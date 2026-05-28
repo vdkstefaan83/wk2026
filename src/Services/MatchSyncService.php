@@ -31,6 +31,7 @@ final class MatchSyncService
         $updated = 0;
         $finalsRecomputed = false;
         $topscorerInfo = null;
+        $topscorerChanged = false;
 
         $leagueId = (int) Config::get('API_FOOTBALL_LEAGUE_ID', 1);  // 1 = World Cup
         $season   = (int) Config::get('API_FOOTBALL_SEASON', 2026);
@@ -48,13 +49,14 @@ final class MatchSyncService
             try {
                 $top = $this->api->topScorers($leagueId, $season);
                 $topscorerInfo = $this->applyTopscorer($top, $errors);
+                $topscorerChanged = $topscorerInfo !== null;
             } catch (\Throwable $e) {
                 $errors[] = 'topscorer: ' . $e->getMessage();
             }
         }
 
-        // 3. Recompute scores if any final-stage match was updated to FT
-        if ($finalsRecomputed) {
+        // 3. Recompute scores whenever match results OR topscorer goal counts moved.
+        if ($finalsRecomputed || $topscorerChanged) {
             ScoringService::recomputeAll();
         }
 
@@ -74,7 +76,7 @@ final class MatchSyncService
 
     private function topscorerStale(): bool
     {
-        $hours = (int) Config::get('API_FOOTBALL_TOPSCORER_INTERVAL_HOURS', 6);
+        $hours = (float) Config::get('API_FOOTBALL_TOPSCORER_INTERVAL_HOURS', 1);
         $last  = (string) Setting::get('last_topscorer_sync_at', '');
         if ($last === '') return true;
         return (time() - strtotime($last)) > $hours * 3600;
