@@ -113,6 +113,15 @@ final class MatchSyncService
         $finalUpdated = false;
 
         foreach ($fixtures as $f) {
+            // Knockout placeholders that don't have teams assigned yet
+            // (R32/R16/QF/SF/F before the group stage decides them) come back
+            // with empty team objects. Skip these silently — they're not errors.
+            $hasHomeIdent = !empty($f['home_iso']) || !empty($f['home_name']);
+            $hasAwayIdent = !empty($f['away_iso']) || !empty($f['away_name']);
+            if (!$hasHomeIdent && !$hasAwayIdent) {
+                continue;
+            }
+
             $homeId = $this->lookupTeam($f['home_iso'] ?? null, $f['home_name'] ?? null, $teamsByIso, $teamsByName);
             $awayId = $this->lookupTeam($f['away_iso'] ?? null, $f['away_name'] ?? null, $teamsByIso, $teamsByName);
 
