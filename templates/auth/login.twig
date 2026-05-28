@@ -2,34 +2,34 @@
 {% block title %}Inloggen · {{ app.name }}{% endblock %}
 {% block content %}
 <div class="max-w-md mx-auto mt-10">
-  <div class="glass rounded-3xl p-8 relative overflow-hidden">
-    <div class="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-lime-400/15 blur-3xl pointer-events-none"></div>
-
-    <h1 class="font-display text-3xl font-extrabold text-slate-100">Welkom terug</h1>
-    <p class="text-sm text-slate-400 mt-1">Log in om je voorspellingen verder in te vullen.</p>
+  <div class="card-thick p-8">
+    <div class="banner banner-green mb-6">
+      <span class="text-2xl">👋</span>
+      <span>Welkom terug</span>
+    </div>
 
     {% if settings.auth_provider == 'keycloak' and keycloak %}
-      <a href="{{ url('/auth/keycloak/login') }}" class="mt-6 btn-neon w-full text-center inline-flex items-center justify-center gap-2">
+      <a href="{{ url('/auth/keycloak/login') }}" class="btn btn-primary w-full">
         Inloggen met Keycloak SSO →
       </a>
-      <p class="text-xs text-slate-500 mt-4 text-center">DB-login uitgeschakeld door de beheerder.</p>
+      <p class="text-sm text-slate-500 mt-4 text-center">DB-login uitgeschakeld door de beheerder.</p>
     {% else %}
-      <form method="post" action="{{ url('/login') }}" class="space-y-4 mt-6">
+      <form method="post" action="{{ url('/login') }}" class="space-y-5">
         <input type="hidden" name="_csrf" value="{{ csrf }}">
         <div>
-          <label class="text-xs uppercase tracking-wider font-medium">E-mail</label>
-          <input name="email" type="email" required autofocus value="{{ old('email') }}" class="mt-1 w-full px-3 py-2.5">
+          <label class="field-label">📧 E-mailadres</label>
+          <input name="email" type="email" required autofocus value="{{ old('email') }}" placeholder="jij@example.com">
         </div>
         <div>
-          <label class="text-xs uppercase tracking-wider font-medium">Wachtwoord</label>
-          <input name="password" type="password" required class="mt-1 w-full px-3 py-2.5">
+          <label class="field-label">🔑 Wachtwoord</label>
+          <input name="password" type="password" required placeholder="••••••••">
         </div>
-        <button class="btn-neon w-full mt-2">Inloggen</button>
+        <button class="btn btn-primary w-full">Inloggen →</button>
       </form>
       {% if settings.registration_open == '1' %}
-        <p class="text-sm text-slate-400 mt-6 text-center">
+        <p class="text-sm text-slate-600 mt-6 text-center">
           Nog geen account?
-          <a href="{{ url('/register') }}" class="text-lime-400 hover:text-lime-300 font-medium">Registreer hier</a>
+          <a href="{{ url('/register') }}" class="text-emerald-600 hover:text-emerald-700 font-bold">Registreer hier</a>
         </p>
       {% endif %}
     {% endif %}

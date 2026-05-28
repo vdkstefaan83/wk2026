@@ -1,24 +1,27 @@
 {% extends 'admin/_layout.twig' %}
 {% block admin_content %}
-<p class="text-xs uppercase tracking-wider text-slate-500">Admin</p>
-<h1 class="font-display text-3xl sm:text-4xl font-extrabold mt-1 mb-8">Overzicht</h1>
+<p class="text-xs uppercase tracking-widest text-slate-500 font-bold">Admin</p>
+<h1 class="font-display text-4xl font-extrabold mt-1 mb-8 text-slate-900">Overzicht</h1>
 
 <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
   {% set tiles = [
-    {label:'Gebruikers',  value: stats.users,          icon:'👥', color:'from-sky-400/20 to-sky-600/0'},
-    {label:'Formulieren', value: stats.forms_total,    icon:'📝', color:'from-indigo-400/20 to-indigo-600/0'},
-    {label:'Verzonden',   value: stats.forms_submitted,icon:'✅', color:'from-lime-400/20 to-emerald-600/0'},
-    {label:'Betaald',     value: stats.forms_paid,     icon:'💰', color:'from-amber-400/20 to-amber-600/0'}
+    {label:'Gebruikers',  value: stats.users,          icon:'👥', color:'green'},
+    {label:'Formulieren', value: stats.forms_total,    icon:'📝', color:'blue'},
+    {label:'Verzonden',   value: stats.forms_submitted,icon:'✅', color:'orange'},
+    {label:'Betaald',     value: stats.forms_paid,     icon:'💰', color:'pink'}
   ] %}
   {% for t in tiles %}
-    <div class="glass rounded-2xl p-5 card-hover relative overflow-hidden">
-      <div class="absolute inset-0 bg-gradient-to-br {{ t.color }} pointer-events-none"></div>
-      <div class="relative">
-        <div class="flex items-center justify-between">
-          <div class="text-xs uppercase tracking-wider text-slate-400">{{ t.label }}</div>
-          <span class="text-2xl">{{ t.icon }}</span>
-        </div>
-        <div class="font-display text-4xl font-extrabold text-slate-100 mt-2">{{ t.value }}</div>
+    <div class="card card-hover p-5">
+      <div class="flex items-center justify-between">
+        <div class="text-xs uppercase tracking-widest text-slate-500 font-bold">{{ t.label }}</div>
+        <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl text-xl
+          {% if t.color == 'green' %}bg-emerald-50{% elseif t.color == 'blue' %}bg-sky-50{% elseif t.color == 'orange' %}bg-orange-50{% else %}bg-pink-50{% endif %}">
+          {{ t.icon }}
+        </span>
+      </div>
+      <div class="stat-number text-5xl mt-3
+        {% if t.color == 'green' %}text-emerald-600{% elseif t.color == 'blue' %}text-sky-600{% elseif t.color == 'orange' %}text-orange-600{% else %}text-pink-600{% endif %}">
+        {{ t.value }}
       </div>
     </div>
   {% endfor %}

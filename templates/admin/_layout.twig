@@ -2,16 +2,16 @@
 
 {% block content %}
 <div class="flex flex-col lg:flex-row gap-6">
-  <aside class="lg:w-60 shrink-0">
-    <div class="glass rounded-2xl p-3 lg:sticky lg:top-20">
-      <p class="px-3 pt-1 pb-2 text-[10px] uppercase tracking-widest text-slate-500">Admin</p>
+  <aside class="lg:w-64 shrink-0">
+    <div class="card p-3 lg:sticky lg:top-20">
+      <p class="px-3 pt-1 pb-2 text-xs uppercase tracking-widest text-slate-500 font-bold">Admin menu</p>
       <nav class="space-y-0.5 text-sm">
         {% set links = [
           {url:'/admin',                 label:'Overzicht',        icon:'📊'},
           {url:'/admin/settings',        label:'Instellingen',     icon:'⚙️'},
           {url:'/admin/email-templates', label:'E-mail templates', icon:'✉️'},
           {url:'/admin/teams',           label:'Teams & groepen',  icon:'🏳️'},
-          {url:'/admin/players',         label:'Spelers',          icon:'⚽'},
+          {url:'/admin/players',         label:'Spelers',          icon:'👟'},
           {url:'/admin/matches',         label:'Wedstrijden',      icon:'🥅'},
           {url:'/admin/forms',           label:'Formulieren',      icon:'📝'},
           {url:'/admin/leaderboard',     label:'Leaderboard',      icon:'🏆'}
@@ -19,9 +19,9 @@
         {% for l in links %}
           {% set active = app.request_uri starts with l.url and (l.url != '/admin' or app.request_uri == '/admin') %}
           <a href="{{ url(l.url) }}"
-             class="flex items-center gap-2.5 px-3 py-2 rounded-lg transition
-                    {{ active ? 'bg-gradient-to-r from-lime-400/15 to-emerald-500/10 text-lime-200 border border-lime-400/20' : 'text-slate-300 hover:bg-white/5 hover:text-white' }}">
-            <span>{{ l.icon }}</span>
+             class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition font-semibold
+                    {{ active ? 'bg-emerald-500 text-white shadow-md shadow-emerald-200' : 'text-slate-700 hover:bg-slate-100' }}">
+            <span class="text-base">{{ l.icon }}</span>
             <span>{{ l.label }}</span>
           </a>
         {% endfor %}

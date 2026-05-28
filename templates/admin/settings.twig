@@ -1,74 +1,84 @@
 {% extends 'admin/_layout.twig' %}
 {% block admin_content %}
-<p class="text-xs uppercase tracking-wider text-slate-500">Admin</p>
-<h1 class="font-display text-3xl font-extrabold mt-1 mb-6">Instellingen</h1>
+<p class="text-xs uppercase tracking-widest text-slate-500 font-bold">Admin</p>
+<h1 class="font-display text-4xl font-extrabold mt-1 mb-6 text-slate-900">Instellingen</h1>
 
 <form method="post" action="{{ url('/admin/settings') }}" class="space-y-5 max-w-2xl">
   <input type="hidden" name="_csrf" value="{{ csrf }}">
 
-  <div class="glass rounded-2xl p-6 space-y-4">
-    <h2 class="font-display font-bold text-lg text-slate-100">Authenticatie</h2>
+  <div class="card p-6 space-y-5">
+    <div class="banner banner-blue">
+      <span class="text-2xl">🔐</span>
+      <span>Authenticatie</span>
+    </div>
     <div>
-      <label class="text-xs uppercase tracking-wider font-medium">Login-methode</label>
-      <select name="auth_provider" class="mt-1 w-full px-3 py-2.5">
+      <label class="field-label">Login-methode</label>
+      <select name="auth_provider">
         <option value="db" {{ settings.auth_provider == 'db' ? 'selected' : '' }}>Database (e-mail + wachtwoord)</option>
         <option value="keycloak" {{ settings.auth_provider == 'keycloak' ? 'selected' : '' }}>Keycloak SSO</option>
       </select>
     </div>
-    <label class="flex items-center gap-2 text-sm text-slate-300">
-      <input type="checkbox" name="registration_open" value="1" {{ settings.registration_open == '1' ? 'checked' : '' }}
-             class="rounded border-white/20 bg-white/5 text-lime-500 focus:ring-lime-400">
+    <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
+      <input type="checkbox" name="registration_open" value="1" {{ settings.registration_open == '1' ? 'checked' : '' }}>
       Registraties toestaan
     </label>
   </div>
 
-  <div class="glass rounded-2xl p-6 space-y-4">
-    <h2 class="font-display font-bold text-lg text-slate-100">Pool</h2>
-    <label class="flex items-center gap-2 text-sm text-slate-300">
-      <input type="checkbox" name="predictions_open" value="1" {{ settings.predictions_open == '1' ? 'checked' : '' }}
-             class="rounded border-white/20 bg-white/5 text-lime-500 focus:ring-lime-400">
+  <div class="card p-6 space-y-5">
+    <div class="banner banner-green">
+      <span class="text-2xl">⚽</span>
+      <span>Pool</span>
+    </div>
+    <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
+      <input type="checkbox" name="predictions_open" value="1" {{ settings.predictions_open == '1' ? 'checked' : '' }}>
       Voorspellingen open
     </label>
     <div>
-      <label class="text-xs uppercase tracking-wider font-medium">Deadline (YYYY-MM-DD HH:MM:SS)</label>
-      <input name="predictions_deadline" value="{{ settings.predictions_deadline }}" class="mt-1 w-full px-3 py-2.5">
+      <label class="field-label">Deadline (YYYY-MM-DD HH:MM:SS)</label>
+      <input name="predictions_deadline" value="{{ settings.predictions_deadline }}">
     </div>
   </div>
 
-  <div class="glass rounded-2xl p-6 space-y-4">
-    <h2 class="font-display font-bold text-lg text-slate-100">Betaling</h2>
-    <div class="grid sm:grid-cols-2 gap-3">
+  <div class="card p-6 space-y-5">
+    <div class="banner banner-orange">
+      <span class="text-2xl">💰</span>
+      <span>Betaling</span>
+    </div>
+    <div class="grid sm:grid-cols-2 gap-4">
       <div>
-        <label class="text-xs uppercase tracking-wider font-medium">Bedrag</label>
-        <input name="payment_amount" value="{{ settings.payment_amount }}" class="mt-1 w-full px-3 py-2.5">
+        <label class="field-label">Bedrag</label>
+        <input name="payment_amount" value="{{ settings.payment_amount }}">
       </div>
       <div>
-        <label class="text-xs uppercase tracking-wider font-medium">Munteenheid</label>
-        <input name="payment_currency" value="{{ settings.payment_currency }}" class="mt-1 w-full px-3 py-2.5">
+        <label class="field-label">Munteenheid</label>
+        <input name="payment_currency" value="{{ settings.payment_currency }}">
       </div>
       <div>
-        <label class="text-xs uppercase tracking-wider font-medium">Te betalen aan</label>
-        <input name="payment_recipient" value="{{ settings.payment_recipient }}" class="mt-1 w-full px-3 py-2.5">
+        <label class="field-label">Te betalen aan</label>
+        <input name="payment_recipient" value="{{ settings.payment_recipient }}">
       </div>
       <div>
-        <label class="text-xs uppercase tracking-wider font-medium">IBAN (optioneel)</label>
-        <input name="payment_iban" value="{{ settings.payment_iban }}" class="mt-1 w-full px-3 py-2.5">
+        <label class="field-label">IBAN (optioneel)</label>
+        <input name="payment_iban" value="{{ settings.payment_iban }}">
       </div>
     </div>
     <div>
-      <label class="text-xs uppercase tracking-wider font-medium">Instructies</label>
-      <textarea name="payment_instructions" rows="3" class="mt-1 w-full px-3 py-2.5">{{ settings.payment_instructions }}</textarea>
+      <label class="field-label">Instructies (verschijnt in mail + na verzenden)</label>
+      <textarea name="payment_instructions" rows="3">{{ settings.payment_instructions }}</textarea>
     </div>
   </div>
 
-  <div class="glass rounded-2xl p-6 space-y-4">
-    <h2 class="font-display font-bold text-lg text-slate-100">Mail</h2>
+  <div class="card p-6 space-y-5">
+    <div class="banner banner-pink">
+      <span class="text-2xl">✉️</span>
+      <span>Mail</span>
+    </div>
     <div>
-      <label class="text-xs uppercase tracking-wider font-medium">Admin ontvangstadres</label>
-      <input name="admin_mail_to" value="{{ settings.admin_mail_to }}" class="mt-1 w-full px-3 py-2.5">
+      <label class="field-label">Admin ontvangstadres</label>
+      <input name="admin_mail_to" value="{{ settings.admin_mail_to }}">
     </div>
   </div>
 
-  <button class="btn-neon">💾 Bewaren</button>
+  <button class="btn btn-primary">💾 Bewaren</button>
 </form>
 {% endblock %}
