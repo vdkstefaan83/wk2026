@@ -2,14 +2,15 @@
 declare(strict_types=1);
 
 /**
- * Update the real FIFA WC2026 kick-off times and venues.
- * Source: ESPN.nl (CEST / Belgian local time).
+ * Update the official FIFA WC2026 kick-off times.
+ * Source: KPN.com (CEST / Belgian local time, full 72 group matches + 31 knock-out slots).
  *
  *   php migrations/seed_real_schedule.php          # update everything
  *   php migrations/seed_real_schedule.php --dry    # show what would change
  *
  * Group matches are matched by team pair (in either order).
  * Knockout matches are matched by slot code (R32-01 → match_number 73, etc.).
+ * Venues are kept as-is — KPN does not publish them; admin can fill via /admin/matches.
  */
 
 require __DIR__ . '/../vendor/autoload.php';
@@ -20,139 +21,150 @@ use App\Core\Database;
 Config::load(dirname(__DIR__));
 $dry = in_array('--dry', $argv, true);
 
-// ---------- Source data (ESPN.nl) ----------
-
-// [datetime, group, homeTeamName, awayTeamName, venue]  — names match DB (English)
+// [datetime, group, homeTeamName, awayTeamName]  — names match DB (English)
 $groupMatches = [
-    ['2026-06-11 03:00','A','Mexico','South Africa','Mexico City'],
-    ['2026-06-12 10:00','A','South Korea','Czech Republic','Guadalajara'],
-    ['2026-06-18 10:00','A','Czech Republic','South Africa','Atlanta'],
-    ['2026-06-25 05:00','A','Czech Republic','Mexico','Mexico City'],
-    ['2026-06-25 05:00','A','South Africa','South Korea','Monterrey'],
+    // Group A
+    ['2026-06-11 21:00','A','Mexico','South Africa'],
+    ['2026-06-12 04:00','A','South Korea','Czech Republic'],
+    ['2026-06-18 18:00','A','Czech Republic','South Africa'],
+    ['2026-06-19 03:00','A','Mexico','South Korea'],
+    ['2026-06-25 03:00','A','South Africa','South Korea'],
+    ['2026-06-25 03:00','A','Czech Republic','Mexico'],
 
-    ['2026-06-12 03:00','B','Canada','Bosnia and Herzegovina','Toronto'],
-    ['2026-06-13 03:00','B','Qatar','Switzerland','San Francisco Bay'],
-    ['2026-06-18 03:00','B','Switzerland','Bosnia and Herzegovina','Los Angeles'],
-    ['2026-06-24 03:00','B','Switzerland','Canada','Vancouver'],
-    ['2026-06-24 03:00','B','Bosnia and Herzegovina','Qatar','Seattle'],
+    // Group B
+    ['2026-06-12 21:00','B','Canada','Bosnia and Herzegovina'],
+    ['2026-06-13 21:00','B','Qatar','Switzerland'],
+    ['2026-06-18 21:00','B','Switzerland','Bosnia and Herzegovina'],
+    ['2026-06-19 00:00','B','Canada','Qatar'],
+    ['2026-06-24 21:00','B','Switzerland','Canada'],
+    ['2026-06-24 21:00','B','Bosnia and Herzegovina','Qatar'],
 
-    ['2026-06-14 06:00','C','Brazil','Morocco','New York/New Jersey'],
-    ['2026-06-14 09:00','C','Haiti','Scotland','Boston'],
-    ['2026-06-20 06:00','C','Scotland','Morocco','Boston'],
-    ['2026-06-20 08:30','C','Brazil','Haiti','Philadelphia'],
-    ['2026-06-27 07:00','C','Morocco','Haiti','Atlanta'],
-    ['2026-06-27 07:00','C','Scotland','Brazil','Miami'],
+    // Group C
+    ['2026-06-14 00:00','C','Brazil','Morocco'],
+    ['2026-06-14 03:00','C','Haiti','Scotland'],
+    ['2026-06-20 00:00','C','Scotland','Morocco'],
+    ['2026-06-20 03:00','C','Brazil','Haiti'],
+    ['2026-06-25 00:00','C','Morocco','Haiti'],
+    ['2026-06-25 00:00','C','Scotland','Brazil'],
 
-    ['2026-06-13 09:00','D','United States','Paraguay','Los Angeles'],
-    ['2026-06-13 12:00','D','Australia','Turkey','Vancouver'],
-    ['2026-06-26 06:00','D','Turkey','United States','Los Angeles'],
-    ['2026-06-26 06:00','D','Paraguay','Australia','San Francisco Bay'],
+    // Group D
+    ['2026-06-13 03:00','D','United States','Paraguay'],
+    ['2026-06-14 06:00','D','Australia','Turkey'],
+    ['2026-06-19 21:00','D','United States','Australia'],
+    ['2026-06-20 06:00','D','Turkey','Paraguay'],
+    ['2026-06-26 04:00','D','Paraguay','Australia'],
+    ['2026-06-26 04:00','D','Turkey','United States'],
 
-    ['2026-06-14 01:00','E','Germany','Curaçao','Houston'],
-    ['2026-06-15 07:00','E','Ivory Coast','Ecuador','Philadelphia'],
-    ['2026-06-20 04:00','E','Germany','Ivory Coast','Toronto'],
-    ['2026-06-21 01:00','E','Ecuador','Curaçao','Kansas City'],
-    ['2026-06-25 04:00','E','Ecuador','Germany','New York/New Jersey'],
-    ['2026-06-25 04:00','E','Curaçao','Ivory Coast','Philadelphia'],
+    // Group E
+    ['2026-06-14 19:00','E','Germany','Curaçao'],
+    ['2026-06-15 01:00','E','Ivory Coast','Ecuador'],
+    ['2026-06-20 22:00','E','Germany','Ivory Coast'],
+    ['2026-06-21 02:00','E','Ecuador','Curaçao'],
+    ['2026-06-25 22:00','E','Curaçao','Ivory Coast'],
+    ['2026-06-25 22:00','E','Ecuador','Germany'],
 
-    ['2026-06-15 00:00','F','Netherlands','Japan','Dallas'],
-    ['2026-06-15 10:00','F','Sweden','Tunisia','Monterrey'],
-    ['2026-06-18 06:00','F','Tunisia','Japan','Monterrey'],
-    ['2026-06-20 01:00','F','Netherlands','Sweden','Houston'],
-    ['2026-06-25 07:00','F','Japan','Sweden','Dallas'],
-    ['2026-06-25 07:00','F','Tunisia','Netherlands','Kansas City'],
+    // Group F
+    ['2026-06-14 22:00','F','Netherlands','Japan'],
+    ['2026-06-15 04:00','F','Sweden','Tunisia'],
+    ['2026-06-20 19:00','F','Netherlands','Sweden'],
+    ['2026-06-21 06:00','F','Tunisia','Japan'],
+    ['2026-06-26 01:00','F','Japan','Sweden'],
+    ['2026-06-26 01:00','F','Tunisia','Netherlands'],
 
-    ['2026-06-15 03:00','G','Belgium','Egypt','Seattle'],
-    ['2026-06-16 03:00','G','Iran','New Zealand','Los Angeles'],
-    ['2026-06-21 03:00','G','Belgium','Iran','Los Angeles'],
-    ['2026-06-21 08:00','G','New Zealand','Egypt','Vancouver'],
-    ['2026-06-27 11:00','G','Egypt','Iran','Seattle'],
-    ['2026-06-27 11:00','G','New Zealand','Belgium','Vancouver'],
+    // Group G
+    ['2026-06-15 21:00','G','Belgium','Egypt'],
+    ['2026-06-16 03:00','G','Iran','New Zealand'],
+    ['2026-06-21 21:00','G','Belgium','Iran'],
+    ['2026-06-22 03:00','G','New Zealand','Egypt'],
+    ['2026-06-27 05:00','G','Egypt','Iran'],
+    ['2026-06-27 05:00','G','New Zealand','Belgium'],
 
-    ['2026-06-15 00:00','H','Spain','Cape Verde','Atlanta'],
-    ['2026-06-16 06:00','H','Saudi Arabia','Uruguay','Miami'],
-    ['2026-06-21 00:00','H','Spain','Saudi Arabia','Atlanta'],
-    ['2026-06-27 07:00','H','Cape Verde','Saudi Arabia','Houston'],
-    ['2026-06-27 04:00','H','Uruguay','Spain','Guadalajara'],
+    // Group H
+    ['2026-06-15 18:00','H','Spain','Cape Verde'],
+    ['2026-06-16 00:00','H','Saudi Arabia','Uruguay'],
+    ['2026-06-21 18:00','H','Spain','Saudi Arabia'],
+    ['2026-06-22 00:00','H','Uruguay','Cape Verde'],
+    ['2026-06-27 02:00','H','Cape Verde','Saudi Arabia'],
+    ['2026-06-27 02:00','H','Uruguay','Spain'],
 
-    ['2026-06-16 03:00','I','France','Senegal','New York/New Jersey'],
-    ['2026-06-17 06:00','I','Iraq','Norway','Boston'],
-    ['2026-06-22 05:00','I','France','Iraq','Philadelphia'],
-    ['2026-06-22 08:00','I','Norway','Senegal','New York/New Jersey'],
-    ['2026-06-26 03:00','I','Norway','France','Boston'],
-    ['2026-06-26 03:00','I','Senegal','Iraq','Toronto'],
+    // Group I
+    ['2026-06-16 21:00','I','France','Senegal'],
+    ['2026-06-17 00:00','I','Iraq','Norway'],
+    ['2026-06-22 23:00','I','France','Iraq'],
+    ['2026-06-23 02:00','I','Norway','Senegal'],
+    ['2026-06-26 21:00','I','Norway','France'],
+    ['2026-06-26 21:00','I','Senegal','Iraq'],
 
-    ['2026-06-16 12:00','J','Austria','Jordan','San Francisco Bay'],
-    ['2026-06-17 09:00','J','Argentina','Algeria','Kansas City'],
-    ['2026-06-22 01:00','J','Argentina','Austria','Dallas'],
-    ['2026-06-23 11:00','J','Jordan','Algeria','San Francisco Bay'],
-    ['2026-06-28 06:00','J','Algeria','Austria','Kansas City'],
-    ['2026-06-28 06:00','J','Jordan','Argentina','Dallas'],
+    // Group J
+    ['2026-06-17 03:00','J','Argentina','Algeria'],
+    ['2026-06-17 06:00','J','Austria','Jordan'],
+    ['2026-06-22 19:00','J','Argentina','Austria'],
+    ['2026-06-23 04:00','J','Jordan','Algeria'],
+    ['2026-06-28 04:00','J','Algeria','Austria'],
+    ['2026-06-28 04:00','J','Jordan','Argentina'],
 
-    ['2026-06-17 01:00','K','Portugal','DR Congo','Houston'],
-    ['2026-06-18 10:00','K','Uzbekistan','Colombia','Mexico City'],
-    ['2026-06-23 01:00','K','Portugal','Uzbekistan','Houston'],
-    ['2026-06-24 10:00','K','Colombia','DR Congo','Guadalajara'],
-    ['2026-06-28 03:30','K','Colombia','Portugal','Miami'],
-    ['2026-06-28 03:30','K','DR Congo','Uzbekistan','Atlanta'],
+    // Group K
+    ['2026-06-17 19:00','K','Portugal','DR Congo'],
+    ['2026-06-18 04:00','K','Uzbekistan','Colombia'],
+    ['2026-06-23 19:00','K','Portugal','Uzbekistan'],
+    ['2026-06-24 04:00','K','Colombia','DR Congo'],
+    ['2026-06-28 01:30','K','Colombia','Portugal'],
+    ['2026-06-28 01:30','K','DR Congo','Uzbekistan'],
 
-    ['2026-06-18 00:00','L','England','Croatia','Dallas'],
-    ['2026-06-18 07:00','L','Ghana','Panama','Toronto'],
-    ['2026-06-23 00:00','L','England','Ghana','Boston'],
-    ['2026-06-24 07:00','L','Panama','Croatia','Toronto'],
+    // Group L
+    ['2026-06-17 22:00','L','England','Croatia'],
+    ['2026-06-18 01:00','L','Ghana','Panama'],
+    ['2026-06-23 22:00','L','England','Ghana'],
+    ['2026-06-24 01:00','L','Panama','Croatia'],
+    ['2026-06-27 23:00','L','Croatia','Ghana'],
+    ['2026-06-27 23:00','L','Panama','England'],
 ];
 
-// Knockout: slot code → [datetime, venue]
+// Knockout: slot code → datetime
 $ko = [
-    'R32-01' => ['2026-06-28 03:00','Los Angeles'],
-    'R32-02' => ['2026-06-29 01:00','Houston'],
-    'R32-03' => ['2026-06-29 04:30','Boston'],
-    'R32-04' => ['2026-06-30 09:00','Monterrey'],
-    'R32-05' => ['2026-06-30 01:00','Dallas'],
-    'R32-06' => ['2026-06-30 05:00','New York/New Jersey'],
-    'R32-07' => ['2026-07-01 09:00','Mexico City'],
-    'R32-08' => ['2026-07-01 00:00','Atlanta'],
-    'R32-09' => ['2026-07-01 04:00','San Francisco Bay'],
-    'R32-10' => ['2026-07-02 08:00','Seattle'],
-    'R32-11' => ['2026-07-02 03:00','Los Angeles'],
-    'R32-12' => ['2026-07-03 07:00','Toronto'],
-    'R32-13' => ['2026-07-03 11:00','Vancouver'],
-    'R32-14' => ['2026-07-03 02:00','Dallas'],
-    'R32-15' => ['2026-07-04 06:00','Miami'],
-    'R32-16' => ['2026-07-04 09:30','Kansas City'],
+    'R32-01' => '2026-06-28 21:00',
+    'R32-02' => '2026-06-29 19:00',
+    'R32-03' => '2026-06-29 22:30',
+    'R32-04' => '2026-06-30 03:00',
+    'R32-05' => '2026-06-30 19:00',
+    'R32-06' => '2026-06-30 23:00',
+    'R32-07' => '2026-07-01 03:00',
+    'R32-08' => '2026-07-01 18:00',
+    'R32-09' => '2026-07-01 22:00',
+    'R32-10' => '2026-07-02 02:00',
+    'R32-11' => '2026-07-02 21:00',
+    'R32-12' => '2026-07-03 01:00',
+    'R32-13' => '2026-07-03 05:00',
+    'R32-14' => '2026-07-03 20:00',
+    'R32-15' => '2026-07-04 00:00',
+    'R32-16' => '2026-07-04 03:30',
 
-    'R16-01' => ['2026-07-04 01:00','Houston'],
-    'R16-02' => ['2026-07-04 05:00','Philadelphia'],
-    'R16-03' => ['2026-07-05 04:00','New York/New Jersey'],
-    'R16-04' => ['2026-07-06 08:00','Mexico City'],
-    'R16-05' => ['2026-07-06 03:00','Dallas'],
-    'R16-06' => ['2026-07-07 08:00','Seattle'],
-    'R16-07' => ['2026-07-07 00:00','Atlanta'],
-    'R16-08' => ['2026-07-07 04:00','Vancouver'],
+    'R16-01' => '2026-07-04 19:00',
+    'R16-02' => '2026-07-04 23:00',
+    'R16-03' => '2026-07-05 22:00',
+    'R16-04' => '2026-07-06 02:00',
+    'R16-05' => '2026-07-06 21:00',
+    'R16-06' => '2026-07-07 02:00',
+    'R16-07' => '2026-07-07 18:00',
+    'R16-08' => '2026-07-07 22:00',
 
-    'QF-01'  => ['2026-07-09 04:00','Boston'],
-    'QF-02'  => ['2026-07-10 03:00','Los Angeles'],
-    'QF-03'  => ['2026-07-11 05:00','Miami'],
-    'QF-04'  => ['2026-07-12 09:00','Kansas City'],
+    'QF-01'  => '2026-07-09 22:00',
+    'QF-02'  => '2026-07-10 21:00',
+    'QF-03'  => '2026-07-11 23:00',
+    'QF-04'  => '2026-07-12 03:00',
 
-    'SF-01'  => ['2026-07-14 03:00','Dallas'],
-    'SF-02'  => ['2026-07-15 03:00','Atlanta'],
+    'SF-01'  => '2026-07-14 21:00',
+    'SF-02'  => '2026-07-15 21:00',
 
-    'F-01'   => ['2026-07-19 03:00','New York/New Jersey (MetLife Stadium)'],
+    'F-01'   => '2026-07-19 21:00',
 ];
 
-// ---------- Apply ----------
 $updated = 0;
-$skipped = 0;
 $missing = [];
 
-// Helper: get team id by name
-$teamId = function (string $name) {
-    return (int) Database::fetchColumn('SELECT id FROM teams WHERE name = ?', [$name]);
-};
+$teamId = fn(string $name) => (int) Database::fetchColumn('SELECT id FROM teams WHERE name = ?', [$name]);
 
-// Group matches: match either home/away orientation.
-foreach ($groupMatches as [$dt, $group, $home, $away, $venue]) {
+foreach ($groupMatches as [$dt, $group, $home, $away]) {
     $hid = $teamId($home);
     $aid = $teamId($away);
     if (!$hid || !$aid) {
@@ -168,49 +180,44 @@ foreach ($groupMatches as [$dt, $group, $home, $away, $venue]) {
         [$hid, $aid, $aid, $hid]
     );
     if (!$row) {
-        $missing[] = "No match in DB for {$home} vs {$away}";
+        $missing[] = "No DB match for {$home} vs {$away}";
         continue;
     }
     if ($dry) {
-        echo "  GRP would update id={$row['id']} ({$home} vs {$away}) → {$dt} @ {$venue}\n";
+        echo "  GRP {$group}  {$dt}  {$home} vs {$away}\n";
         continue;
     }
-    Database::update('matches', ['kickoff_at' => $dt, 'venue' => $venue], ['id' => $row['id']]);
+    Database::update('matches', ['kickoff_at' => $dt], ['id' => $row['id']]);
     $updated++;
 }
 
-// Knockout: match by match_number based on slot position.
 $slotToMatchNumber = [];
-$base = 72; // group stage uses 1..72
+$base = 72;
 foreach (['R32' => 16, 'R16' => 8, 'QF' => 4, 'SF' => 2, 'F' => 1] as $prefix => $count) {
     for ($i = 1; $i <= $count; $i++) {
         $slotToMatchNumber[sprintf('%s-%02d', $prefix, $i)] = ++$base;
     }
 }
-
-foreach ($ko as $slot => [$dt, $venue]) {
+foreach ($ko as $slot => $dt) {
     if (!isset($slotToMatchNumber[$slot])) {
-        $missing[] = "Unknown slot code: {$slot}";
+        $missing[] = "Unknown slot: {$slot}";
         continue;
     }
     $matchNo = $slotToMatchNumber[$slot];
     $row = Database::fetch('SELECT id FROM matches WHERE match_number = ?', [$matchNo]);
     if (!$row) {
-        $missing[] = "No match row for {$slot} (match_number={$matchNo})";
+        $missing[] = "No DB match for {$slot} (number={$matchNo})";
         continue;
     }
     if ($dry) {
-        echo "  KO  would update id={$row['id']} ({$slot}) → {$dt} @ {$venue}\n";
+        echo "  KO   {$slot}  {$dt}\n";
         continue;
     }
-    Database::update('matches', ['kickoff_at' => $dt, 'venue' => $venue], ['id' => $row['id']]);
+    Database::update('matches', ['kickoff_at' => $dt], ['id' => $row['id']]);
     $updated++;
 }
 
-echo "✓ {$updated} matches updated" . ($dry ? ' (dry run, nothing actually written)' : '') . "\n";
-if ($missing) {
-    echo "⚠ Issues:\n  - " . implode("\n  - ", $missing) . "\n";
-}
-echo "ℹ Times are in CEST (Belgian local time). All matches are played in USA / Canada / Mexico.\n";
-echo "  ESPN's published kalender does not include every single fixture — any match without a kickoff\n";
-echo "  in the DB can be filled in manually via /admin/matches.\n";
+echo "✓ {$updated} matches updated" . ($dry ? ' (dry run)' : '') . "\n";
+if ($missing) echo "⚠ Issues:\n  - " . implode("\n  - ", $missing) . "\n";
+echo "ℹ Times in CEST (Belgian local time). Source: KPN.com\n";
+echo "  Venues are not touched — fill via /admin/matches if you need them.\n";

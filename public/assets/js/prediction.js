@@ -22,7 +22,29 @@ function predictionWizard(cfg) {
     thirdsRanked: [],
     // R32 bracket (16 slots) computed locally
     bracket: { r32: [] },
-    downstream: { r16: [], qf: [], sf: [], final: { slot: 'F-01', feeds: ['SF-01','SF-02'] } },
+    downstream: {
+      r16: [
+        { slot: 'R16-01', feeds: ['R32-01','R32-03'] },
+        { slot: 'R16-02', feeds: ['R32-02','R32-05'] },
+        { slot: 'R16-03', feeds: ['R32-04','R32-06'] },
+        { slot: 'R16-04', feeds: ['R32-07','R32-08'] },
+        { slot: 'R16-05', feeds: ['R32-11','R32-12'] },
+        { slot: 'R16-06', feeds: ['R32-09','R32-10'] },
+        { slot: 'R16-07', feeds: ['R32-14','R32-16'] },
+        { slot: 'R16-08', feeds: ['R32-13','R32-15'] },
+      ],
+      qf: [
+        { slot: 'QF-01', feeds: ['R16-01','R16-02'] },
+        { slot: 'QF-02', feeds: ['R16-05','R16-06'] },
+        { slot: 'QF-03', feeds: ['R16-03','R16-04'] },
+        { slot: 'QF-04', feeds: ['R16-07','R16-08'] },
+      ],
+      sf: [
+        { slot: 'SF-01', feeds: ['QF-01','QF-02'] },
+        { slot: 'SF-02', feeds: ['QF-03','QF-04'] },
+      ],
+      final: { slot: 'F-01', feeds: ['SF-01','SF-02'] },
+    },
     picks: {},
     winnerTeamId: '',
     topscorerPlayerId: '',
