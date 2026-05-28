@@ -15,10 +15,10 @@ final class Mailer
     }
 
     /** Returns true on success, false on failure. Use lastError() to inspect failures. */
-    public static function send(string $to, string $subject, string $htmlBody, array $attachments = [], ?string $toName = null): bool
+    public static function send(string $to, string $subject, string $htmlBody, array $attachments = [], ?string $toName = null, ?string $replyToEmail = null, ?string $replyToName = null): bool
     {
         try {
-            self::doSend($to, $subject, $htmlBody, $attachments, $toName);
+            self::doSend($to, $subject, $htmlBody, $attachments, $toName, $replyToEmail, $replyToName);
             self::$lastError = '';
             return true;
         } catch (\Throwable $e) {
@@ -29,12 +29,12 @@ final class Mailer
     }
 
     /** Same as send() but throws on failure — handy when the caller wants to surface the exact error. */
-    public static function sendOrThrow(string $to, string $subject, string $htmlBody, array $attachments = [], ?string $toName = null): void
+    public static function sendOrThrow(string $to, string $subject, string $htmlBody, array $attachments = [], ?string $toName = null, ?string $replyToEmail = null, ?string $replyToName = null): void
     {
-        self::doSend($to, $subject, $htmlBody, $attachments, $toName);
+        self::doSend($to, $subject, $htmlBody, $attachments, $toName, $replyToEmail, $replyToName);
     }
 
-    private static function doSend(string $to, string $subject, string $htmlBody, array $attachments, ?string $toName): void
+    private static function doSend(string $to, string $subject, string $htmlBody, array $attachments, ?string $toName, ?string $replyToEmail = null, ?string $replyToName = null): void
     {
         $mail = new PHPMailer(true);
         $mail->isSMTP();
@@ -60,6 +60,9 @@ final class Mailer
             (string) Config::get('MAIL_FROM_ADDRESS', 'no-reply@example.com'),
             (string) Config::get('MAIL_FROM_NAME', 'WK2026 Pool')
         );
+        if ($replyToEmail !== null && $replyToEmail !== '') {
+            $mail->addReplyTo($replyToEmail, $replyToName ?? $replyToEmail);
+        }
         $mail->addAddress($to, $toName ?? $to);
         $mail->isHTML(true);
         $mail->Subject = $subject;

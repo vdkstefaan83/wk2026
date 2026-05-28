@@ -479,7 +479,10 @@ final class PredictionController extends Controller
                 (string) $adminTo,
                 $this->renderTemplate($adminTpl['subject'], $vars),
                 $this->renderTemplate($adminTpl['body_html'], $vars),
-                [$pdfPath]
+                [$pdfPath],
+                null,
+                $form['user_email'],   // Reply-To = the submitter
+                $form['user_name']
             );
         }
     }
