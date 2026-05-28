@@ -4,30 +4,73 @@ declare(strict_types=1);
 namespace App\Services;
 
 /**
- * Builds the Round-of-32 bracket for the 48-team WK2026 format:
- *  - 12 group winners (1st)
- *  - 12 runners-up (2nd)
- *  - 8 best third-placed teams (selected from the 12 thirds by FIFA tiebreakers)
+ * Build the official FIFA 2026 knockout bracket (48-team format).
  *
- * Third-place team selection (best 8 out of 12) uses the same FIFA criteria
- * applied across thirds: points, GD, GF, fair-play (skipped), drawing of lots
- * (here: stable group code order).
+ * The Round-of-32 structure is fixed: 4 W-vs-2nd matches, 4 2nd-vs-2nd matches,
+ * and 8 W-vs-3rd matches where each W-vs-3rd slot has a pre-defined list of
+ * "allowed source groups" for the third-placed team. The 8 best thirds are
+ * picked from the 12 group thirds via FIFA tiebreakers (points → GD → GF →
+ * group code as deterministic substitute for fair-play / drawing of lots).
  *
- * For each combination of which 8 third-placed groups qualify, FIFA publishes a
- * matrix that says which thirds go to which 1st-place team's R32 slot. We use a
- * simplified, deterministic mapping: thirds sorted by quality are paired to
- * the highest-seeded group winners. The exact official FIFA matrix can be
- * dropped in later via the admin UI.
+ * Slot constraints are taken from FIFA's published 2026 schedule (matches
+ * 73–88 = R32, in numerical / chronological order).
+ *
+ * Downstream feeders (R16 → Final) also follow the FIFA bracket structure.
  */
 final class KnockoutBracketService
 {
     /**
+     * R32 slot definitions. Each entry describes how the slot's two participants
+     * are sourced:
+     *   - 'W{code}' for group winner (e.g. W1A = winner of group A)
+     *   - '2{code}' for runner-up
+     *   - '3#{A,B,…}' for a third-placed team picked from one of the listed groups
+     */
+    private const R32 = [
+        'R32-01' => ['2A',                 '2B'],
+        'R32-02' => ['W1C',                '2F'],
+        'R32-03' => ['W1E',                '3#A,B,C,D,F'],
+        'R32-04' => ['W1F',                '2C'],
+        'R32-05' => ['2E',                 '2I'],
+        'R32-06' => ['W1I',                '3#C,D,F,G,H'],
+        'R32-07' => ['W1A',                '3#C,E,F,H,I'],
+        'R32-08' => ['W1L',                '3#E,H,I,J,K'],
+        'R32-09' => ['W1G',                '3#A,E,H,I,J'],
+        'R32-10' => ['W1D',                '3#B,E,F,I,J'],
+        'R32-11' => ['W1H',                '2J'],
+        'R32-12' => ['2K',                 '2L'],
+        'R32-13' => ['W1B',                '3#E,F,G,I,J'],
+        'R32-14' => ['2D',                 '2G'],
+        'R32-15' => ['W1J',                '2H'],
+        'R32-16' => ['W1K',                '3#D,E,I,J,L'],
+    ];
+
+    /**
+     * Downstream feeders per FIFA 2026 bracket structure.
+     */
+    private const FEEDERS = [
+        'R16-01' => ['R32-01','R32-04'],
+        'R16-02' => ['R32-03','R32-06'],
+        'R16-03' => ['R32-02','R32-05'],
+        'R16-04' => ['R32-07','R32-08'],
+        'R16-05' => ['R32-12','R32-11'],
+        'R16-06' => ['R32-10','R32-09'],
+        'R16-07' => ['R32-15','R32-14'],
+        'R16-08' => ['R32-13','R32-16'],
+        'QF-01'  => ['R16-02','R16-01'],
+        'QF-02'  => ['R16-05','R16-06'],
+        'QF-03'  => ['R16-03','R16-04'],
+        'QF-04'  => ['R16-07','R16-08'],
+        'SF-01'  => ['QF-01','QF-02'],
+        'SF-02'  => ['QF-03','QF-04'],
+        'F-01'   => ['SF-01','SF-02'],
+    ];
+
+    /**
      * @param array<string, list<array>> $groupStandings  group code => rows from FifaRankingService::rank()
      * @return array{
-     *   firsts: list<array>,  // 12 winners
-     *   seconds: list<array>, // 12 runners-up
-     *   thirds_ranked: list<array>, // 12 thirds ordered best→worst
-     *   qualified_thirds: list<array>, // best 8
+     *   firsts: list<array>, seconds: list<array>,
+     *   thirds_ranked: list<array>, qualified_thirds: list<array>,
      *   r32: list<array{slot:string, home:array, away:array}>
      * }
      */
@@ -35,33 +78,58 @@ final class KnockoutBracketService
     {
         $firsts = $seconds = $thirds = [];
         foreach ($groupStandings as $code => $rows) {
-            if (isset($rows[0])) $firsts[]  = ['group' => $code] + $rows[0];
-            if (isset($rows[1])) $seconds[] = ['group' => $code] + $rows[1];
-            if (isset($rows[2])) $thirds[]  = ['group' => $code] + $rows[2];
+            if (isset($rows[0])) $firsts[$code]  = ['group' => $code] + $rows[0];
+            if (isset($rows[1])) $seconds[$code] = ['group' => $code] + $rows[1];
+            if (isset($rows[2])) $thirds[$code]  = ['group' => $code] + $rows[2];
         }
 
-        $thirdsRanked = self::rankThirds($thirds);
+        $thirdsRanked = self::rankThirds(array_values($thirds));
         $qualified    = array_slice($thirdsRanked, 0, 8);
+        $thirdsByGroup = [];
+        foreach ($qualified as $t) $thirdsByGroup[$t['group']] = $t;
 
-        // R32 pairings:
-        //  - 12 group winners face: 8 best thirds (4 of the winners may face thirds) + some runners-up
-        //  - 12 runners-up: 4 of them face other runners-up (since 12 winners + 8 thirds = 20 teams,
-        //    leaving 12 runners-up to fill 12 R32 slots — 8 vs winners, 4 vs other runners-up).
-        //
-        // We use a deterministic pairing that respects FIFA's spirit (avoid same-group rematches in R32).
+        // Assign each qualifying third to a valid R32 slot.
+        $thirdSlotAssignment = self::assignThirdsToSlots($thirdsByGroup);
 
-        $r32 = self::pairR32($firsts, $seconds, $qualified);
+        // Build R32 match pairs.
+        $r32 = [];
+        foreach (self::R32 as $slot => [$leftDef, $rightDef]) {
+            $r32[] = [
+                'slot' => $slot,
+                'home' => self::resolveTeam($leftDef,  $firsts, $seconds, $thirdSlotAssignment, $slot),
+                'away' => self::resolveTeam($rightDef, $firsts, $seconds, $thirdSlotAssignment, $slot),
+            ];
+        }
 
         return [
-            'firsts'           => $firsts,
-            'seconds'          => $seconds,
+            'firsts'           => array_values($firsts),
+            'seconds'          => array_values($seconds),
             'thirds_ranked'    => $thirdsRanked,
             'qualified_thirds' => $qualified,
             'r32'              => $r32,
         ];
     }
 
-    /** @param list<array> $thirds */
+    /**
+     * Build the empty downstream bracket (R16 → Final) per FIFA structure.
+     */
+    public static function downstream(): array
+    {
+        $bucket = ['r16' => [], 'qf' => [], 'sf' => [], 'final' => null];
+        foreach (self::FEEDERS as $slot => $feeds) {
+            $entry = ['slot' => $slot, 'feeds' => $feeds];
+            if (str_starts_with($slot, 'R16'))      $bucket['r16'][] = $entry;
+            elseif (str_starts_with($slot, 'QF'))   $bucket['qf'][]  = $entry;
+            elseif (str_starts_with($slot, 'SF'))   $bucket['sf'][]  = $entry;
+            elseif (str_starts_with($slot, 'F'))    $bucket['final']  = $entry;
+        }
+        return $bucket;
+    }
+
+    // ------------------------------------------------------------------
+    // Internal helpers
+    // ------------------------------------------------------------------
+
     private static function rankThirds(array $thirds): array
     {
         usort($thirds, function ($a, $b) {
@@ -74,111 +142,71 @@ final class KnockoutBracketService
     }
 
     /**
-     * Deterministic R32 pairing.
-     * - 8 best thirds → paired against the top 8 group winners (seeded by quality).
-     * - Bottom 4 group winners → paired against bottom 4 group runners-up.
-     * - Top 8 group runners-up → paired against each other (4 ties).
-     * Same-group teams are never paired together; if a clash would occur we swap with the next pair.
+     * Bipartite matching: assign the 8 qualifying thirds to the 8 R32 third-slots.
+     * Each slot accepts a third only from its allowed-groups list.
+     * Strategy: backtracking — try each slot in order, pick any available third
+     * whose group is in the allowed set; recurse. Always finds an assignment when
+     * one exists.
      *
-     * Slot codes follow R32-01 … R32-16.
+     * @param array<string, array> $thirdsByGroup
+     * @return array<string, array>  slot => third row
      */
-    private static function pairR32(array $firsts, array $seconds, array $thirds): array
+    private static function assignThirdsToSlots(array $thirdsByGroup): array
     {
-        $rankFirsts = self::sortByQuality($firsts);
-        $rankSeconds = self::sortByQuality($seconds);
-
-        $topFirsts    = array_slice($rankFirsts, 0, 8);
-        $bottomFirsts = array_slice($rankFirsts, 8, 4);
-        $topSeconds   = array_slice($rankSeconds, 0, 8);
-        $bottomSeconds= array_slice($rankSeconds, 8, 4);
-
-        $pairs = [];
-        // 1. Top 8 winners vs the 8 qualified thirds (reverse to give the strongest winner the weakest third)
-        $thirdsAsc = array_reverse($thirds);
-        foreach ($topFirsts as $i => $w) {
-            $pairs[] = ['home' => $w, 'away' => $thirdsAsc[$i] ?? null];
-        }
-        // 2. Bottom 4 winners vs bottom 4 runners-up
-        foreach ($bottomFirsts as $i => $w) {
-            $pairs[] = ['home' => $w, 'away' => $bottomSeconds[$i] ?? null];
-        }
-        // 3. Top 8 runners-up paired against each other (1v8, 2v7, 3v6, 4v5)
-        $n = count($topSeconds);
-        for ($i = 0; $i < intdiv($n, 2); $i++) {
-            $pairs[] = ['home' => $topSeconds[$i], 'away' => $topSeconds[$n - 1 - $i]];
-        }
-
-        // Avoid same-group rematches by swapping with the next pair when needed
-        $count = count($pairs);
-        for ($i = 0; $i < $count; $i++) {
-            if (self::clash($pairs[$i])) {
-                for ($j = $i + 1; $j < $count; $j++) {
-                    $swapped = ['home' => $pairs[$i]['home'], 'away' => $pairs[$j]['away']];
-                    $other   = ['home' => $pairs[$j]['home'], 'away' => $pairs[$i]['away']];
-                    if (!self::clash($swapped) && !self::clash($other)) {
-                        $pairs[$i] = $swapped;
-                        $pairs[$j] = $other;
-                        break;
-                    }
+        $thirdSlots = [];
+        foreach (self::R32 as $slot => [$left, $right]) {
+            foreach ([$left, $right] as $side) {
+                if (str_starts_with($side, '3#')) {
+                    $thirdSlots[$slot] = array_map('trim', explode(',', substr($side, 2)));
+                    break;
                 }
             }
         }
 
-        $out = [];
-        foreach ($pairs as $i => $p) {
-            $out[] = [
-                'slot' => sprintf('R32-%02d', $i + 1),
-                'home' => $p['home'],
-                'away' => $p['away'],
-            ];
+        $assignment = [];
+        $solve = function (array $slotsLeft) use (&$solve, $thirdsByGroup, &$assignment) {
+            if (empty($slotsLeft)) return true;
+            $slot = array_key_first($slotsLeft);
+            $allowed = $slotsLeft[$slot];
+            unset($slotsLeft[$slot]);
+            foreach ($allowed as $g) {
+                if (!isset($thirdsByGroup[$g])) continue;
+                if (in_array($g, $assignment, true)) continue;
+                $assignment[$slot] = $g;
+                if ($solve($slotsLeft)) return true;
+                unset($assignment[$slot]);
+            }
+            return false;
+        };
+
+        if (!$solve($thirdSlots)) {
+            // Should never happen — FIFA's matrix guarantees a solution exists for
+            // every legal combination of 8 thirds. If we land here it usually means
+            // the user's group-stage predictions are incomplete and we shouldn't
+            // surface a bracket yet.
+            return [];
         }
+
+        // Map slot → actual third-row (not just group code)
+        $out = [];
+        foreach ($assignment as $slot => $g) $out[$slot] = $thirdsByGroup[$g];
         return $out;
     }
 
-    private static function clash(array $pair): bool
-    {
-        return isset($pair['home']['group'], $pair['away']['group'])
-            && $pair['home']['group'] === $pair['away']['group'];
-    }
-
-    private static function sortByQuality(array $rows): array
-    {
-        usort($rows, function ($a, $b) {
-            if ($a['points'] !== $b['points']) return $b['points'] <=> $a['points'];
-            if ($a['gd']     !== $b['gd'])     return $b['gd']     <=> $a['gd'];
-            if ($a['gf']     !== $b['gf'])     return $b['gf']     <=> $a['gf'];
-            return strcmp((string)$a['group'], (string)$b['group']);
-        });
-        return $rows;
-    }
-
     /**
-     * Build the empty bracket downstream of R32 (R16 → Final). Slots are
-     * R16-01..R16-08, QF-01..QF-04, SF-01..SF-02, F-01.
-     * Each slot is fed by two parent slots — fed[0]=winner of slot X, fed[1]=winner of slot Y.
+     * Translate a participant definition (W1X / 2X / 3#A,B,…) to a team row.
      */
-    public static function downstream(): array
+    private static function resolveTeam(string $def, array $firsts, array $seconds, array $thirdSlots, string $slot): ?array
     {
-        $r16 = $qf = $sf = [];
-        for ($i = 1; $i <= 8; $i++) {
-            $r16[] = [
-                'slot' => sprintf('R16-%02d', $i),
-                'feeds' => [sprintf('R32-%02d', $i * 2 - 1), sprintf('R32-%02d', $i * 2)],
-            ];
+        if (preg_match('/^W1([A-L])$/', $def, $m)) {
+            return $firsts[$m[1]] ?? null;
         }
-        for ($i = 1; $i <= 4; $i++) {
-            $qf[] = [
-                'slot' => sprintf('QF-%02d', $i),
-                'feeds' => [sprintf('R16-%02d', $i * 2 - 1), sprintf('R16-%02d', $i * 2)],
-            ];
+        if (preg_match('/^2([A-L])$/', $def, $m)) {
+            return $seconds[$m[1]] ?? null;
         }
-        for ($i = 1; $i <= 2; $i++) {
-            $sf[] = [
-                'slot' => sprintf('SF-%02d', $i),
-                'feeds' => [sprintf('QF-%02d', $i * 2 - 1), sprintf('QF-%02d', $i * 2)],
-            ];
+        if (str_starts_with($def, '3#')) {
+            return $thirdSlots[$slot] ?? null;
         }
-        $final = ['slot' => 'F-01', 'feeds' => ['SF-01', 'SF-02']];
-        return ['r16' => $r16, 'qf' => $qf, 'sf' => $sf, 'final' => $final];
+        return null;
     }
 }

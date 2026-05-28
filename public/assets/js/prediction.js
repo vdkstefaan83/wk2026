@@ -179,55 +179,86 @@ function predictionWizard(cfg) {
       return filled >= required;
     },
 
+    // FIFA 2026 R32 structure (matches matchnumbers 73–88).
+    // Defs: 'W1X' = winner of group X, '2X' = runner-up of group X,
+    //       '3#A,B,…' = third-placed team from one of the listed groups.
+    R32_DEF: {
+      'R32-01': ['2A',  '2B'],
+      'R32-02': ['W1C', '2F'],
+      'R32-03': ['W1E', '3#A,B,C,D,F'],
+      'R32-04': ['W1F', '2C'],
+      'R32-05': ['2E',  '2I'],
+      'R32-06': ['W1I', '3#C,D,F,G,H'],
+      'R32-07': ['W1A', '3#C,E,F,H,I'],
+      'R32-08': ['W1L', '3#E,H,I,J,K'],
+      'R32-09': ['W1G', '3#A,E,H,I,J'],
+      'R32-10': ['W1D', '3#B,E,F,I,J'],
+      'R32-11': ['W1H', '2J'],
+      'R32-12': ['2K',  '2L'],
+      'R32-13': ['W1B', '3#E,F,G,I,J'],
+      'R32-14': ['2D',  '2G'],
+      'R32-15': ['W1J', '2H'],
+      'R32-16': ['W1K', '3#D,E,I,J,L'],
+    },
+
     refreshBracket() {
       if (!this.isGroupsComplete()) {
         this.bracket = { r32: [] };
         return;
       }
-      // Build firsts/seconds/thirds from current standings
-      const firsts = [], seconds = [], thirds = [];
+      const firsts  = {};
+      const seconds = {};
+      const thirds  = [];
       Object.keys(this.standings).forEach(code => {
         const rows = this.standings[code];
-        if (rows[0]) firsts.push({  ...rows[0], group: code });
-        if (rows[1]) seconds.push({ ...rows[1], group: code });
-        if (rows[2]) thirds.push({  ...rows[2], group: code });
+        if (rows[0]) firsts[code]  = { ...rows[0], group: code };
+        if (rows[1]) seconds[code] = { ...rows[1], group: code };
+        if (rows[2]) thirds.push({ ...rows[2], group: code });
       });
 
-      // Rank thirds and take 8 best
+      // Best 8 thirds (FIFA tiebreakers: pts → gd → gf → group)
       thirds.sort((a, b) => this.qualityCmp(a, b));
-      const qualifiedThirds = thirds.slice(0, 8);
+      const qualified = thirds.slice(0, 8);
+      const thirdsByGroup = {};
+      qualified.forEach(t => thirdsByGroup[t.group] = t);
 
-      const rankFirsts  = [...firsts].sort((a,b) => this.qualityCmp(a,b));
-      const rankSeconds = [...seconds].sort((a,b) => this.qualityCmp(a,b));
-      const topFirsts    = rankFirsts.slice(0, 8);
-      const bottomFirsts = rankFirsts.slice(8, 12);
-      const topSeconds   = rankSeconds.slice(0, 8);
-      const bottomSeconds= rankSeconds.slice(8, 12);
-
-      const pairs = [];
-      const thirdsAsc = [...qualifiedThirds].reverse();
-      topFirsts.forEach((w, i) => pairs.push({ home: w, away: thirdsAsc[i] || null }));
-      bottomFirsts.forEach((w, i) => pairs.push({ home: w, away: bottomSeconds[i] || null }));
-      const n = topSeconds.length;
-      for (let i = 0; i < Math.floor(n/2); i++) {
-        pairs.push({ home: topSeconds[i], away: topSeconds[n - 1 - i] });
-      }
-      // Avoid same-group clash
-      for (let i = 0; i < pairs.length; i++) {
-        if (this.clash(pairs[i])) {
-          for (let j = i+1; j < pairs.length; j++) {
-            const sw = { home: pairs[i].home, away: pairs[j].away };
-            const ot = { home: pairs[j].home, away: pairs[i].away };
-            if (!this.clash(sw) && !this.clash(ot)) {
-              pairs[i] = sw; pairs[j] = ot; break;
-            }
-          }
+      // Backtracking: assign each R32 third-slot a third whose group is allowed.
+      const thirdSlots = {};
+      Object.entries(this.R32_DEF).forEach(([slot, [l, r]]) => {
+        [l, r].forEach(side => {
+          if (side.startsWith('3#')) thirdSlots[slot] = side.slice(2).split(',').map(s => s.trim());
+        });
+      });
+      const slotOrder = Object.keys(thirdSlots);
+      const assigned = {};
+      const used = new Set();
+      const solve = (idx) => {
+        if (idx === slotOrder.length) return true;
+        const slot = slotOrder[idx];
+        for (const g of thirdSlots[slot]) {
+          if (!thirdsByGroup[g] || used.has(g)) continue;
+          assigned[slot] = thirdsByGroup[g];
+          used.add(g);
+          if (solve(idx + 1)) return true;
+          used.delete(g);
+          delete assigned[slot];
         }
-      }
+        return false;
+      };
+      solve(0);
+
+      const resolve = (def, slot) => {
+        if (def.startsWith('W1')) return firsts[def[2]] || null;
+        if (/^2[A-L]$/.test(def)) return seconds[def[1]] || null;
+        if (def.startsWith('3#')) return assigned[slot] || null;
+        return null;
+      };
+
       this.bracket = {
-        r32: pairs.map((p, i) => ({
-          slot: 'R32-' + String(i+1).padStart(2,'0'),
-          home: p.home, away: p.away,
+        r32: Object.entries(this.R32_DEF).map(([slot, [l, r]]) => ({
+          slot,
+          home: resolve(l, slot),
+          away: resolve(r, slot),
         })),
       };
     },
@@ -237,10 +268,6 @@ function predictionWizard(cfg) {
       if (a.gd     !== b.gd)     return b.gd - a.gd;
       if (a.gf     !== b.gf)     return b.gf - a.gf;
       return (a.group || '').localeCompare(b.group || '');
-    },
-
-    clash(p) {
-      return p && p.home && p.away && p.home.group && p.home.group === p.away.group;
     },
 
     matchesForStage(stage) {
