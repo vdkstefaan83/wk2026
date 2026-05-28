@@ -98,24 +98,4 @@
 
   <button class="btn btn-primary">💾 Save</button>
 </form>
-
-{# ---------- SMTP test (separate form) ---------- #}
-<form method="post" action="{{ url('/admin/email-test') }}" class="card p-6 space-y-5 max-w-2xl mt-6">
-  <input type="hidden" name="_csrf" value="{{ csrf }}">
-  <div class="banner banner-blue">
-    <span class="text-2xl">🧪</span>
-    <span>Test SMTP</span>
-  </div>
-  <p class="text-sm text-slate-600">
-    Sends a small test message using the current SMTP credentials from <code>.env</code>.
-    The email body lists the host, port, encryption and from-address being used so you can
-    verify the configuration without digging through server logs.
-  </p>
-  <div>
-    <label class="field-label">Send to</label>
-    <input name="to" type="email" placeholder="{{ settings.admin_mail_to }}" value="{{ user.email }}">
-    <span class="field-hint">Leave blank to use the admin recipient above. Defaults to your own address so you receive the test yourself.</span>
-  </div>
-  <button class="btn btn-primary">📨 Send test email</button>
-</form>
 {% endblock %}

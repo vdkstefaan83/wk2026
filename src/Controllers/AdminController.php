@@ -323,56 +323,6 @@ final class AdminController extends Controller
         $this->redirect('/admin/users');
     }
 
-    public function sendTestEmail(): void
-    {
-        $user = $this->requireAdmin();
-        $this->requireCsrf();
-
-        $to = trim((string)($_POST['to'] ?? ''));
-        if ($to === '') {
-            $to = (string) Setting::get('admin_mail_to', \App\Core\Config::get('MAIL_ADMIN_ADDRESS', ''));
-        }
-        if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
-            Session::flash('error', 'Invalid recipient email address.');
-            $this->redirect('/admin/settings');
-        }
-
-        $cfg = [
-            'host'       => (string) \App\Core\Config::get('MAIL_HOST', ''),
-            'port'       => (string) \App\Core\Config::get('MAIL_PORT', ''),
-            'encryption' => (string) \App\Core\Config::get('MAIL_ENCRYPTION', ''),
-            'username'   => (string) \App\Core\Config::get('MAIL_USERNAME', ''),
-            'from_addr'  => (string) \App\Core\Config::get('MAIL_FROM_ADDRESS', ''),
-            'from_name'  => (string) \App\Core\Config::get('MAIL_FROM_NAME', ''),
-        ];
-
-        $body = '<h2 style="font-family:sans-serif">WK2026 — test email ✓</h2>'
-              . '<p style="font-family:sans-serif">If you can read this, your SMTP setup works.</p>'
-              . '<p style="font-family:sans-serif">Sent at <strong>' . date('Y-m-d H:i:s') . '</strong> by <strong>'
-              . htmlspecialchars($user['name']) . '</strong> (' . htmlspecialchars($user['email']) . ').</p>'
-              . '<table style="font-family:monospace;font-size:13px;border-collapse:collapse;margin-top:12px">'
-              . '<tr><td style="padding:3px 8px;color:#64748b">SMTP host</td><td style="padding:3px 8px">' . htmlspecialchars($cfg['host']) . ':' . htmlspecialchars($cfg['port']) . '</td></tr>'
-              . '<tr><td style="padding:3px 8px;color:#64748b">Encryption</td><td style="padding:3px 8px">' . htmlspecialchars($cfg['encryption'] ?: '(none)') . '</td></tr>'
-              . '<tr><td style="padding:3px 8px;color:#64748b">SMTP user</td><td style="padding:3px 8px">' . htmlspecialchars($cfg['username'] ?: '(none)') . '</td></tr>'
-              . '<tr><td style="padding:3px 8px;color:#64748b">From</td><td style="padding:3px 8px">' . htmlspecialchars($cfg['from_name']) . ' &lt;' . htmlspecialchars($cfg['from_addr']) . '&gt;</td></tr>'
-              . '</table>';
-
-        try {
-            \App\Core\Mailer::sendOrThrow($to, 'WK2026 — test email', $body, [], 'WK2026 admin');
-            Session::flash('success', 'Test email sent to ' . $to . '. Check the inbox (and spam folder).');
-        } catch (\Throwable $e) {
-            Session::flash('error',
-                'Test email FAILED — ' . $e->getMessage()
-                . ' &nbsp;|&nbsp; <span class="text-xs">host=' . htmlspecialchars($cfg['host'])
-                . ':' . htmlspecialchars($cfg['port'])
-                . ' enc=' . htmlspecialchars($cfg['encryption'] ?: 'none')
-                . ' user=' . htmlspecialchars($cfg['username'] ?: '(none)')
-                . ' from=' . htmlspecialchars($cfg['from_addr']) . '</span>'
-            );
-        }
-        $this->redirect('/admin/settings');
-    }
-
     public function syncMatches(): void
     {
         $this->requireAdmin();
