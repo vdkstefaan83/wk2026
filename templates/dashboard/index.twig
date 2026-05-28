@@ -46,6 +46,11 @@
             </a>
             {% if f.status == 'submitted' %}
               <a href="{{ url('/predictions/' ~ f.id ~ '/pdf') }}" target="_blank" class="btn btn-secondary btn-sm">📄 PDF</a>
+              <form method="post" action="{{ url('/predictions/' ~ f.id ~ '/delete') }}"
+                    onsubmit="return confirm('Delete this SUBMITTED entry &quot;{{ f.label|e('js') }}&quot;? This is permanent and cannot be undone.')">
+                <input type="hidden" name="_csrf" value="{{ csrf }}">
+                <button class="btn btn-danger btn-sm">🗑</button>
+              </form>
             {% else %}
               <form method="post" action="{{ url('/predictions/' ~ f.id ~ '/delete') }}" onsubmit="return confirm('Delete draft?')">
                 <input type="hidden" name="_csrf" value="{{ csrf }}">

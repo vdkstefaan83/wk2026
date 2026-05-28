@@ -208,6 +208,23 @@ final class AdminController extends Controller
         $this->render('admin/forms.twig', compact('forms'));
     }
 
+    public function deleteForm(string $id): void
+    {
+        $this->requireAdmin();
+        $this->requireCsrf();
+        $form = Database::fetch('SELECT id, pdf_path, label FROM forms WHERE id = ?', [(int) $id]);
+        if (!$form) {
+            Session::flash('error', 'Entry not found.');
+            $this->redirect('/admin/forms');
+        }
+        if (!empty($form['pdf_path']) && is_file($form['pdf_path'])) {
+            @unlink($form['pdf_path']);
+        }
+        Database::delete('forms', ['id' => (int) $form['id']]);
+        Session::flash('success', 'Entry "' . $form['label'] . '" deleted.');
+        $this->redirect('/admin/forms');
+    }
+
     public function markPaid(string $id): void
     {
         $this->requireAdmin();

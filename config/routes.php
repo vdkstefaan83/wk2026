@@ -61,6 +61,7 @@ $router->get('/admin/users',                  $admin . '@users');
 $router->post('/admin/users/(\d+)/admin',     $admin . '@toggleAdmin');
 $router->get('/admin/forms',                  $admin . '@forms');
 $router->post('/admin/forms/(\d+)/payment',   $admin . '@markPaid');
+$router->post('/admin/forms/(\d+)/delete',    $admin . '@deleteForm');
 $router->get('/admin/leaderboard',            $admin . '@leaderboard');
 $router->post('/admin/recompute',             $admin . '@recompute');
 $router->post('/admin/sync-matches',          $admin . '@syncMatches');
