@@ -381,18 +381,30 @@ function predictionWizard(cfg) {
       return Object.keys(this.picks).filter(k => k.startsWith(prefix) && this.picks[k]).length;
     },
 
-    get canSubmit() {
-      if (this.readonly) return false;
+    get missingChecks() {
+      const out = [];
       const gc = this.groupCompletion();
-      if (gc.filled < gc.total) return false;
-      if (this.countPicks('R32') < 16) return false;
-      if (this.countPicks('R16') < 8) return false;
-      if (this.countPicks('QF') < 4) return false;
-      if (this.countPicks('SF') < 2) return false;
-      if (this.countPicks('F') < 1) return false;
-      if (!this.topscorerPlayerId) return false;
-      if (this.tiebreakerValue === '' || this.tiebreakerValue === null || isNaN(Number(this.tiebreakerValue))) return false;
-      return true;
+      if (gc.filled < gc.total) out.push((gc.total - gc.filled) + ' group score(s)');
+      const ko = [['R32',16,'1/16'],['R16',8,'1/8'],['QF',4,'1/4'],['SF',2,'1/2'],['F',1,'final']];
+      for (const [p, need, label] of ko) {
+        const have = this.countPicks(p);
+        if (have < need) out.push((need - have) + ' ' + label + ' pick(s)');
+      }
+      if (!this.topscorerPlayerId) out.push('top scorer');
+      if (this.tiebreakerValue === '' || this.tiebreakerValue === null || isNaN(Number(this.tiebreakerValue))) {
+        out.push('tiebreaker');
+      }
+      return out;
+    },
+
+    get canSubmit() {
+      return !this.readonly && this.missingChecks.length === 0;
+    },
+
+    get submitButtonLabel() {
+      if (this.canSubmit) return '🚀 Submit final';
+      const n = this.missingChecks.length;
+      return n === 0 ? '🚀 Submit final' : '🚀 ' + n + ' to go';
     },
 
     submitFinal() {

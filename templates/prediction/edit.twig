@@ -89,9 +89,9 @@
       {% if not readonly %}
         <button type="button" @click="save()" class="btn btn-secondary btn-sm">💾 Save</button>
         <button type="button" @click="submitFinal()"
-                x-show="canSubmit"
-                x-cloak
-                class="btn btn-primary btn-sm">🚀 Submit final</button>
+                :class="canSubmit ? 'btn-primary' : 'btn-secondary opacity-60'"
+                :title="missingChecks.length ? 'Missing: ' + missingChecks.join(', ') : ''"
+                class="btn btn-sm" x-text="submitButtonLabel"></button>
       {% else %}
         <a href="{{ url('/predictions/' ~ form.id ~ '/pdf') }}" target="_blank" class="btn btn-primary btn-sm">📄 PDF</a>
       {% endif %}
@@ -401,12 +401,21 @@
         </div>
       </div>
 
-      <div class="card-thick border-sky-300 bg-gradient-to-br from-sky-50 to-white p-5">
+      <div class="card-thick p-5"
+           :class="(tiebreakerValue === '' || tiebreakerValue === null) && !readonly
+                     ? 'border-rose-300 bg-gradient-to-br from-rose-50 to-white'
+                     : 'border-sky-300 bg-gradient-to-br from-sky-50 to-white'">
         <div class="flex items-center gap-3 mb-3">
           <span class="text-3xl">🎲</span>
           <div>
-            <div class="text-xs uppercase tracking-wider text-sky-700 font-bold">Tiebreaker</div>
-            <div class="font-display font-extrabold text-lg text-sky-900">{{ settings.tiebreaker_question }}</div>
+            <div class="text-xs uppercase tracking-wider font-bold"
+                 :class="(tiebreakerValue === '' || tiebreakerValue === null) && !readonly ? 'text-rose-700' : 'text-sky-700'">
+              Tiebreaker
+              <template x-if="(tiebreakerValue === '' || tiebreakerValue === null) && !readonly">
+                <span class="pill pill-grey ml-1" style="background:#fecaca;color:#7f1d1d">required</span>
+              </template>
+            </div>
+            <div class="font-display font-extrabold text-lg text-slate-900">{{ settings.tiebreaker_question }}</div>
           </div>
         </div>
         <label class="field-label">Your answer (number)</label>
