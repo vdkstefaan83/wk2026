@@ -30,8 +30,13 @@
   .stage.first { margin-top: 0; }
 
   .m { display: block; padding: 1.4pt 2pt; border-bottom: 0.3pt solid #e2e8f0; font-size: 7pt; }
-  .m .dt { color: #64748b; font-variant-numeric: tabular-nums; }
-  .m .grp { color: #94a3b8; font-size: 6pt; }
+  .m .dt   { color: #64748b; font-variant-numeric: tabular-nums; }
+  .m .grp  { color: #94a3b8; font-size: 6pt; }
+  .m .iso  {
+    display: inline-block; background: #e2e8f0; color: #1e293b;
+    font-size: 5.6pt; font-weight: bold; letter-spacing: 0.04em;
+    padding: 0pt 2pt; border-radius: 2pt; margin-right: 1pt;
+  }
   .m .home { float: left;  width: 38%; text-align: right; padding-right: 4pt; }
   .m .away { float: right; width: 38%; text-align: left;  padding-left: 4pt; }
   .m .sc   { display: block; margin: 0 auto; width: 24%; text-align: center; font-weight: bold; }
@@ -47,33 +52,33 @@
 
   <table class="head" width="100%"><tr>
     <td>
-      <h1>⚽ World Cup 2026 prediction</h1>
-      <div class="sub"><b style="color:#0f172a">{{ form.label }}</b> — {{ form.user_name }} ({{ form.user_email }})</div>
+      <h1>World Cup 2026 prediction</h1>
+      <div class="sub"><b style="color:#0f172a">{{ form.label }}</b> &mdash; {{ form.user_name }} ({{ form.user_email }})</div>
     </td>
     <td align="right" class="sub">
       <b style="color:#0f172a">Submitted:</b> {{ form.submitted_at ? form.submitted_at|date('Y-m-d H:i:s') : '—' }}<br>
-      <b style="color:#0f172a">File:</b> {{ filename }} — generated {{ now }}
+      <b style="color:#0f172a">File:</b> {{ filename }} &mdash; generated {{ now }}
     </td>
   </tr></table>
 
   <table class="picks"><tr>
     <td>
-      <div class="lbl">🏆 World champion</div>
-      <div class="val">{{ winner ? winner.flag_emoji ~ ' ' ~ winner.name : '—' }}</div>
+      <div class="lbl">World champion</div>
+      <div class="val">{{ winner ? winner.name : '—' }}</div>
+      {% if winner and winner.iso3 %}<div class="qst">{{ winner.iso3 }}</div>{% endif %}
     </td>
     <td>
-      <div class="lbl">👟 Top scorer</div>
+      <div class="lbl">Top scorer</div>
       <div class="val">{{ topscorer ? topscorer.name : '—' }}</div>
       {% if topscorer and topscorer.team_name %}<div class="qst">{{ topscorer.team_name }}</div>{% endif %}
     </td>
     <td>
-      <div class="lbl">🎲 Tiebreaker</div>
+      <div class="lbl">Tiebreaker</div>
       <div class="val">{{ form.tiebreaker_value is not null ? form.tiebreaker_value : '—' }}</div>
       <div class="qst">{{ settings.tiebreaker_question }}</div>
     </td>
   </tr></table>
 
-  {# Split rows into 3 columns of (almost) equal length #}
   {% set total  = rows|length %}
   {% set perCol = (total / 3)|round(0, 'ceil') %}
 
@@ -99,13 +104,19 @@
           <div class="m">
             <span class="dt">{{ r.kickoff ? r.kickoff|date('m-d H:i') : '—' }}{% if r.group %} <span class="grp">·{{ r.group }}</span>{% endif %}</span>
             {% if r.stage == 'group' %}
-              <span class="home">{{ r.home ? r.home.flag ~ ' ' ~ r.home.name : '—' }}</span>
-              <span class="away">{{ r.away ? r.away.flag ~ ' ' ~ r.away.name : '—' }}</span>
+              <span class="home">
+                {% if r.home %}<span class="iso">{{ r.home.iso }}</span>{{ r.home.name }}{% else %}—{% endif %}
+              </span>
+              <span class="away">
+                {% if r.away %}<span class="iso">{{ r.away.iso }}</span>{{ r.away.name }}{% else %}—{% endif %}
+              </span>
               <span class="sc{% if r.pred_home is null or r.pred_away is null %} empty{% endif %}">
                 {% if r.pred_home is not null and r.pred_away is not null %}{{ r.pred_home }}–{{ r.pred_away }}{% else %}—{% endif %}
               </span>
             {% else %}
-              <span class="ko"> <span class="grp">{{ r.slot }}</span> → {{ r.pick ? r.pick.flag_emoji ~ ' ' ~ r.pick.name : '—' }}</span>
+              <span class="ko"> <span class="grp">{{ r.slot }}</span> &rarr;
+                {% if r.pick %}<span class="iso">{{ r.pick.iso3 }}</span>{{ r.pick.name }}{% else %}—{% endif %}
+              </span>
             {% endif %}
           </div>
         {% endfor %}
@@ -114,7 +125,7 @@
   </tr></tbody></table>
 
   <div class="foot">
-    World Cup 2026 Pool · payment due {{ settings.payment_amount }} {{ settings.payment_currency }} to {{ settings.payment_recipient }}
+    World Cup 2026 Pool &middot; payment due {{ settings.payment_amount }} {{ settings.payment_currency }} to {{ settings.payment_recipient }}
   </div>
 
 </body>

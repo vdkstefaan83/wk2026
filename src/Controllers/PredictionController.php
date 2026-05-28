@@ -366,7 +366,7 @@ final class PredictionController extends Controller
 
         // Teams by id
         $teams = [];
-        foreach (Database::fetchAll('SELECT id, name, flag_emoji FROM teams') as $t) {
+        foreach (Database::fetchAll('SELECT id, name, iso3, flag_emoji FROM teams') as $t) {
             $teams[(int)$t['id']] = $t;
         }
         $winner   = $form['winner_team_id'] ? $teams[(int)$form['winner_team_id']] ?? null : null;
@@ -379,8 +379,8 @@ final class PredictionController extends Controller
             'SELECT m.id, m.stage, m.match_number, m.kickoff_at, m.venue,
                     m.home_team_id, m.away_team_id,
                     g.code AS group_code,
-                    h.name AS home_name, h.flag_emoji AS home_flag,
-                    a.name AS away_name, a.flag_emoji AS away_flag,
+                    h.name AS home_name, h.iso3 AS home_iso,
+                    a.name AS away_name, a.iso3 AS away_iso,
                     p.home_goals AS pred_home, p.away_goals AS pred_away
                FROM matches m
           LEFT JOIN team_groups g ON g.id = m.group_id
@@ -410,8 +410,8 @@ final class PredictionController extends Controller
                 'kickoff'  => $m['kickoff_at'],
                 'venue'    => $m['venue'],
                 'group'    => $m['group_code'],
-                'home'     => $m['home_name'] ? ['name' => $m['home_name'], 'flag' => $m['home_flag']] : null,
-                'away'     => $m['away_name'] ? ['name' => $m['away_name'], 'flag' => $m['away_flag']] : null,
+                'home'     => $m['home_name'] ? ['name' => $m['home_name'], 'iso' => $m['home_iso']] : null,
+                'away'     => $m['away_name'] ? ['name' => $m['away_name'], 'iso' => $m['away_iso']] : null,
                 'pred_home'=> $m['pred_home'],
                 'pred_away'=> $m['pred_away'],
                 'slot'     => null,
