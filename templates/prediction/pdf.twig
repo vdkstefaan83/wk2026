@@ -29,17 +29,16 @@
   }
   .stage.first { margin-top: 0; }
 
-  .m { display: block; padding: 1.6pt 2pt; border-bottom: 0.3pt solid #e2e8f0; font-size: 7pt; }
-  .m .dt   { color: #64748b; font-variant-numeric: tabular-nums; }
-  .m .grp  { color: #94a3b8; font-size: 6pt; }
-  .m .home { float: left;  width: 40%; text-align: right; padding-right: 4pt; }
-  .m .away { float: right; width: 40%; text-align: left;  padding-left: 4pt; }
-  .m .sc   { display: block; margin: 0 auto; width: 20%; text-align: center;
-             font-weight: bold; font-size: 8pt; color: #0f172a; }
-  .m .sc.empty { color: #cbd5e1; font-weight: normal; font-size: 7pt; }
-  .m .ko   { }
-  .m .ko-slot { font-weight: bold; }
-  .m::after { content: ''; display: block; clear: both; }
+  table.m { width: 100%; border-collapse: collapse; border-bottom: 0.3pt solid #e2e8f0; }
+  table.m td { padding: 1.8pt 2pt; font-size: 7pt; vertical-align: middle; }
+  td.dt   { width: 18%; color: #64748b; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.dt .grp { color: #94a3b8; font-size: 6pt; }
+  td.home { width: 36%; text-align: right; padding-right: 4pt; }
+  td.away { width: 36%; text-align: left;  padding-left: 4pt; }
+  td.sc   { width: 10%; text-align: center; font-weight: bold; font-size: 8.5pt; color: #0f172a; white-space: nowrap; }
+  td.sc.empty { color: #cbd5e1; font-weight: normal; font-size: 7pt; }
+  td.ko   { padding-left: 6pt; }
+  td.ko .slot { color: #64748b; font-size: 6.5pt; margin-right: 3pt; }
 
   .foot { margin-top: 4pt; padding-top: 2pt; border-top: 0.3pt dashed #cbd5e1;
           font-size: 6.5pt; color: #94a3b8; text-align: center; }
@@ -97,18 +96,20 @@
             {% set prevStage = r.stage %}
           {% endif %}
 
-          <div class="m">
-            <span class="dt">{{ r.kickoff ? r.kickoff|date('m-d H:i') : '—' }}{% if r.group %} <span class="grp">·{{ r.group }}</span>{% endif %}</span>
+          <table class="m"><tr>
+            <td class="dt">{{ r.kickoff ? r.kickoff|date('m-d H:i') : '—' }}{% if r.group %} <span class="grp">·{{ r.group }}</span>{% endif %}</td>
             {% if r.stage == 'group' %}
-              <span class="home">{{ r.home ? r.home.name : '—' }}</span>
-              <span class="away">{{ r.away ? r.away.name : '—' }}</span>
-              <span class="sc{% if r.pred_home is null or r.pred_away is null %} empty{% endif %}">
+              <td class="home">{{ r.home ? r.home.name : '—' }}</td>
+              <td class="sc{% if r.pred_home is null or r.pred_away is null %} empty{% endif %}">
                 {% if r.pred_home is not null and r.pred_away is not null %}{{ r.pred_home }}–{{ r.pred_away }}{% else %}—{% endif %}
-              </span>
+              </td>
+              <td class="away">{{ r.away ? r.away.name : '—' }}</td>
             {% else %}
-              <span class="ko"> <span class="ko-slot">{{ r.slot }}</span> &rarr; <b>{{ r.pick ? r.pick.name : '—' }}</b></span>
+              <td class="ko" colspan="3">
+                <span class="slot">{{ r.slot }}</span><b>{{ r.pick ? r.pick.name : '—' }}</b>
+              </td>
             {% endif %}
-          </div>
+          </tr></table>
         {% endfor %}
       </td>
     {% endfor %}
