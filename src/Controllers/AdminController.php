@@ -356,6 +356,36 @@ final class AdminController extends Controller
         $this->redirect('/admin/users');
     }
 
+    public function debugSync(): void
+    {
+        $this->requireAdmin();
+        $this->requireCsrf();
+        try {
+            $provider = \App\Services\MatchSyncService::pickProvider();
+            $reflClass = new \ReflectionClass($provider);
+            $providerFile = $reflClass->getFileName();
+            $configured = $provider->isConfigured() ? 'yes' : 'no';
+            $fixtures = $provider->fixtures();
+            $count = count($fixtures);
+            $first = $fixtures[0] ?? null;
+            $debug = sprintf(
+                "Provider: <b>%s</b> (configured: %s)<br>"
+                . "File: <code>%s</code><br>"
+                . "Fixtures returned: <b>%d</b><br>"
+                . "First normalized row: <code>%s</code>",
+                $provider->name(),
+                $configured,
+                $providerFile,
+                $count,
+                htmlspecialchars(json_encode($first, JSON_UNESCAPED_UNICODE))
+            );
+            Session::flash('info', $debug);
+        } catch (\Throwable $e) {
+            Session::flash('error', 'Debug sync failed: ' . $e->getMessage());
+        }
+        $this->redirect('/admin/matches');
+    }
+
     public function syncMatches(): void
     {
         $this->requireAdmin();

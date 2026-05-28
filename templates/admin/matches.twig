@@ -5,16 +5,22 @@
     <p class="text-xs uppercase tracking-widest text-slate-500 font-bold">Admin</p>
     <h1 class="font-display text-4xl font-extrabold mt-1 text-slate-900">Matches</h1>
   </div>
-  <form method="post" action="{{ url('/admin/sync-matches') }}" class="flex items-center gap-2 text-sm">
-    <input type="hidden" name="_csrf" value="{{ csrf }}">
-    <label class="flex items-center gap-1.5 text-xs text-slate-700">
-      <input type="checkbox" name="topscorer" value="1"> + top scorer
-    </label>
-    <button class="btn btn-primary btn-sm">↻ Sync via API-Football</button>
+  <div class="flex items-center gap-2 text-sm flex-wrap">
+    <form method="post" action="{{ url('/admin/sync-matches') }}" class="flex items-center gap-2">
+      <input type="hidden" name="_csrf" value="{{ csrf }}">
+      <label class="flex items-center gap-1.5 text-xs text-slate-700">
+        <input type="checkbox" name="topscorer" value="1"> + top scorer
+      </label>
+      <button class="btn btn-primary btn-sm">↻ Sync</button>
+    </form>
+    <form method="post" action="{{ url('/admin/sync-debug') }}" class="inline">
+      <input type="hidden" name="_csrf" value="{{ csrf }}">
+      <button class="btn btn-secondary btn-sm" title="Show what the web context fetches">🔍 Debug</button>
+    </form>
     {% if settings.last_sync_at %}
       <span class="text-xs text-slate-500">last sync: {{ settings.last_sync_at }}</span>
     {% endif %}
-  </form>
+  </div>
 </div>
 
 <div class="flex flex-wrap gap-1 mb-4 text-sm">

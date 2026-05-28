@@ -65,6 +65,7 @@ $router->post('/admin/forms/(\d+)/delete',    $admin . '@deleteForm');
 $router->get('/admin/leaderboard',            $admin . '@leaderboard');
 $router->post('/admin/recompute',             $admin . '@recompute');
 $router->post('/admin/sync-matches',          $admin . '@syncMatches');
+$router->post('/admin/sync-debug',             $admin . '@debugSync');
 
 $router->set404(function () {
     http_response_code(404);
