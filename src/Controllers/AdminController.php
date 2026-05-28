@@ -365,7 +365,8 @@ final class AdminController extends Controller
             $svc = new MatchSyncService();
             $r = $svc->sync($force);
             $msg = sprintf(
-                'Sync complete: %d match(es) updated%s%s.',
+                'Sync complete via %s: %d match(es) updated%s%s.',
+                $r['provider'] ?? '?',
                 $r['updated'],
                 $r['finals_recomputed'] ? ', scores recalculated' : '',
                 $r['topscorer'] ? ', top scorer: ' . $r['topscorer']['player'] . ' (' . $r['topscorer']['goals'] . ')' : ''

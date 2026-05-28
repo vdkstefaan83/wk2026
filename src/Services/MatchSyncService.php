@@ -6,25 +6,41 @@ namespace App\Services;
 use App\Core\Config;
 use App\Core\Database;
 use App\Core\Setting;
+use App\Services\Providers\ApiFootballProvider;
+use App\Services\Providers\FootballDataOrgProvider;
 
 /**
- * Syncs match results (and optionally the tournament topscorer) from
- * API-Football into the local `matches` and `settings` tables.
+ * Provider-agnostic sync:
  *
- * Matching strategy:
- *   - Teams: by ISO3 code (api-football exposes `team.code`), fallback to name.
- *   - Matches: by (home_team_id + away_team_id) tuple; if multiple, use the
- *     one closest in time to the API kickoff.
+ *  - Picks a backend based on env var MATCH_DATA_PROVIDER
+ *    ("api_football" or "football_data_org"). Falls back to api_football
+ *    for backwards compatibility.
+ *  - Each backend implements MatchDataProvider with a normalized fixture +
+ *    top-scorer shape, so the matching / scoring logic below doesn't care
+ *    which API the data came from.
  *
- * Topscorer fetch is throttled (max once per N hours) to respect the free tier.
+ * Outputs:
+ *  - actual_home_goals / actual_away_goals on `matches`
+ *  - actual_topscorer_player_id + per-player goal counts in `settings`
+ *  - triggers ScoringService::recomputeAll when fixtures or topscorer change
  */
 final class MatchSyncService
 {
-    public function __construct(
-        private ApiFootballClient $api = new ApiFootballClient(),
-    ) {}
+    public function __construct(private ?MatchDataProvider $provider = null)
+    {
+        $this->provider ??= self::pickProvider();
+    }
 
-    /** @return array{updated:int, finals_recomputed:bool, topscorer:?array, errors:list<string>} */
+    public static function pickProvider(): MatchDataProvider
+    {
+        $name = strtolower((string) Config::get('MATCH_DATA_PROVIDER', 'api_football'));
+        return match ($name) {
+            'football_data_org', 'football-data.org', 'football_data' => new FootballDataOrgProvider(),
+            default => new ApiFootballProvider(),
+        };
+    }
+
+    /** @return array{provider:string, updated:int, finals_recomputed:bool, topscorer:?array, errors:list<string>} */
     public function sync(bool $includeTopscorer = false): array
     {
         $errors = [];
@@ -33,44 +49,43 @@ final class MatchSyncService
         $topscorerInfo = null;
         $topscorerChanged = false;
 
-        $leagueId = (int) Config::get('API_FOOTBALL_LEAGUE_ID', 1);  // 1 = World Cup
-        $season   = (int) Config::get('API_FOOTBALL_SEASON', 2026);
-
-        // 1. Sync fixtures
-        try {
-            $fixtures = $this->api->fixtures($leagueId, $season);
-            [$updated, $finalsRecomputed] = $this->applyFixtures($fixtures, $errors);
-        } catch (\Throwable $e) {
-            $errors[] = 'fixtures: ' . $e->getMessage();
-        }
-
-        // 2. Topscorer (throttled)
-        if ($includeTopscorer || $this->topscorerStale()) {
+        if (!$this->provider->isConfigured()) {
+            $errors[] = $this->provider->name() . ': not configured (check .env)';
+        } else {
+            // 1. Fixtures
             try {
-                $top = $this->api->topScorers($leagueId, $season);
-                $topscorerInfo = $this->applyTopscorer($top, $errors);
-                $topscorerChanged = $topscorerInfo !== null;
+                $fixtures = $this->provider->fixtures();
+                [$updated, $finalsRecomputed] = $this->applyFixtures($fixtures, $errors);
             } catch (\Throwable $e) {
-                $errors[] = 'topscorer: ' . $e->getMessage();
+                $errors[] = 'fixtures: ' . $e->getMessage();
+            }
+
+            // 2. Topscorer (throttled)
+            if ($includeTopscorer || $this->topscorerStale()) {
+                try {
+                    $top = $this->provider->topScorers();
+                    $topscorerInfo = $this->applyTopscorer($top, $errors);
+                    $topscorerChanged = $topscorerInfo !== null;
+                } catch (\Throwable $e) {
+                    $errors[] = 'topscorer: ' . $e->getMessage();
+                }
             }
         }
 
-        // 3. Recompute scores whenever match results OR topscorer goal counts moved.
         if ($finalsRecomputed || $topscorerChanged) {
             ScoringService::recomputeAll();
         }
 
         $summary = [
+            'provider'          => $this->provider->name(),
             'updated'           => $updated,
             'finals_recomputed' => $finalsRecomputed,
             'topscorer'         => $topscorerInfo,
             'errors'            => $errors,
             'synced_at'         => date('Y-m-d H:i:s'),
         ];
-
-        Setting::set('last_sync_at',     $summary['synced_at']);
+        Setting::set('last_sync_at',      $summary['synced_at']);
         Setting::set('last_sync_summary', json_encode($summary, JSON_UNESCAPED_UNICODE));
-
         return $summary;
     }
 
@@ -82,97 +97,142 @@ final class MatchSyncService
         return (time() - strtotime($last)) > $hours * 3600;
     }
 
+    // ------------------------------------------------------------------
+    // Apply normalized data to the DB
+    // ------------------------------------------------------------------
+
     /**
-     * @param list<array> $fixtures
+     * @param list<array> $fixtures   Normalized rows
      * @return array{0:int,1:bool}
      */
     private function applyFixtures(array $fixtures, array &$errors): array
     {
-        // Build team lookup once
-        $teamsByIso = [];
-        $teamsByName = [];
-        foreach (Database::fetchAll('SELECT id, name, iso3 FROM teams') as $t) {
-            $teamsByIso[strtoupper((string)$t['iso3'])] = (int)$t['id'];
-            $teamsByName[$this->normalize($t['name'])] = (int)$t['id'];
-        }
+        [$teamsByIso, $teamsByName] = $this->buildTeamLookup();
 
-        $updated = 0;
+        $updatedCount = 0;
         $finalUpdated = false;
 
         foreach ($fixtures as $f) {
-            $homeApi = $f['teams']['home'] ?? [];
-            $awayApi = $f['teams']['away'] ?? [];
-            $homeId = $this->lookupTeam($homeApi, $teamsByIso, $teamsByName);
-            $awayId = $this->lookupTeam($awayApi, $teamsByIso, $teamsByName);
+            $homeId = $this->lookupTeam($f['home_iso'] ?? null, $f['home_name'] ?? null, $teamsByIso, $teamsByName);
+            $awayId = $this->lookupTeam($f['away_iso'] ?? null, $f['away_name'] ?? null, $teamsByIso, $teamsByName);
 
             if (!$homeId || !$awayId) {
-                $errors[] = sprintf('Onbekend team-paar: %s vs %s',
-                    $homeApi['name'] ?? '?', $awayApi['name'] ?? '?');
+                $errors[] = sprintf('Unknown team pair: %s vs %s', $f['home_name'] ?? '?', $f['away_name'] ?? '?');
+                continue;
+            }
+            if ($f['home_goals'] === null || $f['away_goals'] === null) {
                 continue;
             }
 
-            $statusShort = (string) ($f['fixture']['status']['short'] ?? '');
-            $isFinal = in_array($statusShort, ['FT','AET','PEN'], true);
-            $homeGoals = $f['goals']['home'] ?? null;
-            $awayGoals = $f['goals']['away'] ?? null;
-            if ($homeGoals === null || $awayGoals === null) continue;
-
-            // Find local match: prefer one closest to API kickoff
-            $apiKickoff = $f['fixture']['date'] ?? null;
             $candidates = Database::fetchAll(
                 'SELECT id, stage, kickoff_at, actual_home_goals, actual_away_goals
-                   FROM matches
-                  WHERE home_team_id = ? AND away_team_id = ?',
+                   FROM matches WHERE home_team_id = ? AND away_team_id = ?',
                 [$homeId, $awayId]
             );
-            // Also try reversed (the draw may have swapped home/away vs our seed)
-            $reversed = Database::fetchAll(
-                'SELECT id, stage, kickoff_at, actual_home_goals, actual_away_goals
-                   FROM matches
-                  WHERE home_team_id = ? AND away_team_id = ?',
-                [$awayId, $homeId]
-            );
             $swap = false;
-            if (empty($candidates) && !empty($reversed)) {
-                $candidates = $reversed;
-                $swap = true;
+            if (empty($candidates)) {
+                $candidates = Database::fetchAll(
+                    'SELECT id, stage, kickoff_at, actual_home_goals, actual_away_goals
+                       FROM matches WHERE home_team_id = ? AND away_team_id = ?',
+                    [$awayId, $homeId]
+                );
+                $swap = !empty($candidates);
             }
             if (empty($candidates)) {
-                $errors[] = sprintf('Geen lokale match voor %s vs %s', $homeApi['name'] ?? '?', $awayApi['name'] ?? '?');
+                $errors[] = sprintf('No local match for %s vs %s', $f['home_name'] ?? '?', $f['away_name'] ?? '?');
                 continue;
             }
+            $match = $this->pickClosest($candidates, $f['kickoff_at'] ?? null);
+            $h = $swap ? (int) $f['away_goals'] : (int) $f['home_goals'];
+            $a = $swap ? (int) $f['home_goals'] : (int) $f['away_goals'];
 
-            $match = $this->pickClosest($candidates, $apiKickoff);
-            $h = $swap ? (int)$awayGoals : (int)$homeGoals;
-            $a = $swap ? (int)$homeGoals : (int)$awayGoals;
-            if ((int)($match['actual_home_goals'] ?? -1) === $h && (int)($match['actual_away_goals'] ?? -1) === $a) {
-                continue; // no change
+            if ((int) ($match['actual_home_goals'] ?? -1) === $h
+             && (int) ($match['actual_away_goals'] ?? -1) === $a) {
+                continue;
             }
             Database::update('matches', [
                 'actual_home_goals' => $h,
                 'actual_away_goals' => $a,
-            ], ['id' => (int)$match['id']]);
-            $updated++;
-            if ($isFinal) {
+            ], ['id' => (int) $match['id']]);
+            $updatedCount++;
+            if ($f['is_final']) {
                 $finalUpdated = true;
             }
         }
-
-        return [$updated, $finalUpdated];
+        return [$updatedCount, $finalUpdated];
     }
 
-    private function lookupTeam(array $apiTeam, array $byIso, array $byName): ?int
+    /** @param list<array> $top */
+    private function applyTopscorer(array $top, array &$errors): ?array
     {
-        $code = strtoupper((string)($apiTeam['code'] ?? ''));
-        if ($code !== '' && isset($byIso[$code])) return $byIso[$code];
-        $name = $this->normalize((string)($apiTeam['name'] ?? ''));
-        if ($name !== '' && isset($byName[$name])) return $byName[$name];
+        if (empty($top)) {
+            $errors[] = 'topscorer: empty response';
+            return null;
+        }
+        [$teamsByIso, $teamsByName] = $this->buildTeamLookup();
+
+        $best     = $top[0];
+        $bestName = (string) $best['name'];
+        $bestGoals= (int) $best['goals'];
+        $bestTeamId = $this->lookupTeam($best['team_iso'] ?? null, $best['team_name'] ?? null, $teamsByIso, $teamsByName);
+
+        $playerId = (int) Database::fetchColumn(
+            'SELECT id FROM players WHERE LOWER(name) = LOWER(?) AND (team_id <=> ?)',
+            [$bestName, $bestTeamId]
+        );
+        if (!$playerId) {
+            $playerId = Database::insert('players', ['name' => $bestName, 'team_id' => $bestTeamId]);
+        }
+
+        Setting::set('actual_topscorer_player_id', (string) $playerId);
+        Setting::set('actual_topscorer_goals',     (string) $bestGoals);
+        Setting::set('last_topscorer_sync_at',     date('Y-m-d H:i:s'));
+
+        // Per-player goal totals — supports the "+3 per goal your predicted topscorer scored" rule.
+        foreach ($top as $p) {
+            $pname = (string) $p['name'];
+            if ($pname === '') continue;
+            $pteam = $this->lookupTeam($p['team_iso'] ?? null, $p['team_name'] ?? null, $teamsByIso, $teamsByName);
+            $pid = (int) Database::fetchColumn(
+                'SELECT id FROM players WHERE LOWER(name) = LOWER(?) AND (team_id <=> ?)',
+                [$pname, $pteam]
+            );
+            if ($pid) {
+                Setting::set('predicted_topscorer_goals_for_' . $pid, (string) (int) $p['goals']);
+            }
+        }
+        return ['player' => $bestName, 'goals' => $bestGoals];
+    }
+
+    // ------------------------------------------------------------------
+    // Helpers
+    // ------------------------------------------------------------------
+
+    /** @return array{0:array<string,int>, 1:array<string,int>} */
+    private function buildTeamLookup(): array
+    {
+        $byIso = $byName = [];
+        foreach (Database::fetchAll('SELECT id, name, iso3 FROM teams') as $t) {
+            $byIso[strtoupper((string) $t['iso3'])] = (int) $t['id'];
+            $byName[$this->normalize((string) $t['name'])] = (int) $t['id'];
+        }
+        return [$byIso, $byName];
+    }
+
+    private function lookupTeam(?string $iso, ?string $name, array $byIso, array $byName): ?int
+    {
+        if ($iso) {
+            $code = strtoupper($iso);
+            if (isset($byIso[$code])) return $byIso[$code];
+        }
+        if ($name) {
+            $n = $this->normalize($name);
+            if ($n !== '' && isset($byName[$n])) return $byName[$n];
+        }
         return null;
     }
 
-    /**
-     * @param list<array> $candidates
-     */
+    /** @param list<array> $candidates */
     private function pickClosest(array $candidates, ?string $apiKickoff): array
     {
         if (count($candidates) === 1 || !$apiKickoff) return $candidates[0];
@@ -183,61 +243,6 @@ final class MatchSyncService
             return $da <=> $db;
         });
         return $candidates[0];
-    }
-
-    private function applyTopscorer(array $top, array &$errors): ?array
-    {
-        if (empty($top)) {
-            $errors[] = 'topscorer: lege response';
-            return null;
-        }
-        // API-Football returns players sorted by goals desc.
-        $best = $top[0];
-        $name   = (string)($best['player']['name'] ?? '');
-        $goals  = (int)($best['statistics'][0]['goals']['total'] ?? 0);
-        $teamId = $this->resolveTeamFromApi($best['statistics'][0]['team'] ?? []);
-
-        // Find or create player record
-        $playerId = (int) Database::fetchColumn(
-            'SELECT id FROM players WHERE LOWER(name) = LOWER(?) AND (team_id <=> ?)',
-            [$name, $teamId]
-        );
-        if (!$playerId) {
-            $playerId = Database::insert('players', [
-                'name'    => $name,
-                'team_id' => $teamId,
-            ]);
-        }
-
-        Setting::set('actual_topscorer_player_id', (string)$playerId);
-        Setting::set('actual_topscorer_goals',     (string)$goals);
-        Setting::set('last_topscorer_sync_at',     date('Y-m-d H:i:s'));
-
-        // Per-player goal totals for "3pts per goal jouw topscorer scoorde" rule
-        foreach ($top as $p) {
-            $pname = (string)($p['player']['name'] ?? '');
-            $pgoal = (int)($p['statistics'][0]['goals']['total'] ?? 0);
-            $pteam = $this->resolveTeamFromApi($p['statistics'][0]['team'] ?? []);
-            $pid = (int) Database::fetchColumn(
-                'SELECT id FROM players WHERE LOWER(name) = LOWER(?) AND (team_id <=> ?)',
-                [$pname, $pteam]
-            );
-            if ($pid) {
-                Setting::set('predicted_topscorer_goals_for_' . $pid, (string)$pgoal);
-            }
-        }
-
-        return ['player' => $name, 'goals' => $goals];
-    }
-
-    private function resolveTeamFromApi(array $apiTeam): ?int
-    {
-        $byIso = $byName = [];
-        foreach (Database::fetchAll('SELECT id, name, iso3 FROM teams') as $t) {
-            $byIso[strtoupper((string)$t['iso3'])] = (int)$t['id'];
-            $byName[$this->normalize($t['name'])] = (int)$t['id'];
-        }
-        return $this->lookupTeam($apiTeam, $byIso, $byName);
     }
 
     private function normalize(string $s): string

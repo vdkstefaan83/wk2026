@@ -23,7 +23,7 @@ $svc = new MatchSyncService();
 $result = $svc->sync($forceTop);
 
 $ts = date('Y-m-d H:i:s');
-echo "[$ts] updated={$result['updated']} finals_recomputed=" . ($result['finals_recomputed'] ? '1' : '0');
+echo "[$ts] provider={$result['provider']} updated={$result['updated']} finals_recomputed=" . ($result['finals_recomputed'] ? '1' : '0');
 if ($result['topscorer']) {
     echo " topscorer=" . $result['topscorer']['player'] . " ({$result['topscorer']['goals']})";
 }
