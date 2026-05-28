@@ -245,6 +245,9 @@ final class AdminController extends Controller
     {
         $this->requireAdmin();
         $correct = Setting::get('tiebreaker_correct_value', '');
+        $showAll = !empty($_GET['all']);
+        $paidFilter = $showAll ? '' : ' AND f.paid_at IS NOT NULL';
+
         if ($correct === '' || $correct === null) {
             $rows = Database::fetchAll(
                 'SELECT f.id, f.label, f.score, f.tiebreaker_value, f.paid_at,
@@ -252,7 +255,7 @@ final class AdminController extends Controller
                         NULL AS tiebreak_diff
                    FROM forms f
                    JOIN users u ON u.id = f.user_id
-                  WHERE f.status = "submitted"
+                  WHERE f.status = "submitted"' . $paidFilter . '
                ORDER BY f.score DESC, u.name'
             );
         } else {
@@ -262,7 +265,7 @@ final class AdminController extends Controller
                         ABS(f.tiebreaker_value - ?) AS tiebreak_diff
                    FROM forms f
                    JOIN users u ON u.id = f.user_id
-                  WHERE f.status = "submitted"
+                  WHERE f.status = "submitted"' . $paidFilter . '
                ORDER BY f.score DESC,
                         (tiebreak_diff IS NULL) ASC,
                         tiebreak_diff ASC,
@@ -270,9 +273,15 @@ final class AdminController extends Controller
                 [(int) $correct]
             );
         }
+        $counts = [
+            'paid'   => (int) Database::fetchColumn('SELECT COUNT(*) FROM forms WHERE status = "submitted" AND paid_at IS NOT NULL'),
+            'unpaid' => (int) Database::fetchColumn('SELECT COUNT(*) FROM forms WHERE status = "submitted" AND paid_at IS NULL'),
+        ];
         $this->render('admin/leaderboard.twig', [
-            'rows'            => $rows,
-            'correct_tiebreak'=> $correct,
+            'rows'             => $rows,
+            'correct_tiebreak' => $correct,
+            'show_all'         => $showAll,
+            'counts'           => $counts,
         ]);
     }
 
