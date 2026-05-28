@@ -43,17 +43,21 @@
   }
 </script>
 {% set readonly = form.status == 'submitted' %}
-<div x-data="predictionWizard({
-        formId: {{ form.id }},
-        csrf: '{{ csrf }}',
-        readonly: {{ readonly ? 'true' : 'false' }},
-        initial: {{ {
-          standings: resolved.standings,
-          bracket:   resolved.bracket,
-          downstream:resolved.downstream,
-          picks:     resolved.picks,
-        }|json_encode|raw }}
-     })"
+<script>
+  // Wizard config moved out of x-data so JSON quotes don't break the HTML attribute.
+  window.__wizardConfig = {
+    formId: {{ form.id }},
+    csrf: {{ csrf|json_encode|raw }},
+    readonly: {{ readonly ? 'true' : 'false' }},
+    initial: {
+      standings:  {{ resolved.standings|json_encode|raw }},
+      bracket:    {{ resolved.bracket|json_encode|raw }},
+      downstream: {{ resolved.downstream|json_encode|raw }},
+      picks:      {{ resolved.picks|json_encode|raw }}
+    }
+  };
+</script>
+<div x-data="predictionWizard(window.__wizardConfig)"
      x-init="init()"
      class="space-y-6">
 
