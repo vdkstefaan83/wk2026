@@ -1,7 +1,47 @@
 {% extends 'layout/base.twig' %}
 {% block title %}{{ form.label }} · {{ app.name }}{% endblock %}
 
+{% block head %}
+  {# Load prediction.js BEFORE Alpine so x-data="predictionWizard(...)" resolves. #}
+  <script defer src="{{ asset('js/prediction.js') }}"></script>
+{% endblock %}
+
 {% block content %}
+<script>
+  // Fallback so the wizard still renders if prediction.js fails to load.
+  if (typeof window.predictionWizard !== 'function') {
+    window.predictionWizard = function (cfg) {
+      return {
+        step: 'groups',
+        readonly: cfg.readonly,
+        label: '',
+        winnerTeamId: '',
+        topscorerPlayerId: '',
+        topscorerSearch: '',
+        standings: cfg.initial.standings || {},
+        bracket:   cfg.initial.bracket   || { r32: [] },
+        downstream:cfg.initial.downstream|| { r16: [], qf: [], sf: [], final: { feeds: [] } },
+        picks:     cfg.initial.picks     || {},
+        lastSavedLabel: 'JS niet geladen',
+        init() {},
+        onScoreChange() {},
+        pickSlot() {},
+        autosave() {},
+        save()  { document.getElementById('prediction-form').submit(); },
+        isGroupsComplete() { return false; },
+        matchesForStage() { return []; },
+        slotsForStage() { return []; },
+        completionForGroup() { return ''; },
+        countPicks() { return 0; },
+        groupCompletion() { return { filled: 0, total: 72 }; },
+        get filteredPlayers() { return (window.__players || []).slice(0, 200); },
+        get winnerLabel() { return ''; },
+        get topscorerLabel() { return ''; },
+      };
+    };
+    console.warn('prediction.js fallback geactiveerd – live ranking + autosave werken niet.');
+  }
+</script>
 {% set readonly = form.status == 'submitted' %}
 <div x-data="predictionWizard({
         formId: {{ form.id }},
@@ -272,5 +312,4 @@
       {% endfor %}
     };
   </script>
-  <script src="{{ asset('js/prediction.js') }}"></script>
 {% endblock %}

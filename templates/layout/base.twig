@@ -6,9 +6,9 @@
   <title>{% block title %}{{ app.name }}{% endblock %}</title>
   <meta name="csrf-token" content="{{ csrf }}">
   <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.5/dist/cdn.min.js"></script>
   <link rel="stylesheet" href="{{ asset('css/app.css') }}">
   {% block head %}{% endblock %}
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.5/dist/cdn.min.js"></script>
 </head>
 <body class="h-full flex flex-col text-slate-800">
   <header class="bg-gradient-to-r from-indigo-600 to-emerald-500 text-white shadow">
