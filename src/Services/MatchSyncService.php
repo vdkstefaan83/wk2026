@@ -117,7 +117,13 @@ final class MatchSyncService
             $awayId = $this->lookupTeam($f['away_iso'] ?? null, $f['away_name'] ?? null, $teamsByIso, $teamsByName);
 
             if (!$homeId || !$awayId) {
-                $errors[] = sprintf('Unknown team pair: %s vs %s', $f['home_name'] ?? '?', $f['away_name'] ?? '?');
+                $errors[] = sprintf(
+                    'Unknown team pair: %s [%s] vs %s [%s]',
+                    $f['home_name'] ?? '?',
+                    $f['home_iso']  ?? '?',
+                    $f['away_name'] ?? '?',
+                    $f['away_iso']  ?? '?'
+                );
                 continue;
             }
             if ($f['home_goals'] === null || $f['away_goals'] === null) {

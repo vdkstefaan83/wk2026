@@ -21,12 +21,15 @@ final class FootballDataOrgProvider implements MatchDataProvider
     private string $baseUrl;
     private string $token;
     private string $competition;
+    private ?int   $season;
 
     public function __construct()
     {
         $this->baseUrl     = rtrim((string) Config::get('FOOTBALL_DATA_ORG_BASE_URL', 'https://api.football-data.org/v4'), '/');
         $this->token       = (string) Config::get('FOOTBALL_DATA_ORG_TOKEN', '');
         $this->competition = (string) Config::get('FOOTBALL_DATA_ORG_COMPETITION', 'WC');
+        $season            = Config::get('FOOTBALL_DATA_ORG_SEASON', '2026');
+        $this->season      = $season === '' || $season === null ? null : (int) $season;
     }
 
     public function isConfigured(): bool
@@ -41,7 +44,8 @@ final class FootballDataOrgProvider implements MatchDataProvider
 
     public function fixtures(): array
     {
-        $data = $this->get("/competitions/{$this->competition}/matches");
+        $query = $this->season ? ['season' => $this->season] : [];
+        $data = $this->get("/competitions/{$this->competition}/matches", $query);
         $matches = $data['matches'] ?? [];
         $out = [];
         foreach ($matches as $m) {
@@ -51,11 +55,16 @@ final class FootballDataOrgProvider implements MatchDataProvider
             $homeGoals = $m['score']['fullTime']['home'] ?? null;
             $awayGoals = $m['score']['fullTime']['away'] ?? null;
 
+            // football-data.org sometimes returns name=null when the draw / data
+            // hasn't been ingested yet — fall back through tla / shortName / id.
+            $home = $m['homeTeam'] ?? [];
+            $away = $m['awayTeam'] ?? [];
+
             $out[] = [
-                'home_iso'   => $this->isoFromTla($m['homeTeam']['tla'] ?? null),
-                'home_name'  => $m['homeTeam']['name'] ?? null,
-                'away_iso'   => $this->isoFromTla($m['awayTeam']['tla'] ?? null),
-                'away_name'  => $m['awayTeam']['name'] ?? null,
+                'home_iso'   => $this->iso($home),
+                'home_name'  => $home['name'] ?? $home['shortName'] ?? null,
+                'away_iso'   => $this->iso($away),
+                'away_name'  => $away['name'] ?? $away['shortName'] ?? null,
                 'home_goals' => $homeGoals === null ? null : (int) $homeGoals,
                 'away_goals' => $awayGoals === null ? null : (int) $awayGoals,
                 'is_final'   => $isFinal,
@@ -67,18 +76,20 @@ final class FootballDataOrgProvider implements MatchDataProvider
 
     public function topScorers(): array
     {
-        $data = $this->get("/competitions/{$this->competition}/scorers", ['limit' => 100]);
+        $query = ['limit' => 100];
+        if ($this->season) $query['season'] = $this->season;
+        $data = $this->get("/competitions/{$this->competition}/scorers", $query);
         $rows = $data['scorers'] ?? [];
         $out = [];
         foreach ($rows as $r) {
+            $team = $r['team'] ?? [];
             $out[] = [
                 'name'      => (string) ($r['player']['name'] ?? ''),
                 'goals'     => (int) ($r['goals'] ?? 0),
-                'team_iso'  => $this->isoFromTla($r['team']['tla'] ?? null),
-                'team_name' => $r['team']['name'] ?? null,
+                'team_iso'  => $this->iso($team),
+                'team_name' => $team['name'] ?? $team['shortName'] ?? null,
             ];
         }
-        // football-data.org returns sorted by goals desc already, but normalize anyway.
         usort($out, fn($a, $b) => $b['goals'] <=> $a['goals']);
         return $out;
     }
@@ -121,13 +132,20 @@ final class FootballDataOrgProvider implements MatchDataProvider
 
     /**
      * football-data.org uses TLA (Three-Letter Abbreviation) such as ENG, BEL, …
-     * which match our `teams.iso3` column directly for most countries. Pass
-     * through as-is; the upstream lookup also tries name-fallback so small
-     * deviations (e.g. KOR vs RKO) still resolve.
+     * which match our `teams.iso3` column for most countries.
      */
-    private function isoFromTla(?string $tla): ?string
+    private function iso(array $team): ?string
     {
+        $tla = $team['tla'] ?? null;
         if (!$tla) return null;
-        return strtoupper($tla);
+        return strtoupper((string) $tla);
+    }
+
+    /** Fetch & dump the first match — handy for diagnosing schema surprises. */
+    public function debugFirstMatch(): array
+    {
+        $query = $this->season ? ['season' => $this->season] : [];
+        $data = $this->get("/competitions/{$this->competition}/matches", $query);
+        return $data['matches'][0] ?? [];
     }
 }
