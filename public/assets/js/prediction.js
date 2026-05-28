@@ -35,10 +35,12 @@ function predictionWizard(cfg) {
       this.downstream= cfg.initial.downstream || this.downstream;
       this.picks     = cfg.initial.picks || {};
       this.label     = (document.querySelector('h1 input')?.value) || '';
-      this.winnerTeamId     = (document.querySelector('select[x-model="winnerTeamId"]')?.value) || '';
+      // Winner is derived from the F-01 slot pick (which is authoritative),
+      // falling back to the persisted forms.winner_team_id from the server.
+      this.winnerTeamId      = (this.picks['F-01'] || cfg.initial.winnerTeamId || '');
       this.topscorerPlayerId = cfg.initial.topscorerPlayerId || '';
       this.topscorerQuery    = cfg.initial.topscorerCustomName || this.lookupPlayerName(this.topscorerPlayerId) || '';
-      this.tiebreakerValue   = cfg.initial.tiebreakerValue ?? '';
+      this.tiebreakerValue   = (cfg.initial.tiebreakerValue ?? '') === null ? '' : (cfg.initial.tiebreakerValue ?? '');
 
       // Seed groupMatches from server-rendered initial data
       const initial = window.__initialGroupMatches || {};
@@ -443,11 +445,15 @@ function predictionWizard(cfg) {
 
     async autosave() {
       if (this.readonly) return;
+      // Always derive winner from the F-01 slot pick so we never accidentally
+      // overwrite the persisted winner with a stale empty value.
+      const winner = this.picks['F-01'] || this.winnerTeamId || null;
+      this.winnerTeamId = winner || '';
       const payload = {
         _csrf: this.csrf,
         scores: this.flattenScores(),
         slots:  Object.keys(this.picks).map(s => ({ slot: s, team_id: this.picks[s] })),
-        winner_team_id: this.winnerTeamId || null,
+        winner_team_id: winner,
         topscorer_player_id: this.topscorerPlayerId || null,
         topscorer_custom_name: this.topscorerCustomName || null,
         tiebreaker_value: this.tiebreakerValue === '' ? null : Number(this.tiebreakerValue),

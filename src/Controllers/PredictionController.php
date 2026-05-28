@@ -222,21 +222,28 @@ final class PredictionController extends Controller
                 }
             }
 
-            // Winner + topscorer
-            $winner = $post['winner_team_id'] ?? null;
-            $top    = $post['topscorer_player_id'] ?? null;
-            $custom = trim((string)($post['topscorer_custom_name'] ?? ''));
-            $label  = trim((string)($post['label'] ?? ''));
-            $patch = [];
-            $patch['winner_team_id']        = ($winner === '' || $winner === null) ? null : (int) $winner;
-            $patch['topscorer_player_id']   = ($top === '' || $top === null) ? null : (int) $top;
-            $patch['topscorer_custom_name'] = $custom === '' ? null : mb_substr($custom, 0, 128);
+            // Winner + topscorer + tiebreak: only patch fields that were sent.
+            $patch = ['updated_at' => date('Y-m-d H:i:s')];
 
-            $tb = $post['tiebreaker_value'] ?? null;
-            $patch['tiebreaker_value'] = ($tb === '' || $tb === null) ? null : max(0, (int) $tb);
-
+            if (array_key_exists('winner_team_id', $post)) {
+                $w = $post['winner_team_id'];
+                $patch['winner_team_id'] = ($w === '' || $w === null) ? null : (int) $w;
+            }
+            if (array_key_exists('topscorer_player_id', $post)) {
+                $t = $post['topscorer_player_id'];
+                $patch['topscorer_player_id'] = ($t === '' || $t === null) ? null : (int) $t;
+            }
+            if (array_key_exists('topscorer_custom_name', $post)) {
+                $c = trim((string) $post['topscorer_custom_name']);
+                $patch['topscorer_custom_name'] = $c === '' ? null : mb_substr($c, 0, 128);
+            }
+            if (array_key_exists('tiebreaker_value', $post)) {
+                $tb = $post['tiebreaker_value'];
+                $patch['tiebreaker_value'] = ($tb === '' || $tb === null) ? null : max(0, (int) $tb);
+            }
+            $label = trim((string)($post['label'] ?? ''));
             if ($label !== '') $patch['label'] = $label;
-            $patch['updated_at'] = date('Y-m-d H:i:s');
+
             Database::update('forms', $patch, ['id' => $formId]);
 
             Database::commit();

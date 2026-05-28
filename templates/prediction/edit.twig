@@ -54,8 +54,10 @@
       bracket:             {{ resolved.bracket|json_encode|raw }},
       downstream:          {{ resolved.downstream|json_encode|raw }},
       picks:               {{ resolved.picks|json_encode|raw }},
+      winnerTeamId:        {{ form.winner_team_id ? form.winner_team_id : 'null' }},
       topscorerPlayerId:   {{ form.topscorer_player_id ? form.topscorer_player_id : 'null' }},
-      topscorerCustomName: {{ (form.topscorer_custom_name ?? '')|json_encode|raw }}
+      topscorerCustomName: {{ (form.topscorer_custom_name ?? '')|json_encode|raw }},
+      tiebreakerValue:     {{ form.tiebreaker_value is not null ? form.tiebreaker_value : 'null' }}
     }
   };
 </script>
