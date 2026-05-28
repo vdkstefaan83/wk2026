@@ -16,11 +16,11 @@ final class PdfGenerator
         $mpdf = new Mpdf([
             'tempDir' => $tmp,
             'mode' => 'utf-8',
-            'format' => 'A4',
-            'margin_left' => 12,
-            'margin_right' => 12,
-            'margin_top' => 14,
-            'margin_bottom' => 14,
+            'format' => 'A4-L',
+            'margin_left' => 8,
+            'margin_right' => 8,
+            'margin_top' => 8,
+            'margin_bottom' => 8,
         ]);
         $mpdf->SetTitle($title);
         $mpdf->SetAuthor('WK2026 Pool');

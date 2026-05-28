@@ -358,25 +358,80 @@ final class PredictionController extends Controller
             'SELECT f.*, u.name AS user_name, u.email AS user_email FROM forms f JOIN users u ON u.id = f.user_id WHERE f.id = ?',
             [$formId]
         );
-        $resolved = PredictionResolver::resolve($formId);
 
+        // Teams by id
         $teams = [];
         foreach (Database::fetchAll('SELECT id, name, flag_emoji FROM teams') as $t) {
             $teams[(int)$t['id']] = $t;
         }
         $winner   = $form['winner_team_id'] ? $teams[(int)$form['winner_team_id']] ?? null : null;
-        $topscorer= $form['topscorer_player_id']
+        $topscorer = $form['topscorer_player_id']
             ? Database::fetch('SELECT p.name, t.name AS team_name FROM players p LEFT JOIN teams t ON t.id = p.team_id WHERE p.id = ?', [(int)$form['topscorer_player_id']])
             : null;
 
+        // All matches in chronological order, with predicted scores / slot picks.
+        $rawMatches = Database::fetchAll(
+            'SELECT m.id, m.stage, m.match_number, m.kickoff_at, m.venue,
+                    m.home_team_id, m.away_team_id,
+                    g.code AS group_code,
+                    h.name AS home_name, h.flag_emoji AS home_flag,
+                    a.name AS away_name, a.flag_emoji AS away_flag,
+                    p.home_goals AS pred_home, p.away_goals AS pred_away
+               FROM matches m
+          LEFT JOIN team_groups g ON g.id = m.group_id
+          LEFT JOIN teams h ON h.id = m.home_team_id
+          LEFT JOIN teams a ON a.id = m.away_team_id
+          LEFT JOIN predictions p ON p.match_id = m.id AND p.form_id = ? AND p.stage = "group"
+           ORDER BY (m.kickoff_at IS NULL), m.kickoff_at, m.match_number',
+            [$formId]
+        );
+
+        // Knockout slot picks (R32-01, …, F-01)
+        $slotPicks = [];
+        foreach (Database::fetchAll(
+            'SELECT slot_code, team_id FROM predictions WHERE form_id = ? AND team_id IS NOT NULL AND slot_code <> ""',
+            [$formId]
+        ) as $r) {
+            $slotPicks[$r['slot_code']] = (int) $r['team_id'];
+        }
+
+        // Build display rows: each row already knows its predicted result.
+        $rows = [];
+        $stageSlot = ['r32' => 'R32', 'r16' => 'R16', 'qf' => 'QF', 'sf' => 'SF', 'final' => 'F'];
+        $stageNum  = ['r32' => 0,    'r16' => 0,    'qf' => 0,   'sf' => 0,   'final' => 0];
+        foreach ($rawMatches as $m) {
+            $row = [
+                'stage'    => $m['stage'],
+                'kickoff'  => $m['kickoff_at'],
+                'venue'    => $m['venue'],
+                'group'    => $m['group_code'],
+                'home'     => $m['home_name'] ? ['name' => $m['home_name'], 'flag' => $m['home_flag']] : null,
+                'away'     => $m['away_name'] ? ['name' => $m['away_name'], 'flag' => $m['away_flag']] : null,
+                'pred_home'=> $m['pred_home'],
+                'pred_away'=> $m['pred_away'],
+                'slot'     => null,
+                'pick'     => null,
+            ];
+            if ($m['stage'] !== 'group') {
+                $stageNum[$m['stage']]++;
+                $slot = sprintf('%s-%02d', $stageSlot[$m['stage']], $stageNum[$m['stage']]);
+                $row['slot'] = $slot;
+                $teamId = $slotPicks[$slot] ?? null;
+                if ($teamId && isset($teams[$teamId])) {
+                    $row['pick'] = $teams[$teamId];
+                }
+            }
+            $rows[] = $row;
+        }
+
         $html = View::render('prediction/pdf.twig', [
             'form'      => $form,
-            'resolved'  => $resolved,
-            'teams_by_id' => $teams,
+            'rows'      => $rows,
             'winner'    => $winner,
             'topscorer' => $topscorer,
             'now'       => date('Y-m-d H:i'),
             'settings'  => \App\Core\Setting::all(),
+            'filename'  => "wc2026-prediction-{$formId}.pdf",
         ]);
 
         $dir = \App\Core\Config::basePath('storage/pdfs');
