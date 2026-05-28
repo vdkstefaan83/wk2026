@@ -8,51 +8,59 @@ use App\Controllers\DashboardController;
 use App\Controllers\AdminController;
 use App\Controllers\ApiController;
 
-$router->get('/',                  [HomeController::class, 'index']);
+// Bramus Router expects "Class@method" strings, not [Class, 'method'] arrays.
+$home       = HomeController::class;
+$auth       = AuthController::class;
+$prediction = PredictionController::class;
+$dashboard  = DashboardController::class;
+$admin      = AdminController::class;
+$api        = ApiController::class;
+
+$router->get('/',                  $home . '@index');
 
 // --- Authentication ---
-$router->get('/login',                 [AuthController::class, 'showLogin']);
-$router->post('/login',                [AuthController::class, 'login']);
-$router->get('/register',              [AuthController::class, 'showRegister']);
-$router->post('/register',             [AuthController::class, 'register']);
-$router->get('/logout',                [AuthController::class, 'logout']);
-$router->get('/auth/keycloak/login',    [AuthController::class, 'keycloakLogin']);
-$router->get('/auth/keycloak/callback', [AuthController::class, 'keycloakCallback']);
+$router->get('/login',                  $auth . '@showLogin');
+$router->post('/login',                 $auth . '@login');
+$router->get('/register',               $auth . '@showRegister');
+$router->post('/register',              $auth . '@register');
+$router->get('/logout',                 $auth . '@logout');
+$router->get('/auth/keycloak/login',    $auth . '@keycloakLogin');
+$router->get('/auth/keycloak/callback', $auth . '@keycloakCallback');
 
-// --- Dashboard (logged in) ---
-$router->get('/dashboard',         [DashboardController::class, 'index']);
+// --- Dashboard ---
+$router->get('/dashboard',          $dashboard . '@index');
 
 // --- Prediction wizard ---
-$router->get('/predictions/new',           [PredictionController::class, 'create']);
-$router->post('/predictions/new',          [PredictionController::class, 'store']);
-$router->get('/predictions/(\d+)',         [PredictionController::class, 'edit']);
-$router->post('/predictions/(\d+)/save',   [PredictionController::class, 'save']);
-$router->post('/predictions/(\d+)/submit', [PredictionController::class, 'submit']);
-$router->get('/predictions/(\d+)/pdf',     [PredictionController::class, 'pdf']);
-$router->post('/predictions/(\d+)/delete', [PredictionController::class, 'delete']);
+$router->get('/predictions/new',           $prediction . '@create');
+$router->post('/predictions/new',          $prediction . '@store');
+$router->get('/predictions/(\d+)',         $prediction . '@edit');
+$router->post('/predictions/(\d+)/save',   $prediction . '@save');
+$router->post('/predictions/(\d+)/submit', $prediction . '@submit');
+$router->get('/predictions/(\d+)/pdf',     $prediction . '@pdf');
+$router->post('/predictions/(\d+)/delete', $prediction . '@delete');
 
-// --- API (JSON, used by the wizard) ---
-$router->post('/api/predictions/(\d+)/autosave', [ApiController::class, 'autosave']);
-$router->get('/api/predictions/(\d+)/state',     [ApiController::class, 'state']);
-$router->get('/api/players',                     [ApiController::class, 'players']);
+// --- API ---
+$router->post('/api/predictions/(\d+)/autosave', $api . '@autosave');
+$router->get('/api/predictions/(\d+)/state',     $api . '@state');
+$router->get('/api/players',                     $api . '@players');
 
 // --- Admin ---
-$router->get('/admin',                       [AdminController::class, 'dashboard']);
-$router->get('/admin/settings',              [AdminController::class, 'settings']);
-$router->post('/admin/settings',             [AdminController::class, 'saveSettings']);
-$router->get('/admin/email-templates',       [AdminController::class, 'emailTemplates']);
-$router->get('/admin/email-templates/(\w+)', [AdminController::class, 'editEmailTemplate']);
-$router->post('/admin/email-templates/(\w+)',[AdminController::class, 'saveEmailTemplate']);
-$router->get('/admin/teams',                 [AdminController::class, 'teams']);
-$router->post('/admin/teams',                [AdminController::class, 'saveTeams']);
-$router->get('/admin/matches',               [AdminController::class, 'matches']);
-$router->post('/admin/matches',              [AdminController::class, 'saveMatches']);
-$router->get('/admin/players',               [AdminController::class, 'players']);
-$router->post('/admin/players',              [AdminController::class, 'savePlayers']);
-$router->get('/admin/forms',                 [AdminController::class, 'forms']);
-$router->post('/admin/forms/(\d+)/payment',  [AdminController::class, 'markPaid']);
-$router->get('/admin/leaderboard',           [AdminController::class, 'leaderboard']);
-$router->post('/admin/recompute',            [AdminController::class, 'recompute']);
+$router->get('/admin',                        $admin . '@dashboard');
+$router->get('/admin/settings',               $admin . '@settings');
+$router->post('/admin/settings',              $admin . '@saveSettings');
+$router->get('/admin/email-templates',        $admin . '@emailTemplates');
+$router->get('/admin/email-templates/(\w+)',  $admin . '@editEmailTemplate');
+$router->post('/admin/email-templates/(\w+)', $admin . '@saveEmailTemplate');
+$router->get('/admin/teams',                  $admin . '@teams');
+$router->post('/admin/teams',                 $admin . '@saveTeams');
+$router->get('/admin/matches',                $admin . '@matches');
+$router->post('/admin/matches',               $admin . '@saveMatches');
+$router->get('/admin/players',                $admin . '@players');
+$router->post('/admin/players',               $admin . '@savePlayers');
+$router->get('/admin/forms',                  $admin . '@forms');
+$router->post('/admin/forms/(\d+)/payment',   $admin . '@markPaid');
+$router->get('/admin/leaderboard',            $admin . '@leaderboard');
+$router->post('/admin/recompute',             $admin . '@recompute');
 
 $router->set404(function () {
     http_response_code(404);
