@@ -29,19 +29,16 @@
   }
   .stage.first { margin-top: 0; }
 
-  .m { display: block; padding: 1.4pt 2pt; border-bottom: 0.3pt solid #e2e8f0; font-size: 7pt; }
+  .m { display: block; padding: 1.6pt 2pt; border-bottom: 0.3pt solid #e2e8f0; font-size: 7pt; }
   .m .dt   { color: #64748b; font-variant-numeric: tabular-nums; }
   .m .grp  { color: #94a3b8; font-size: 6pt; }
-  .m .iso  {
-    display: inline-block; background: #e2e8f0; color: #1e293b;
-    font-size: 5.6pt; font-weight: bold; letter-spacing: 0.04em;
-    padding: 0pt 2pt; border-radius: 2pt; margin-right: 1pt;
-  }
-  .m .home { float: left;  width: 38%; text-align: right; padding-right: 4pt; }
-  .m .away { float: right; width: 38%; text-align: left;  padding-left: 4pt; }
-  .m .sc   { display: block; margin: 0 auto; width: 24%; text-align: center; font-weight: bold; }
-  .m .sc.empty { color: #cbd5e1; font-weight: normal; }
-  .m .ko   { font-weight: bold; }
+  .m .home { float: left;  width: 40%; text-align: right; padding-right: 4pt; }
+  .m .away { float: right; width: 40%; text-align: left;  padding-left: 4pt; }
+  .m .sc   { display: block; margin: 0 auto; width: 20%; text-align: center;
+             font-weight: bold; font-size: 8pt; color: #0f172a; }
+  .m .sc.empty { color: #cbd5e1; font-weight: normal; font-size: 7pt; }
+  .m .ko   { }
+  .m .ko-slot { font-weight: bold; }
   .m::after { content: ''; display: block; clear: both; }
 
   .foot { margin-top: 4pt; padding-top: 2pt; border-top: 0.3pt dashed #cbd5e1;
@@ -65,7 +62,6 @@
     <td>
       <div class="lbl">World champion</div>
       <div class="val">{{ winner ? winner.name : '—' }}</div>
-      {% if winner and winner.iso3 %}<div class="qst">{{ winner.iso3 }}</div>{% endif %}
     </td>
     <td>
       <div class="lbl">Top scorer</div>
@@ -104,19 +100,13 @@
           <div class="m">
             <span class="dt">{{ r.kickoff ? r.kickoff|date('m-d H:i') : '—' }}{% if r.group %} <span class="grp">·{{ r.group }}</span>{% endif %}</span>
             {% if r.stage == 'group' %}
-              <span class="home">
-                {% if r.home %}<span class="iso">{{ r.home.iso }}</span>{{ r.home.name }}{% else %}—{% endif %}
-              </span>
-              <span class="away">
-                {% if r.away %}<span class="iso">{{ r.away.iso }}</span>{{ r.away.name }}{% else %}—{% endif %}
-              </span>
+              <span class="home">{{ r.home ? r.home.name : '—' }}</span>
+              <span class="away">{{ r.away ? r.away.name : '—' }}</span>
               <span class="sc{% if r.pred_home is null or r.pred_away is null %} empty{% endif %}">
                 {% if r.pred_home is not null and r.pred_away is not null %}{{ r.pred_home }}–{{ r.pred_away }}{% else %}—{% endif %}
               </span>
             {% else %}
-              <span class="ko"> <span class="grp">{{ r.slot }}</span> &rarr;
-                {% if r.pick %}<span class="iso">{{ r.pick.iso3 }}</span>{{ r.pick.name }}{% else %}—{% endif %}
-              </span>
+              <span class="ko"> <span class="ko-slot">{{ r.slot }}</span> &rarr; <b>{{ r.pick ? r.pick.name : '—' }}</b></span>
             {% endif %}
           </div>
         {% endfor %}
