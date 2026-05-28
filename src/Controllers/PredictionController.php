@@ -155,13 +155,18 @@ final class PredictionController extends Controller
     public function pdf(string $id): void
     {
         $form = $this->loadOwnForm((int) $id);
-        if (empty($form['pdf_path']) || !is_file($form['pdf_path'])) {
-            $form['pdf_path'] = $this->buildPdf((int) $form['id']);
-            Database::update('forms', ['pdf_path' => $form['pdf_path']], ['id' => $form['id']]);
+        // Always rebuild so layout/template changes take effect immediately.
+        // For submitted forms the underlying data is locked, so this is safe.
+        $path = $this->buildPdf((int) $form['id']);
+        if ($path !== ($form['pdf_path'] ?? null)) {
+            Database::update('forms', ['pdf_path' => $path], ['id' => $form['id']]);
         }
         header('Content-Type: application/pdf');
         header('Content-Disposition: inline; filename="wc2026-prediction-' . $form['id'] . '.pdf"');
-        readfile($form['pdf_path']);
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+        readfile($path);
     }
 
     public function delete(string $id): void
