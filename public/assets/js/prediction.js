@@ -381,6 +381,31 @@ function predictionWizard(cfg) {
       return Object.keys(this.picks).filter(k => k.startsWith(prefix) && this.picks[k]).length;
     },
 
+    get canSubmit() {
+      if (this.readonly) return false;
+      const gc = this.groupCompletion();
+      if (gc.filled < gc.total) return false;
+      if (this.countPicks('R32') < 16) return false;
+      if (this.countPicks('R16') < 8) return false;
+      if (this.countPicks('QF') < 4) return false;
+      if (this.countPicks('SF') < 2) return false;
+      if (this.countPicks('F') < 1) return false;
+      if (!this.topscorerPlayerId) return false;
+      if (this.tiebreakerValue === '' || this.tiebreakerValue === null || isNaN(Number(this.tiebreakerValue))) return false;
+      return true;
+    },
+
+    submitFinal() {
+      if (!this.canSubmit) {
+        this.step = 'summary';
+        return;
+      }
+      if (!confirm('Submit definitively? This cannot be undone.')) return;
+      const form = document.getElementById('prediction-form');
+      form.action = form.action.replace(/\/save$/, '/submit');
+      form.submit();
+    },
+
     groupCompletion() {
       let total = 0, filled = 0;
       Object.values(this.standings).forEach(rows => {

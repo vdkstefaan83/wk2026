@@ -84,10 +84,14 @@
         {% if deadline %}<span class="text-slate-400">·</span><span class="text-slate-500">deadline: <span class="text-slate-700 font-semibold">{{ deadline }}</span></span>{% endif %}
       </p>
     </div>
-    <div class="flex gap-2 text-sm">
+    <div class="flex gap-2 text-sm flex-wrap justify-end">
       <a href="{{ url('/dashboard') }}" class="btn btn-secondary btn-sm">← Dashboard</a>
       {% if not readonly %}
         <button type="button" @click="save()" class="btn btn-secondary btn-sm">💾 Save</button>
+        <button type="button" @click="submitFinal()"
+                x-show="canSubmit"
+                x-cloak
+                class="btn btn-primary btn-sm">🚀 Submit final</button>
       {% else %}
         <a href="{{ url('/predictions/' ~ form.id ~ '/pdf') }}" target="_blank" class="btn btn-primary btn-sm">📄 PDF</a>
       {% endif %}
