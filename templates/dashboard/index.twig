@@ -18,7 +18,7 @@
     <a href="{{ url('/predictions/new') }}" class="btn btn-primary mt-6">Start now →</a>
   </div>
 {% else %}
-  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
     {% for f in forms %}
       <div class="card card-hover overflow-hidden flex flex-col">
         <div class="{% if f.status == 'submitted' %}banner banner-green{% else %}banner banner-orange{% endif %} rounded-none rounded-t-[18px] px-5 py-3 text-sm">
@@ -61,6 +61,61 @@
         </div>
       </div>
     {% endfor %}
+  </div>
+{% endif %}
+
+{# ---------- Public leaderboard ---------- #}
+{% if leaderboard is not empty %}
+  <div class="mt-4">
+    <div class="flex items-end justify-between mb-4">
+      <div>
+        <p class="text-xs uppercase tracking-widest text-slate-500 font-bold">Standings</p>
+        <h2 class="font-display text-3xl font-extrabold text-slate-900 mt-1">Leaderboard 🏆</h2>
+      </div>
+      <p class="text-xs text-slate-500">Only paid entries qualify for prizes.</p>
+    </div>
+
+    <div class="card overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 border-b-2 border-slate-100">
+          <tr class="text-xs uppercase tracking-wider text-slate-500 font-bold">
+            <th class="p-3 text-left w-16">#</th>
+            <th class="p-3 text-left">User</th>
+            <th class="p-3 text-left">Form</th>
+            <th class="p-3 text-right">Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in leaderboard %}
+            <tr class="border-t border-slate-100 {{ r.user_id == user_id ? 'bg-emerald-50' : '' }}">
+              <td class="p-3 font-display font-extrabold text-center">
+                {% if r.rank == 1 %}<span class="text-2xl">🥇</span>
+                {% elseif r.rank == 2 %}<span class="text-2xl">🥈</span>
+                {% elseif r.rank == 3 %}<span class="text-2xl">🥉</span>
+                {% else %}<span class="text-slate-500">{{ r.rank }}</span>
+                {% endif %}
+              </td>
+              <td class="p-3">
+                <span class="font-semibold {{ r.user_id == user_id ? 'text-emerald-800' : 'text-slate-900' }}">
+                  {{ r.user_name }}
+                </span>
+                {% if r.user_id == user_id %}
+                  <span class="pill pill-green ml-2">you</span>
+                {% endif %}
+              </td>
+              <td class="p-3 text-slate-700">{{ r.label }}</td>
+              <td class="p-3 text-right stat-number text-2xl text-emerald-600">{{ r.score }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% elseif forms is not empty %}
+  <div class="card p-6 text-center mt-4">
+    <div class="text-3xl mb-2">📊</div>
+    <h3 class="font-display font-bold text-slate-900">Leaderboard coming soon</h3>
+    <p class="text-sm text-slate-600 mt-1">As soon as the first matches are played and paid entries roll in, the standings will appear here.</p>
   </div>
 {% endif %}
 {% endblock %}
