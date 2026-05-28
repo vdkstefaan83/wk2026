@@ -64,6 +64,7 @@ $router->post('/admin/forms/(\d+)/payment',   $admin . '@markPaid');
 $router->get('/admin/leaderboard',            $admin . '@leaderboard');
 $router->post('/admin/recompute',             $admin . '@recompute');
 $router->post('/admin/sync-matches',          $admin . '@syncMatches');
+$router->post('/admin/email-test',             $admin . '@sendTestEmail');
 
 $router->set404(function () {
     http_response_code(404);
