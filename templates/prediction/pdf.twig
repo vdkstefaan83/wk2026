@@ -1,146 +1,120 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>World Cup 2026 prediction – {{ form.label }}</title>
-  <style>
-    @page { size: A4 landscape; margin: 8mm; }
-    * { box-sizing: border-box; }
-    body { font-family: DejaVu Sans, sans-serif; font-size: 8pt; color: #0f172a; margin: 0; line-height: 1.25; }
+<meta charset="utf-8">
+<style>
+  body  { font-family: DejaVu Sans, sans-serif; font-size: 7.5pt; color: #0f172a; line-height: 1.15; margin: 0; }
+  h1    { font-size: 14pt; margin: 0; }
+  .sub  { font-size: 7pt; color: #475569; }
 
-    .head { border-bottom: 1.5pt solid #0f172a; padding-bottom: 4pt; margin-bottom: 6pt; display: table; width: 100%; }
-    .head .col { display: table-cell; vertical-align: middle; }
-    .head .title { font-size: 16pt; font-weight: bold; }
-    .head .meta  { font-size: 7pt; color: #475569; text-align: right; }
-    .head .meta strong { color: #0f172a; }
+  .head { border-bottom: 1pt solid #0f172a; padding-bottom: 3pt; margin-bottom: 4pt; }
+  .head td { vertical-align: middle; }
 
-    .picks { display: table; width: 100%; margin-bottom: 5pt; }
-    .picks .cell {
-      display: table-cell; padding: 4pt 6pt; vertical-align: top;
-      border: 0.75pt solid #cbd5e1; border-radius: 4pt; width: 33.33%;
-    }
-    .picks .cell + .cell { border-left: 0.75pt solid #cbd5e1; margin-left: 4pt; }
-    .picks .label { font-size: 6.5pt; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; font-weight: bold; }
-    .picks .value { font-size: 10pt; font-weight: bold; margin-top: 1pt; }
-    .picks .sub   { font-size: 7pt; color: #475569; }
+  .picks    { width: 100%; border-collapse: separate; border-spacing: 4pt 0; margin-bottom: 4pt; }
+  .picks td { border: 0.75pt solid #94a3b8; border-radius: 3pt; padding: 4pt 6pt; vertical-align: top; width: 33.33%; }
+  .picks .lbl { font-size: 6.5pt; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b; font-weight: bold; }
+  .picks .val { font-size: 10pt; font-weight: bold; }
+  .picks .qst { font-size: 6.5pt; color: #475569; }
 
-    .cols { display: table; width: 100%; table-layout: fixed; }
-    .cols .col { display: table-cell; vertical-align: top; padding: 0 4pt; width: 33.33%; }
-    .cols .col:first-child { padding-left: 0; }
-    .cols .col:last-child  { padding-right: 0; }
+  table.outer { width: 100%; border-collapse: collapse; }
+  table.outer > tbody > tr > td { vertical-align: top; width: 33.33%; padding: 0 3pt; }
+  table.outer > tbody > tr > td.first { padding-left: 0; }
+  table.outer > tbody > tr > td.last  { padding-right: 0; }
 
-    table.matches { width: 100%; border-collapse: collapse; font-size: 7pt; }
-    table.matches th {
-      text-align: left; padding: 2pt 3pt; background: #0f172a; color: #fff;
-      font-size: 6.5pt; text-transform: uppercase; letter-spacing: 0.04em;
-    }
-    table.matches td { padding: 1.5pt 3pt; border-bottom: 0.4pt solid #e2e8f0; vertical-align: middle; }
-    table.matches tr.stage-row td {
-      background: #f1f5f9; font-weight: bold; font-size: 7pt;
-      text-transform: uppercase; letter-spacing: 0.04em; color: #1e293b;
-      border-top: 0.4pt solid #94a3b8; border-bottom: 0.4pt solid #94a3b8;
-    }
-    .date { color: #64748b; white-space: nowrap; font-variant-numeric: tabular-nums; }
-    .home { text-align: right; }
-    .away { text-align: left; }
-    .score { text-align: center; font-weight: bold; padding: 1.5pt 4pt; background: #f8fafc; border-radius: 2pt; white-space: nowrap; }
-    .score.empty { color: #cbd5e1; background: transparent; font-weight: normal; }
-    .pick { font-weight: bold; }
-    .group-tag { color: #475569; font-size: 6.5pt; }
+  .stage {
+    background: #0f172a; color: #fff;
+    font-size: 6.8pt; font-weight: bold;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    padding: 2pt 4pt; margin-top: 3pt;
+  }
+  .stage.first { margin-top: 0; }
 
-    .foot { margin-top: 4pt; padding-top: 3pt; border-top: 0.4pt dashed #cbd5e1; font-size: 6.5pt; color: #94a3b8; text-align: center; }
-  </style>
+  .m { display: block; padding: 1.4pt 2pt; border-bottom: 0.3pt solid #e2e8f0; font-size: 7pt; }
+  .m .dt { color: #64748b; font-variant-numeric: tabular-nums; }
+  .m .grp { color: #94a3b8; font-size: 6pt; }
+  .m .home { float: left;  width: 38%; text-align: right; padding-right: 4pt; }
+  .m .away { float: right; width: 38%; text-align: left;  padding-left: 4pt; }
+  .m .sc   { display: block; margin: 0 auto; width: 24%; text-align: center; font-weight: bold; }
+  .m .sc.empty { color: #cbd5e1; font-weight: normal; }
+  .m .ko   { font-weight: bold; }
+  .m::after { content: ''; display: block; clear: both; }
+
+  .foot { margin-top: 4pt; padding-top: 2pt; border-top: 0.3pt dashed #cbd5e1;
+          font-size: 6.5pt; color: #94a3b8; text-align: center; }
+</style>
 </head>
 <body>
 
-  {# ---------- Header ---------- #}
-  <div class="head">
-    <div class="col">
-      <div class="title">⚽ World Cup 2026 prediction</div>
-      <div class="meta" style="text-align:left;font-size:9pt;color:#0f172a;">
-        <strong>{{ form.label }}</strong> · {{ form.user_name }} ({{ form.user_email }})
-      </div>
-    </div>
-    <div class="col meta">
-      <strong>Submitted:</strong> {{ form.submitted_at ? form.submitted_at|date('Y-m-d H:i:s') : '—' }}<br>
-      <strong>File:</strong> {{ filename }} · generated {{ now }}
-    </div>
-  </div>
+  <table class="head" width="100%"><tr>
+    <td>
+      <h1>⚽ World Cup 2026 prediction</h1>
+      <div class="sub"><b style="color:#0f172a">{{ form.label }}</b> — {{ form.user_name }} ({{ form.user_email }})</div>
+    </td>
+    <td align="right" class="sub">
+      <b style="color:#0f172a">Submitted:</b> {{ form.submitted_at ? form.submitted_at|date('Y-m-d H:i:s') : '—' }}<br>
+      <b style="color:#0f172a">File:</b> {{ filename }} — generated {{ now }}
+    </td>
+  </tr></table>
 
-  {# ---------- Champion / top scorer / tiebreaker ---------- #}
-  <div class="picks">
-    <div class="cell">
-      <div class="label">🏆 World champion</div>
-      <div class="value">{{ winner ? winner.flag_emoji ~ ' ' ~ winner.name : '—' }}</div>
-    </div>
-    <div class="cell">
-      <div class="label">👟 Top scorer</div>
-      <div class="value">{{ topscorer ? topscorer.name : '—' }}</div>
-      {% if topscorer and topscorer.team_name %}<div class="sub">{{ topscorer.team_name }}</div>{% endif %}
-    </div>
-    <div class="cell">
-      <div class="label">🎲 Tiebreaker</div>
-      <div class="value">{{ form.tiebreaker_value is not null ? form.tiebreaker_value : '—' }}</div>
-      <div class="sub">{{ settings.tiebreaker_question }}</div>
-    </div>
-  </div>
+  <table class="picks"><tr>
+    <td>
+      <div class="lbl">🏆 World champion</div>
+      <div class="val">{{ winner ? winner.flag_emoji ~ ' ' ~ winner.name : '—' }}</div>
+    </td>
+    <td>
+      <div class="lbl">👟 Top scorer</div>
+      <div class="val">{{ topscorer ? topscorer.name : '—' }}</div>
+      {% if topscorer and topscorer.team_name %}<div class="qst">{{ topscorer.team_name }}</div>{% endif %}
+    </td>
+    <td>
+      <div class="lbl">🎲 Tiebreaker</div>
+      <div class="val">{{ form.tiebreaker_value is not null ? form.tiebreaker_value : '—' }}</div>
+      <div class="qst">{{ settings.tiebreaker_question }}</div>
+    </td>
+  </tr></table>
 
-  {# ---------- Matches split into 3 columns ---------- #}
-  {% set total = rows|length %}
+  {# Split rows into 3 columns of (almost) equal length #}
+  {% set total  = rows|length %}
   {% set perCol = (total / 3)|round(0, 'ceil') %}
-  {% set col1 = rows|slice(0, perCol) %}
-  {% set col2 = rows|slice(perCol, perCol) %}
-  {% set col3 = rows|slice(perCol * 2) %}
 
-  <div class="cols">
-    {% for col in [col1, col2, col3] %}
-      <div class="col">
-        <table class="matches">
-          <thead>
-            <tr><th style="width:18%">When</th><th colspan="3">Match / pick</th></tr>
-          </thead>
-          <tbody>
-            {% set prevStage = null %}
-            {% for r in col %}
-              {% if r.stage != prevStage %}
-                <tr class="stage-row"><td colspan="4">
-                  {% if r.stage == 'group' %}Group stage
-                  {% elseif r.stage == 'r32' %}Round of 32
-                  {% elseif r.stage == 'r16' %}Round of 16
-                  {% elseif r.stage == 'qf' %}Quarter-finals
-                  {% elseif r.stage == 'sf' %}Semi-finals
-                  {% else %}Final{% endif %}
-                </td></tr>
-                {% set prevStage = r.stage %}
-              {% endif %}
+  <table class="outer"><tbody><tr>
+    {% for colIndex in 0..2 %}
+      {% set start = colIndex * perCol %}
+      {% set col = rows|slice(start, perCol) %}
+      <td class="{{ colIndex == 0 ? 'first' : (colIndex == 2 ? 'last' : '') }}">
+        {% set prevStage = null %}
+        {% for r in col %}
+          {% if r.stage != prevStage %}
+            <div class="stage {% if loop.first %}first{% endif %}">
+              {% if r.stage == 'group' %}Group stage
+              {% elseif r.stage == 'r32' %}Round of 32
+              {% elseif r.stage == 'r16' %}Round of 16
+              {% elseif r.stage == 'qf' %}Quarter-finals
+              {% elseif r.stage == 'sf' %}Semi-finals
+              {% else %}Final{% endif %}
+            </div>
+            {% set prevStage = r.stage %}
+          {% endif %}
 
-              <tr>
-                <td class="date">
-                  {% if r.kickoff %}{{ r.kickoff|date('m-d H:i') }}{% else %}—{% endif %}
-                  {% if r.group %} <span class="group-tag">·{{ r.group }}</span>{% endif %}
-                </td>
-                {% if r.stage == 'group' %}
-                  <td class="home" style="width:34%">{{ r.home ? r.home.flag ~ ' ' ~ r.home.name : '—' }}</td>
-                  <td class="score {% if r.pred_home is null or r.pred_away is null %}empty{% endif %}" style="width:14%">
-                    {% if r.pred_home is not null and r.pred_away is not null %}{{ r.pred_home }}–{{ r.pred_away }}{% else %}—{% endif %}
-                  </td>
-                  <td class="away" style="width:34%">{{ r.away ? r.away.flag ~ ' ' ~ r.away.name : '—' }}</td>
-                {% else %}
-                  <td colspan="3" class="pick">
-                    <span class="group-tag">{{ r.slot }}</span> →
-                    {{ r.pick ? r.pick.flag_emoji ~ ' ' ~ r.pick.name : '—' }}
-                  </td>
-                {% endif %}
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+          <div class="m">
+            <span class="dt">{{ r.kickoff ? r.kickoff|date('m-d H:i') : '—' }}{% if r.group %} <span class="grp">·{{ r.group }}</span>{% endif %}</span>
+            {% if r.stage == 'group' %}
+              <span class="home">{{ r.home ? r.home.flag ~ ' ' ~ r.home.name : '—' }}</span>
+              <span class="away">{{ r.away ? r.away.flag ~ ' ' ~ r.away.name : '—' }}</span>
+              <span class="sc{% if r.pred_home is null or r.pred_away is null %} empty{% endif %}">
+                {% if r.pred_home is not null and r.pred_away is not null %}{{ r.pred_home }}–{{ r.pred_away }}{% else %}—{% endif %}
+              </span>
+            {% else %}
+              <span class="ko"> <span class="grp">{{ r.slot }}</span> → {{ r.pick ? r.pick.flag_emoji ~ ' ' ~ r.pick.name : '—' }}</span>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </td>
     {% endfor %}
-  </div>
+  </tr></tbody></table>
 
   <div class="foot">
-    World Cup 2026 Pool · {{ form.user_name }} · payment due {{ settings.payment_amount }} {{ settings.payment_currency }} to {{ settings.payment_recipient }}
+    World Cup 2026 Pool · payment due {{ settings.payment_amount }} {{ settings.payment_currency }} to {{ settings.payment_recipient }}
   </div>
 
 </body>

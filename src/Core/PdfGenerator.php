@@ -24,6 +24,9 @@ final class PdfGenerator
         ]);
         $mpdf->SetTitle($title);
         $mpdf->SetAuthor('WK2026 Pool');
+        // Single-page output: disable auto page break and shrink content to fit.
+        $mpdf->SetAutoPageBreak(false, 0);
+        $mpdf->shrink_tables_to_fit = 1;
         $mpdf->WriteHTML($html);
 
         $dir = dirname($outputPath);
