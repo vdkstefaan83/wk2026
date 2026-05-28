@@ -1,0 +1,276 @@
+{% extends 'layout/base.twig' %}
+{% block title %}{{ form.label }} · {{ app.name }}{% endblock %}
+
+{% block content %}
+{% set readonly = form.status == 'submitted' %}
+<div x-data="predictionWizard({
+        formId: {{ form.id }},
+        csrf: '{{ csrf }}',
+        readonly: {{ readonly ? 'true' : 'false' }},
+        initial: {{ {
+          standings: resolved.standings,
+          bracket:   resolved.bracket,
+          downstream:resolved.downstream,
+          picks:     resolved.picks,
+        }|json_encode|raw }}
+     })"
+     x-init="init()"
+     class="space-y-6">
+
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <div>
+      <h1 class="text-2xl font-bold">
+        <input x-model="label" @change="autosave()" :disabled="readonly"
+               class="bg-transparent border-b border-dashed border-slate-300 focus:border-indigo-500 focus:outline-none"
+               value="{{ form.label }}">
+      </h1>
+      <p class="text-xs text-slate-500 mt-1">
+        {% if readonly %}
+          Verzonden op {{ form.submitted_at|date('d/m/Y H:i') }}
+        {% else %}
+          Concept · laatste autosave: <span x-text="lastSavedLabel"></span>
+        {% endif %}
+        {% if deadline %} · Deadline: {{ deadline }}{% endif %}
+      </p>
+    </div>
+    <div class="flex gap-2 text-sm">
+      <a href="{{ url('/dashboard') }}" class="px-3 py-1.5 rounded border border-slate-300 hover:bg-slate-50">← Dashboard</a>
+      {% if not readonly %}
+        <button type="button" @click="save()" class="px-3 py-1.5 rounded border border-indigo-300 text-indigo-700 hover:bg-indigo-50">
+          Tussentijds bewaren
+        </button>
+      {% else %}
+        <a href="{{ url('/predictions/' ~ form.id ~ '/pdf') }}" target="_blank"
+           class="px-3 py-1.5 rounded bg-slate-800 text-white hover:bg-slate-900">PDF</a>
+      {% endif %}
+    </div>
+  </div>
+
+  {# Step tabs #}
+  <div class="flex flex-wrap gap-1 border-b border-slate-200">
+    {% for step in [
+      {key:'groups',  label:'Groepsfase'},
+      {key:'r32',     label:'1/16 finale'},
+      {key:'r16',     label:'1/8 finale'},
+      {key:'qf',      label:'1/4 finale'},
+      {key:'sf',      label:'1/2 finale'},
+      {key:'final',   label:'Finale'},
+      {key:'topscorer', label:'Topscorer'},
+      {key:'summary', label:'Samenvatting'}
+    ] %}
+      <button type="button" @click="step='{{ step.key }}'"
+              :class="step==='{{ step.key }}' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-600 hover:text-slate-900'"
+              class="px-3 py-2 -mb-px border-b-2 text-sm font-medium">{{ step.label }}</button>
+    {% endfor %}
+  </div>
+
+  <form method="post" id="prediction-form" action="{{ url('/predictions/' ~ form.id ~ '/save') }}">
+    <input type="hidden" name="_csrf" value="{{ csrf }}">
+    <input type="hidden" name="label" x-model="label">
+    <input type="hidden" name="winner_team_id" x-model="winnerTeamId">
+    <input type="hidden" name="topscorer_player_id" x-model="topscorerPlayerId">
+
+    {# ---------------- Group stage ---------------- #}
+    <section x-show="step==='groups'" class="space-y-6">
+      <p class="text-sm text-slate-600">
+        Vul voor elke wedstrijd je score-voorspelling in. De ranking past zich live aan volgens de FIFA-regels.
+      </p>
+      {% for g in groups %}
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between px-4 py-2 border-b border-slate-100">
+            <h2 class="font-semibold">Groep {{ g.code }}</h2>
+            <span class="text-xs text-slate-500" x-text="completionForGroup('{{ g.code }}')"></span>
+          </div>
+          <div class="grid md:grid-cols-2">
+            <div class="p-4 space-y-2">
+              {% for m in matches_by_group[g.code] %}
+                <div class="flex items-center justify-between gap-2 py-1.5 border-b last:border-0 border-slate-100">
+                  <div class="flex items-center gap-2 text-sm w-2/5 justify-end text-right">
+                    <span>{{ m.home_flag }}</span>
+                    <span>{{ m.home_name }}</span>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <input type="number" min="0" max="20" name="score[{{ m.id }}][home]"
+                           value="{{ m.home_goals }}"
+                           @input="onScoreChange({{ m.id }}, {{ m.home_id }}, {{ m.away_id }}, '{{ g.code }}', $event)"
+                           :disabled="readonly"
+                           class="w-12 text-center rounded border-slate-300">
+                    <span class="text-slate-400">–</span>
+                    <input type="number" min="0" max="20" name="score[{{ m.id }}][away]"
+                           value="{{ m.away_goals }}"
+                           @input="onScoreChange({{ m.id }}, {{ m.home_id }}, {{ m.away_id }}, '{{ g.code }}', $event)"
+                           :disabled="readonly"
+                           class="w-12 text-center rounded border-slate-300">
+                  </div>
+                  <div class="flex items-center gap-2 text-sm w-2/5">
+                    <span>{{ m.away_name }}</span>
+                    <span>{{ m.away_flag }}</span>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+
+            {# Live standings #}
+            <div class="p-4 bg-slate-50 border-l border-slate-100">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="text-xs uppercase text-slate-500">
+                    <th class="text-left font-medium pb-1">#</th>
+                    <th class="text-left font-medium pb-1">Team</th>
+                    <th class="text-right font-medium pb-1 w-8">G</th>
+                    <th class="text-right font-medium pb-1 w-8">DV</th>
+                    <th class="text-right font-medium pb-1 w-8">+/-</th>
+                    <th class="text-right font-medium pb-1 w-8">Pt</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template x-for="(row, idx) in standings['{{ g.code }}']" :key="row.team_id">
+                    <tr :class="idx<2 ? 'bg-emerald-50' : (idx===2 ? 'bg-amber-50' : '')">
+                      <td class="py-1 pr-2" x-text="idx+1"></td>
+                      <td class="py-1 pr-2" x-text="row.name"></td>
+                      <td class="py-1 text-right" x-text="row.played"></td>
+                      <td class="py-1 text-right" x-text="row.gf+':'+row.ga"></td>
+                      <td class="py-1 text-right" x-text="(row.gd>=0?'+':'')+row.gd"></td>
+                      <td class="py-1 text-right font-semibold" x-text="row.points"></td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+              <p class="text-[10px] text-slate-500 mt-2">
+                <span class="inline-block w-2 h-2 bg-emerald-500 rounded-sm mr-1"></span>Top 2 →
+                <span class="inline-block w-2 h-2 bg-amber-400 rounded-sm ml-2 mr-1"></span>3de (mogelijk door)
+              </p>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </section>
+
+    {# ---------------- Knockout rounds ---------------- #}
+    {% for ko in ['r32','r16','qf','sf','final'] %}
+      <section x-show="step==='{{ ko }}'" class="space-y-4">
+        <p class="text-sm text-slate-600" x-show="bracket && bracket.r32 && bracket.r32.length">
+          Klik per wedstrijd op het team dat doorgaat. Volgende ronde verschijnt automatisch.
+        </p>
+        <template x-if="!isGroupsComplete()">
+          <div class="bg-amber-50 border border-amber-200 text-amber-800 rounded p-3 text-sm">
+            Vul eerst alle groepswedstrijden in om deze ronde te zien.
+          </div>
+        </template>
+        <template x-if="isGroupsComplete()">
+          <div class="grid sm:grid-cols-2 gap-3">
+            <template x-for="match in matchesForStage('{{ ko }}')" :key="match.slot">
+              <div class="bg-white rounded-lg border border-slate-200 p-3">
+                <div class="text-xs text-slate-500 mb-2" x-text="match.slot"></div>
+                <div class="space-y-1">
+                  <template x-for="side in ['home','away']" :key="side">
+                    <button type="button"
+                            @click="pickSlot(match.slot, match[side]?.team_id)"
+                            :disabled="!match[side] || readonly"
+                            :class="picks[match.slot] && match[side] && picks[match.slot]===match[side].team_id
+                                       ? 'bg-emerald-500 text-white border-emerald-500'
+                                       : 'bg-white hover:bg-slate-50 border-slate-300'"
+                            class="w-full text-left px-3 py-2 rounded border flex items-center justify-between">
+                      <span class="flex items-center gap-2">
+                        <span x-text="match[side]?.flag_emoji || ''"></span>
+                        <span x-text="match[side]?.name || '–'"></span>
+                      </span>
+                      <span class="text-xs opacity-70" x-text="match[side]?.group ? 'Groep '+match[side].group : ''"></span>
+                    </button>
+                  </template>
+                </div>
+              </div>
+            </template>
+          </div>
+        </template>
+        <template x-for="slot in slotsForStage('{{ ko }}')" :key="slot">
+          <input type="hidden" :name="'slot['+slot+']'" :value="picks[slot] || ''">
+        </template>
+      </section>
+    {% endfor %}
+
+    {# ---------------- Topscorer ---------------- #}
+    <section x-show="step==='topscorer'" class="space-y-4">
+      <div class="bg-white rounded-xl border border-slate-200 p-5 max-w-xl">
+        <h2 class="font-semibold mb-2">Wereldkampioen</h2>
+        <select x-model="winnerTeamId" :disabled="readonly"
+                class="w-full rounded border-slate-300">
+          <option value="">– kies een team –</option>
+          {% for t in teams %}
+            <option value="{{ t.id }}">{{ t.flag_emoji }} {{ t.name }} {% if t.group_code %}(Groep {{ t.group_code }}){% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 p-5 max-w-xl">
+        <h2 class="font-semibold mb-2">Topscorer van het toernooi</h2>
+        <input type="text" x-model="topscorerSearch" placeholder="Zoek speler op naam of team..."
+               :disabled="readonly"
+               class="w-full rounded border-slate-300 mb-2">
+        <select x-model="topscorerPlayerId" :disabled="readonly"
+                class="w-full rounded border-slate-300" size="8">
+          <template x-for="p in filteredPlayers" :key="p.id">
+            <option :value="p.id" x-text="p.name + ' — ' + (p.team_name || 'onbekend team')"></option>
+          </template>
+        </select>
+        <p class="text-xs text-slate-500 mt-2">
+          10 punten voor de juiste topscorer + 3 punten per goal die jouw topscorer maakt.
+        </p>
+      </div>
+    </section>
+
+    {# ---------------- Summary / submit ---------------- #}
+    <section x-show="step==='summary'" class="space-y-4">
+      <div class="bg-white rounded-xl border border-slate-200 p-5">
+        <h2 class="font-semibold mb-3">Samenvatting</h2>
+        <ul class="text-sm space-y-1 text-slate-700">
+          <li>Groepswedstrijden ingevuld: <strong x-text="groupCompletion().filled + ' / ' + groupCompletion().total"></strong></li>
+          <li>R32 picks: <strong x-text="countPicks('R32') + ' / 16'"></strong></li>
+          <li>R16 picks: <strong x-text="countPicks('R16') + ' / 8'"></strong></li>
+          <li>QF picks: <strong x-text="countPicks('QF') + ' / 4'"></strong></li>
+          <li>SF picks: <strong x-text="countPicks('SF') + ' / 2'"></strong></li>
+          <li>Finale pick: <strong x-text="countPicks('F') + ' / 1'"></strong></li>
+          <li>Wereldkampioen: <strong x-text="winnerLabel || '— niet gekozen —'"></strong></li>
+          <li>Topscorer: <strong x-text="topscorerLabel || '— niet gekozen —'"></strong></li>
+        </ul>
+      </div>
+
+      <div class="bg-amber-50 border border-amber-200 text-amber-900 rounded p-4 text-sm">
+        <strong>Let op:</strong> na verzenden kan je je voorspelling niet meer wijzigen. Je ontvangt een PDF
+        per mail en moet <strong>{{ settings.payment_amount }} {{ settings.payment_currency }}</strong>
+        aan <strong>{{ settings.payment_recipient }}</strong> betalen om mee te dingen.
+      </div>
+
+      {% if not readonly %}
+        <div class="flex gap-2">
+          <button type="submit" class="px-4 py-2 rounded border border-slate-300 hover:bg-slate-50">Bewaren als concept</button>
+          <button type="submit" formaction="{{ url('/predictions/' ~ form.id ~ '/submit') }}"
+                  onclick="return confirm('Definitief verzenden? Dit kan niet ongedaan gemaakt worden.')"
+                  class="px-4 py-2 rounded bg-emerald-500 text-white hover:bg-emerald-600 font-medium">
+            Definitief verzenden
+          </button>
+        </div>
+      {% endif %}
+    </section>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    window.__players = {{ players|json_encode|raw }};
+    window.__teamsById = {{ teams_by_id|json_encode|raw }};
+    window.__initialGroupMatches = {
+      {% for code, list in matches_by_group %}
+        "{{ code }}": [
+          {% for m in list %}
+            { match_id: {{ m.id }}, home_team_id: {{ m.home_id ?: 'null' }}, away_team_id: {{ m.away_id ?: 'null' }},
+              home: {{ m.home_goals is not null ? m.home_goals : 'null' }},
+              away: {{ m.away_goals is not null ? m.away_goals : 'null' }} }{{ not loop.last ? ',' : '' }}
+          {% endfor %}
+        ]{{ not loop.last ? ',' : '' }}
+      {% endfor %}
+    };
+  </script>
+  <script src="{{ asset('js/prediction.js') }}"></script>
+{% endblock %}

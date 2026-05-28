@@ -1,0 +1,58 @@
+{% extends 'layout/base.twig' %}
+{% block title %}Dashboard · {{ app.name }}{% endblock %}
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+  <h1 class="text-2xl font-bold">Mijn voorspellingen</h1>
+  <a href="{{ url('/predictions/new') }}"
+     class="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">+ Nieuwe voorspelling</a>
+</div>
+
+{% if forms is empty %}
+  <div class="bg-white border border-dashed border-slate-300 rounded-xl p-10 text-center text-slate-500">
+    Nog geen voorspellingen. Maak je eerste aan!
+  </div>
+{% else %}
+  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    {% for f in forms %}
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="font-semibold">{{ f.label }}</div>
+            <div class="text-xs text-slate-500 mt-0.5">{{ f.created_at|date('d/m/Y H:i') }}</div>
+          </div>
+          {% if f.status == 'submitted' %}
+            <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">verzonden</span>
+          {% else %}
+            <span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">concept</span>
+          {% endif %}
+        </div>
+        <div class="text-sm text-slate-600 mt-3">
+          {% if f.paid_at %}
+            <span class="text-emerald-700">✓ Betaald op {{ f.paid_at|date('d/m/Y') }}</span>
+          {% elseif f.status == 'submitted' %}
+            <span class="text-amber-700">Wacht op betaling</span>
+          {% else %}
+            <span class="text-slate-500">Concept, nog niet verzonden</span>
+          {% endif %}
+        </div>
+        <div class="flex gap-2 mt-4 text-sm">
+          <a href="{{ url('/predictions/' ~ f.id) }}"
+             class="px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700">
+            {{ f.status == 'submitted' ? 'Bekijken' : 'Bewerken' }}
+          </a>
+          {% if f.status == 'submitted' %}
+            <a href="{{ url('/predictions/' ~ f.id ~ '/pdf') }}" target="_blank"
+               class="px-3 py-1.5 rounded border border-slate-300 hover:bg-slate-50">PDF</a>
+          {% else %}
+            <form method="post" action="{{ url('/predictions/' ~ f.id ~ '/delete') }}"
+                  onsubmit="return confirm('Concept verwijderen?')">
+              <input type="hidden" name="_csrf" value="{{ csrf }}">
+              <button class="px-3 py-1.5 rounded border border-rose-300 text-rose-600 hover:bg-rose-50">Verwijder</button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+{% endblock %}

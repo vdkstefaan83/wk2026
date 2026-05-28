@@ -1,0 +1,22 @@
+{% extends 'admin/_layout.twig' %}
+{% block admin_content %}
+<h1 class="text-2xl font-bold mb-4">Admin overzicht</h1>
+<div class="grid sm:grid-cols-4 gap-3">
+  <div class="bg-white rounded-xl border border-slate-200 p-4">
+    <div class="text-xs text-slate-500">Gebruikers</div>
+    <div class="text-2xl font-bold">{{ stats.users }}</div>
+  </div>
+  <div class="bg-white rounded-xl border border-slate-200 p-4">
+    <div class="text-xs text-slate-500">Formulieren</div>
+    <div class="text-2xl font-bold">{{ stats.forms_total }}</div>
+  </div>
+  <div class="bg-white rounded-xl border border-slate-200 p-4">
+    <div class="text-xs text-slate-500">Verzonden</div>
+    <div class="text-2xl font-bold">{{ stats.forms_submitted }}</div>
+  </div>
+  <div class="bg-white rounded-xl border border-slate-200 p-4">
+    <div class="text-xs text-slate-500">Betaald</div>
+    <div class="text-2xl font-bold">{{ stats.forms_paid }}</div>
+  </div>
+</div>
+{% endblock %}

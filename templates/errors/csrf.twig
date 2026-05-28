@@ -1,0 +1,8 @@
+{% extends 'layout/base.twig' %}
+{% block content %}
+<div class="text-center py-20">
+  <h1 class="text-3xl font-bold">Sessie verlopen</h1>
+  <p class="text-slate-600 mt-2">Probeer opnieuw — je sessie of CSRF-token is verlopen.</p>
+  <a href="{{ url('/') }}" class="inline-block mt-4 px-4 py-2 rounded bg-indigo-600 text-white">Terug naar home</a>
+</div>
+{% endblock %}

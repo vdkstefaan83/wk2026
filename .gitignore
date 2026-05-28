@@ -1,0 +1,15 @@
+/vendor/
+/node_modules/
+/.env
+/.env.local
+/.idea/
+/.vscode/
+*.log
+/storage/cache/*
+!/storage/cache/.gitkeep
+/storage/pdfs/*
+!/storage/pdfs/.gitkeep
+/storage/logs/*
+!/storage/logs/.gitkeep
+.DS_Store
+Thumbs.db

@@ -1,0 +1,34 @@
+{% extends 'layout/base.twig' %}
+{% block content %}
+<section class="text-center py-16">
+  <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight">Voorspel het WK 2026</h1>
+  <p class="mt-4 text-slate-600 max-w-2xl mx-auto">
+    48 landen, 12 groepen, één wereldkampioen. Vul je voorspelling in, zie de groepsstand live veranderen,
+    en strijd mee voor de top van de pool.
+  </p>
+  <div class="mt-8 flex justify-center gap-3">
+    <a href="{{ url('/login') }}" class="px-5 py-2.5 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700">Inloggen</a>
+    {% if settings.auth_provider == 'db' and settings.registration_open == '1' %}
+      <a href="{{ url('/register') }}" class="px-5 py-2.5 rounded-lg bg-emerald-500 text-white font-medium hover:bg-emerald-600">Account aanmaken</a>
+    {% endif %}
+  </div>
+</section>
+
+<section class="grid sm:grid-cols-3 gap-4 mt-6">
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+    <div class="text-3xl">🏆</div>
+    <h3 class="font-semibold mt-2">Punten per ronde</h3>
+    <p class="text-sm text-slate-600 mt-1">1/2 ptn per groepswedstrijd, oplopend tot 50 ptn per finalist en 100 voor de wereldkampioen.</p>
+  </div>
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+    <div class="text-3xl">📈</div>
+    <h3 class="font-semibold mt-2">Live ranking</h3>
+    <p class="text-sm text-slate-600 mt-1">Terwijl je scores invult zie je de groepsstand updaten volgens de FIFA-tiebreakers.</p>
+  </div>
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+    <div class="text-3xl">🥅</div>
+    <h3 class="font-semibold mt-2">Knock-out</h3>
+    <p class="text-sm text-slate-600 mt-1">Na de groepen verschijnt automatisch je 16de finale incl. beste derdes.</p>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends 'admin/_layout.twig' %}
+{% block admin_content %}
+<h1 class="text-2xl font-bold mb-3">Wedstrijden</h1>
+
+<div class="flex gap-1 mb-4 text-sm">
+  {% for s in ['group','r32','r16','qf','sf','final'] %}
+    <a href="{{ url('/admin/matches?stage=' ~ s) }}"
+       class="px-3 py-1.5 rounded border {{ stage == s ? 'bg-indigo-600 text-white border-indigo-600' : 'border-slate-300 hover:bg-slate-50' }}">
+      {{ {'group':'Groepsfase','r32':'1/16','r16':'1/8','qf':'1/4','sf':'1/2','final':'Finale'}[s] }}
+    </a>
+  {% endfor %}
+</div>
+
+<form method="post" action="{{ url('/admin/matches') }}">
+  <input type="hidden" name="_csrf" value="{{ csrf }}">
+  <input type="hidden" name="stage" value="{{ stage }}">
+  <div class="bg-white rounded-xl border border-slate-200 overflow-x-auto">
+    <table class="w-full text-sm min-w-[800px]">
+      <thead class="bg-slate-50">
+        <tr>
+          <th class="p-2 text-left">#</th>
+          <th class="p-2 text-left">Groep</th>
+          <th class="p-2 text-left">Thuis</th>
+          <th class="p-2 text-left">Uit</th>
+          <th class="p-2 text-left">Aftrap</th>
+          <th class="p-2 text-left">Locatie</th>
+          <th class="p-2 text-center" colspan="2">Werkelijke score</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in matches %}
+          <tr class="border-t border-slate-100">
+            <td class="p-2">{{ m.match_number }}</td>
+            <td class="p-2">{{ m.group_code ?? '' }}</td>
+            <td class="p-2">
+              <select name="match[{{ m.id }}][home_team_id]" class="w-44 rounded border-slate-300">
+                <option value="">—</option>
+                {% for t in teams %}<option value="{{ t.id }}" {{ m.home_team_id == t.id ? 'selected' : '' }}>{{ t.name }}</option>{% endfor %}
+              </select>
+            </td>
+            <td class="p-2">
+              <select name="match[{{ m.id }}][away_team_id]" class="w-44 rounded border-slate-300">
+                <option value="">—</option>
+                {% for t in teams %}<option value="{{ t.id }}" {{ m.away_team_id == t.id ? 'selected' : '' }}>{{ t.name }}</option>{% endfor %}
+              </select>
+            </td>
+            <td class="p-2"><input name="match[{{ m.id }}][kickoff_at]" value="{{ m.kickoff_at }}" placeholder="YYYY-MM-DD HH:MM" class="w-40 rounded border-slate-300"></td>
+            <td class="p-2"><input name="match[{{ m.id }}][venue]" value="{{ m.venue }}" class="w-40 rounded border-slate-300"></td>
+            <td class="p-2"><input type="number" min="0" max="20" name="match[{{ m.id }}][actual_home_goals]" value="{{ m.actual_home_goals }}" class="w-16 rounded border-slate-300 text-center"></td>
+            <td class="p-2"><input type="number" min="0" max="20" name="match[{{ m.id }}][actual_away_goals]" value="{{ m.actual_away_goals }}" class="w-16 rounded border-slate-300 text-center"></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <button class="mt-4 px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700">Bewaren</button>
+</form>
+{% endblock %}

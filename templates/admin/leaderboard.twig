@@ -1,0 +1,28 @@
+{% extends 'admin/_layout.twig' %}
+{% block admin_content %}
+<div class="flex items-center justify-between mb-4">
+  <h1 class="text-2xl font-bold">Leaderboard</h1>
+  <form method="post" action="{{ url('/admin/recompute') }}">
+    <input type="hidden" name="_csrf" value="{{ csrf }}">
+    <button class="px-3 py-1.5 rounded border border-slate-300 hover:bg-slate-50 text-sm">↻ Herberekenen</button>
+  </form>
+</div>
+<div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-slate-50">
+      <tr><th class="p-2 text-left w-12">#</th><th class="p-2 text-left">Gebruiker</th><th class="p-2 text-left">Formulier</th><th class="p-2 text-right">Score</th><th class="p-2 text-left">Betaald</th></tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+        <tr class="border-t border-slate-100">
+          <td class="p-2 text-slate-500">{{ loop.index }}</td>
+          <td class="p-2">{{ r.user_name }}<div class="text-xs text-slate-500">{{ r.user_email }}</div></td>
+          <td class="p-2">{{ r.label }}</td>
+          <td class="p-2 text-right font-bold">{{ r.score }}</td>
+          <td class="p-2">{{ r.paid_at ? '✓' : '—' }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

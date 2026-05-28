@@ -1,0 +1,61 @@
+{% extends 'admin/_layout.twig' %}
+{% block admin_content %}
+<h1 class="text-2xl font-bold mb-4">Instellingen</h1>
+<form method="post" action="{{ url('/admin/settings') }}" class="space-y-5 max-w-2xl bg-white rounded-xl border border-slate-200 p-5">
+  <input type="hidden" name="_csrf" value="{{ csrf }}">
+
+  <fieldset>
+    <legend class="font-semibold mb-2">Authenticatie</legend>
+    <label class="text-sm font-medium block">Login-methode</label>
+    <select name="auth_provider" class="mt-1 w-full rounded border-slate-300">
+      <option value="db" {{ settings.auth_provider == 'db' ? 'selected' : '' }}>Database (e-mail + wachtwoord)</option>
+      <option value="keycloak" {{ settings.auth_provider == 'keycloak' ? 'selected' : '' }}>Keycloak SSO</option>
+    </select>
+    <label class="text-sm font-medium block mt-3">
+      <input type="checkbox" name="registration_open" value="1" {{ settings.registration_open == '1' ? 'checked' : '' }}> Registraties toestaan
+    </label>
+  </fieldset>
+
+  <fieldset>
+    <legend class="font-semibold mb-2">Pool</legend>
+    <label class="text-sm font-medium block">
+      <input type="checkbox" name="predictions_open" value="1" {{ settings.predictions_open == '1' ? 'checked' : '' }}> Voorspellingen open
+    </label>
+    <label class="text-sm font-medium block mt-3">Deadline (formaat YYYY-MM-DD HH:MM:SS)</label>
+    <input name="predictions_deadline" value="{{ settings.predictions_deadline }}"
+           class="mt-1 w-full rounded border-slate-300">
+  </fieldset>
+
+  <fieldset>
+    <legend class="font-semibold mb-2">Betaling</legend>
+    <div class="grid sm:grid-cols-2 gap-3">
+      <div>
+        <label class="text-sm font-medium">Bedrag</label>
+        <input name="payment_amount" value="{{ settings.payment_amount }}" class="mt-1 w-full rounded border-slate-300">
+      </div>
+      <div>
+        <label class="text-sm font-medium">Munteenheid</label>
+        <input name="payment_currency" value="{{ settings.payment_currency }}" class="mt-1 w-full rounded border-slate-300">
+      </div>
+      <div>
+        <label class="text-sm font-medium">Te betalen aan</label>
+        <input name="payment_recipient" value="{{ settings.payment_recipient }}" class="mt-1 w-full rounded border-slate-300">
+      </div>
+      <div>
+        <label class="text-sm font-medium">IBAN (optioneel)</label>
+        <input name="payment_iban" value="{{ settings.payment_iban }}" class="mt-1 w-full rounded border-slate-300">
+      </div>
+    </div>
+    <label class="text-sm font-medium block mt-3">Instructies (verschijnt in mail + na verzenden)</label>
+    <textarea name="payment_instructions" rows="3" class="mt-1 w-full rounded border-slate-300">{{ settings.payment_instructions }}</textarea>
+  </fieldset>
+
+  <fieldset>
+    <legend class="font-semibold mb-2">Mail</legend>
+    <label class="text-sm font-medium block">Admin ontvangstadres</label>
+    <input name="admin_mail_to" value="{{ settings.admin_mail_to }}" class="mt-1 w-full rounded border-slate-300">
+  </fieldset>
+
+  <button class="px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700">Bewaren</button>
+</form>
+{% endblock %}

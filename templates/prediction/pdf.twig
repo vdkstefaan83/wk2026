@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <title>WK2026 voorspelling – {{ form.label }}</title>
+  <style>
+    body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #1e293b; }
+    h1 { font-size: 18px; margin: 0 0 4px; }
+    h2 { font-size: 14px; margin: 14px 0 6px; padding-bottom:2px; border-bottom:1px solid #cbd5e1; }
+    h3 { font-size: 12px; margin: 10px 0 4px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 3px 4px; border-bottom: 1px solid #e5e7eb; }
+    th { background: #f1f5f9; text-align: left; }
+    .small { color:#64748b; font-size: 10px; }
+    .group-box { width: 49%; display: inline-block; vertical-align: top; padding: 4px 6px; box-sizing: border-box; }
+    .pair { padding: 2px 0; border-bottom: 1px dashed #e2e8f0; }
+    .badge { background:#1e293b; color:#fff; padding:1px 6px; border-radius: 8px; font-size: 10px; }
+  </style>
+</head>
+<body>
+  <h1>WK2026 voorspelling – {{ form.label }}</h1>
+  <div class="small">
+    Ingediend door {{ form.user_name }} ({{ form.user_email }}) op {{ form.submitted_at|date('d/m/Y H:i') }} · gegenereerd op {{ now }}
+  </div>
+
+  <h2>Eindkeuzes</h2>
+  <table>
+    <tr><th style="width:30%">Wereldkampioen</th><td>{{ winner ? winner.flag_emoji ~ ' ' ~ winner.name : '—' }}</td></tr>
+    <tr><th>Topscorer</th><td>{{ topscorer ? topscorer.name ~ ' (' ~ (topscorer.team_name ?? '?') ~ ')' : '—' }}</td></tr>
+    <tr><th>Verwachte betaling</th><td>{{ settings.payment_amount }} {{ settings.payment_currency }} aan {{ settings.payment_recipient }}</td></tr>
+  </table>
+
+  <h2>Groepsfase</h2>
+  {% for code, rows in resolved.standings %}
+    <div class="group-box">
+      <h3>Groep {{ code }}</h3>
+      <table>
+        <thead><tr><th>#</th><th>Team</th><th>G</th><th>+/-</th><th>Pt</th></tr></thead>
+        <tbody>
+        {% for r in rows %}
+          <tr>
+            <td>{{ r.position }}</td>
+            <td>{{ r.name }}</td>
+            <td>{{ r.played }}</td>
+            <td>{{ r.gd >= 0 ? '+' ~ r.gd : r.gd }}</td>
+            <td><strong>{{ r.points }}</strong></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endfor %}
+
+  <h2>Knock-out picks</h2>
+  {% for label, stage in {'1/16 finale': 'r32', '1/8 finale':'r16', '1/4 finale':'qf', '1/2 finale':'sf', 'Finale':'final'} %}
+    <h3>{{ label }}</h3>
+    {% set anyPick = false %}
+    {% for slot, teamId in resolved.picks %}
+      {% if (stage == 'r32' and slot starts with 'R32') or (stage == 'r16' and slot starts with 'R16')
+           or (stage == 'qf' and slot starts with 'QF') or (stage == 'sf' and slot starts with 'SF')
+           or (stage == 'final' and slot starts with 'F') %}
+        {% set anyPick = true %}
+        <div class="pair">
+          <span class="badge">{{ slot }}</span>
+          {% set t = teams_by_id[teamId] ?? null %}
+          {{ t ? (t.flag_emoji ~ ' ' ~ t.name) : '—' }}
+        </div>
+      {% endif %}
+    {% endfor %}
+    {% if not anyPick %}<div class="small">Geen keuzes ingevuld.</div>{% endif %}
+  {% endfor %}
+</body>
+</html>

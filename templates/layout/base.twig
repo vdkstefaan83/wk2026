@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="nl" class="h-full bg-slate-50">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ app.name }}{% endblock %}</title>
+  <meta name="csrf-token" content="{{ csrf }}">
+  <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.5/dist/cdn.min.js"></script>
+  <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body class="h-full flex flex-col text-slate-800">
+  <header class="bg-gradient-to-r from-indigo-600 to-emerald-500 text-white shadow">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="{{ url('/') }}" class="font-bold text-lg tracking-tight flex items-center gap-2">
+        <span class="text-2xl">⚽</span>
+        <span>{{ app.name }}</span>
+      </a>
+      <nav class="flex items-center gap-4 text-sm">
+        {% if user %}
+          <a href="{{ url('/dashboard') }}" class="hover:underline">Dashboard</a>
+          <a href="{{ url('/predictions/new') }}" class="hover:underline">Nieuwe voorspelling</a>
+          {% if user.is_admin %}
+            <a href="{{ url('/admin') }}" class="hover:underline">Admin</a>
+          {% endif %}
+          <span class="opacity-80 hidden sm:inline">{{ user.name }}</span>
+          <a href="{{ url('/logout') }}" class="bg-white/20 hover:bg-white/30 px-3 py-1 rounded">Uitloggen</a>
+        {% else %}
+          <a href="{{ url('/login') }}" class="hover:underline">Inloggen</a>
+          {% if settings.auth_provider == 'db' and settings.registration_open == '1' %}
+            <a href="{{ url('/register') }}" class="bg-white/20 hover:bg-white/30 px-3 py-1 rounded">Account aanmaken</a>
+          {% endif %}
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-6xl mx-auto w-full px-4 py-6">
+    {% include 'partials/flash.twig' %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="bg-white border-t border-slate-200 mt-auto">
+    <div class="max-w-6xl mx-auto px-4 py-3 text-xs text-slate-500 flex flex-wrap items-center justify-between gap-2">
+      <span>© {{ "now"|date("Y") }} PSB · WK2026 Pool</span>
+      <span>{{ settings.predictions_deadline ? 'Deadline: ' ~ settings.predictions_deadline : '' }}</span>
+    </div>
+  </footer>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

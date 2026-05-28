@@ -1,0 +1,28 @@
+{% extends 'layout/base.twig' %}
+
+{% block content %}
+<div class="flex gap-6">
+  <aside class="w-56 shrink-0">
+    <h2 class="text-xs uppercase tracking-wide text-slate-500 mb-2">Admin</h2>
+    <nav class="space-y-1 text-sm">
+      {% set links = [
+        {url:'/admin',                 label:'Overzicht'},
+        {url:'/admin/settings',        label:'Instellingen'},
+        {url:'/admin/email-templates', label:'E-mail templates'},
+        {url:'/admin/teams',           label:'Teams & groepen'},
+        {url:'/admin/players',         label:'Spelers (topscorer)'},
+        {url:'/admin/matches',         label:'Wedstrijden'},
+        {url:'/admin/forms',           label:'Formulieren / betalingen'},
+        {url:'/admin/leaderboard',     label:'Leaderboard'}
+      ] %}
+      {% for l in links %}
+        <a href="{{ url(l.url) }}"
+           class="block px-3 py-2 rounded hover:bg-slate-100 {{ app.request_uri == l.url ? 'bg-indigo-100 text-indigo-700 font-medium' : '' }}">{{ l.label }}</a>
+      {% endfor %}
+    </nav>
+  </aside>
+  <section class="flex-1 min-w-0">
+    {% block admin_content %}{% endblock %}
+  </section>
+</div>
+{% endblock %}
