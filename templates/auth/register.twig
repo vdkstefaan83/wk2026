@@ -1,34 +1,34 @@
 {% extends 'layout/base.twig' %}
-{% block title %}Registreren · {{ app.name }}{% endblock %}
+{% block title %}Sign up · {{ app.name }}{% endblock %}
 {% block content %}
 <div class="max-w-md mx-auto mt-10">
   <div class="card-thick p-8">
     <div class="banner banner-blue mb-6">
       <span class="text-2xl">🎉</span>
-      <span>Account aanmaken</span>
+      <span>Create account</span>
     </div>
 
     <form method="post" action="{{ url('/register') }}" class="space-y-5">
       <input type="hidden" name="_csrf" value="{{ csrf }}">
       <div>
-        <label class="field-label">👤 Naam</label>
-        <input name="name" type="text" required value="{{ old('name') }}" placeholder="Voornaam Achternaam">
+        <label class="field-label">👤 Name</label>
+        <input name="name" type="text" required value="{{ old('name') }}" placeholder="First and last name">
       </div>
       <div>
-        <label class="field-label">📧 E-mailadres</label>
-        <input name="email" type="email" required value="{{ old('email') }}" placeholder="jij@example.com">
+        <label class="field-label">📧 Email</label>
+        <input name="email" type="email" required value="{{ old('email') }}" placeholder="you@example.com">
       </div>
       <div>
-        <label class="field-label">🔑 Wachtwoord</label>
-        <input name="password" type="password" minlength="8" required placeholder="minstens 8 tekens">
-        <span class="field-hint">Kies een wachtwoord van minstens 8 tekens.</span>
+        <label class="field-label">🔑 Password</label>
+        <input name="password" type="password" minlength="8" required placeholder="at least 8 characters">
+        <span class="field-hint">Choose a password of at least 8 characters.</span>
       </div>
-      <button class="btn btn-primary w-full">Registreren →</button>
+      <button class="btn btn-primary w-full">Sign up →</button>
     </form>
 
     <p class="text-sm text-slate-600 mt-6 text-center">
-      Reeds een account?
-      <a href="{{ url('/login') }}" class="text-emerald-600 hover:text-emerald-700 font-bold">Inloggen</a>
+      Already have an account?
+      <a href="{{ url('/login') }}" class="text-emerald-600 hover:text-emerald-700 font-bold">Sign in</a>
     </p>
   </div>
 </div>

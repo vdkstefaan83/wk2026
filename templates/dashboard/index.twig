@@ -5,17 +5,17 @@
 <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
   <div>
     <p class="text-xs uppercase tracking-widest text-slate-500 font-bold">Dashboard</p>
-    <h1 class="font-display text-4xl font-extrabold mt-1 text-slate-900">Mijn voorspellingen</h1>
+    <h1 class="font-display text-4xl font-extrabold mt-1 text-slate-900">My predictions</h1>
   </div>
-  <a href="{{ url('/predictions/new') }}" class="btn btn-primary">+ Nieuwe voorspelling</a>
+  <a href="{{ url('/predictions/new') }}" class="btn btn-primary">+ New prediction</a>
 </div>
 
 {% if forms is empty %}
   <div class="card p-12 text-center">
     <div class="text-6xl mb-4">⚽</div>
-    <h2 class="font-display text-2xl font-extrabold text-slate-900">Nog geen voorspellingen</h2>
-    <p class="text-slate-600 mt-2 max-w-md mx-auto">Maak je eerste voorspelling aan en zie hoe ver je geraakt richting wereldkampioen.</p>
-    <a href="{{ url('/predictions/new') }}" class="btn btn-primary mt-6">Begin nu →</a>
+    <h2 class="font-display text-2xl font-extrabold text-slate-900">No predictions yet</h2>
+    <p class="text-slate-600 mt-2 max-w-md mx-auto">Create your first prediction and see how far you can take it toward becoming world champion.</p>
+    <a href="{{ url('/predictions/new') }}" class="btn btn-primary mt-6">Start now →</a>
   </div>
 {% else %}
   <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -23,17 +23,17 @@
       <div class="card card-hover overflow-hidden flex flex-col">
         <div class="{% if f.status == 'submitted' %}banner banner-green{% else %}banner banner-orange{% endif %} rounded-none rounded-t-[18px] px-5 py-3 text-sm">
           <span class="text-base">{% if f.status == 'submitted' %}✅{% else %}✏️{% endif %}</span>
-          <span>{% if f.status == 'submitted' %}VERZONDEN{% else %}CONCEPT{% endif %}</span>
+          <span>{% if f.status == 'submitted' %}SUBMITTED{% else %}DRAFT{% endif %}</span>
         </div>
         <div class="p-5 flex-1 flex flex-col">
           <div class="font-display font-extrabold text-xl text-slate-900 truncate">{{ f.label }}</div>
-          <div class="text-xs text-slate-500 mt-1">aangemaakt {{ f.created_at|date('d/m/Y H:i') }}</div>
+          <div class="text-xs text-slate-500 mt-1">created {{ f.created_at|date('Y-m-d H:i') }}</div>
 
           <div class="mt-4 flex items-center gap-2 flex-wrap">
             {% if f.paid_at %}
-              <span class="pill pill-green">💰 Betaald · {{ f.paid_at|date('d/m/Y') }}</span>
+              <span class="pill pill-green">💰 Paid · {{ f.paid_at|date('Y-m-d') }}</span>
             {% elseif f.status == 'submitted' %}
-              <span class="pill pill-orange">⏳ Wacht op betaling</span>
+              <span class="pill pill-orange">⏳ Awaiting payment</span>
             {% endif %}
             {% if f.status == 'submitted' and f.score is defined %}
               <span class="ml-auto stat-number text-3xl text-emerald-600">{{ f.score }}<span class="text-sm text-slate-400 font-bold ml-1">pt</span></span>
@@ -42,14 +42,14 @@
 
           <div class="flex gap-2 mt-5 pt-4 border-t border-slate-100">
             <a href="{{ url('/predictions/' ~ f.id) }}" class="btn btn-primary btn-sm flex-1">
-              {{ f.status == 'submitted' ? '👁 Bekijken' : '✏️ Bewerken' }}
+              {{ f.status == 'submitted' ? '👁 View' : '✏️ Edit' }}
             </a>
             {% if f.status == 'submitted' %}
               <a href="{{ url('/predictions/' ~ f.id ~ '/pdf') }}" target="_blank" class="btn btn-secondary btn-sm">📄 PDF</a>
             {% else %}
-              <form method="post" action="{{ url('/predictions/' ~ f.id ~ '/delete') }}" onsubmit="return confirm('Concept verwijderen?')">
+              <form method="post" action="{{ url('/predictions/' ~ f.id ~ '/delete') }}" onsubmit="return confirm('Delete draft?')">
                 <input type="hidden" name="_csrf" value="{{ csrf }}">
-                <button class="btn btn-danger btn-sm">Verwijder</button>
+                <button class="btn btn-danger btn-sm">Delete</button>
               </form>
             {% endif %}
           </div>

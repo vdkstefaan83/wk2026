@@ -2,19 +2,19 @@
 {% block admin_content %}
 <div class="flex items-center justify-between mb-6">
   <div>
-    <p class="text-xs uppercase tracking-wider text-slate-500">Admin</p>
-    <h1 class="font-display text-3xl font-extrabold mt-1">Leaderboard 🏆</h1>
+    <p class="text-xs uppercase tracking-widest text-slate-500 font-bold">Admin</p>
+    <h1 class="font-display text-4xl font-extrabold mt-1 text-slate-900">Leaderboard 🏆</h1>
   </div>
   <form method="post" action="{{ url('/admin/recompute') }}">
     <input type="hidden" name="_csrf" value="{{ csrf }}">
-    <button class="btn-ghost text-xs">↻ Herberekenen</button>
+    <button class="btn btn-secondary btn-sm">↻ Recalculate</button>
   </form>
 </div>
 
 {% if correct_tiebreak %}
   <p class="text-sm text-slate-600 mb-3 flex items-center gap-2">
-    <span class="pill pill-blue">🎲 Tiebreak: {{ correct_tiebreak }}</span>
-    <span>gelijke scores worden gescheiden op kleinste afwijking.</span>
+    <span class="pill pill-blue">🎲 Tiebreaker: {{ correct_tiebreak }}</span>
+    <span>tied scores are broken by smallest deviation.</span>
   </p>
 {% endif %}
 
@@ -23,11 +23,11 @@
     <thead class="bg-slate-50 border-b-2 border-slate-100">
       <tr class="text-xs uppercase tracking-wider text-slate-500 font-bold">
         <th class="p-3 text-left w-16">#</th>
-        <th class="p-3 text-left">Gebruiker</th>
-        <th class="p-3 text-left">Formulier</th>
+        <th class="p-3 text-left">User</th>
+        <th class="p-3 text-left">Form</th>
         <th class="p-3 text-right">Score</th>
-        <th class="p-3 text-right">Tiebreak</th>
-        <th class="p-3 text-left">Betaald</th>
+        <th class="p-3 text-right">Tiebreaker</th>
+        <th class="p-3 text-left">Paid</th>
       </tr>
     </thead>
     <tbody>

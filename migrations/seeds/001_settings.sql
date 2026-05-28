@@ -8,18 +8,18 @@ INSERT INTO settings (`key`, `value`) VALUES
 ('payment_currency',    'EUR'),
 ('payment_recipient',   'Jonah'),
 ('payment_iban',        ''),
-('payment_instructions','Gelieve het bedrag in cash aan Jonah te overhandigen.'),
+('payment_instructions','Please hand the payment to Jonah in cash.'),
 ('admin_mail_to',       'wk2026@psb.ugent.be'),
-('tiebreaker_question', 'Hoeveel doelpunten worden er in totaal gemaakt tijdens het toernooi?'),
+('tiebreaker_question', 'How many goals will be scored in the entire tournament?'),
 ('tiebreaker_correct_value','')
 ;
 
 -- Default email templates (Quill-editable)
 INSERT INTO email_templates (`key`, subject, body_html) VALUES
 ('submission_user',
- 'Jouw WK2026 voorspelling is ontvangen',
- '<p>Beste {{user_name}},</p><p>Bedankt voor het indienen van je WK2026 voorspelling <strong>"{{form_label}}"</strong>. In bijlage vind je een PDF met je definitieve voorspelling.</p><p><strong>Betaling:</strong> Gelieve <strong>{{payment_amount}} {{payment_currency}}</strong> aan <strong>{{payment_recipient}}</strong> te bezorgen om je deelname te bevestigen.</p><p>{{payment_instructions}}</p><p>Succes en moge de beste winnen!<br/>– WK2026 Pool</p>'),
+ 'Your World Cup 2026 prediction has been received',
+ '<p>Hi {{user_name}},</p><p>Thanks for submitting your World Cup 2026 prediction <strong>"{{form_label}}"</strong>. Attached you''ll find a PDF with your final picks.</p><p><strong>Payment:</strong> Please pay <strong>{{payment_amount}} {{payment_currency}}</strong> to <strong>{{payment_recipient}}</strong> to confirm your entry.</p><p>{{payment_instructions}}</p><p>Good luck — may the best predictor win!<br/>– World Cup 2026 Pool</p>'),
 ('submission_admin',
- 'Nieuwe WK2026 voorspelling: {{user_name}} – {{form_label}}',
- '<p>Een nieuwe voorspelling is ingediend.</p><ul><li><strong>Gebruiker:</strong> {{user_name}} ({{user_email}})</li><li><strong>Formulier:</strong> {{form_label}}</li><li><strong>Tijdstip:</strong> {{submitted_at}}</li></ul><p>De PDF zit in bijlage.</p>')
+ 'New World Cup 2026 prediction: {{user_name}} – {{form_label}}',
+ '<p>A new prediction has been submitted.</p><ul><li><strong>User:</strong> {{user_name}} ({{user_email}})</li><li><strong>Form:</strong> {{form_label}}</li><li><strong>Submitted at:</strong> {{submitted_at}}</li></ul><p>The PDF is attached.</p>')
 ;

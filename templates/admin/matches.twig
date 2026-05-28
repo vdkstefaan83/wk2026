@@ -2,17 +2,17 @@
 {% block admin_content %}
 <div class="flex flex-wrap items-end justify-between gap-3 mb-6">
   <div>
-    <p class="text-xs uppercase tracking-wider text-slate-500">Admin</p>
-    <h1 class="font-display text-3xl font-extrabold mt-1">Wedstrijden</h1>
+    <p class="text-xs uppercase tracking-widest text-slate-500 font-bold">Admin</p>
+    <h1 class="font-display text-4xl font-extrabold mt-1 text-slate-900">Matches</h1>
   </div>
   <form method="post" action="{{ url('/admin/sync-matches') }}" class="flex items-center gap-2 text-sm">
     <input type="hidden" name="_csrf" value="{{ csrf }}">
-    <label class="flex items-center gap-1.5 text-xs text-slate-300">
-      <input type="checkbox" name="topscorer" value="1" class="rounded border-white/20 bg-white/5 text-lime-500 focus:ring-lime-400"> + topscorer
+    <label class="flex items-center gap-1.5 text-xs text-slate-700">
+      <input type="checkbox" name="topscorer" value="1"> + top scorer
     </label>
-    <button class="btn-neon text-xs">↻ Sync via API-Football</button>
+    <button class="btn btn-primary btn-sm">↻ Sync via API-Football</button>
     {% if settings.last_sync_at %}
-      <span class="text-xs text-slate-500">laatste sync: {{ settings.last_sync_at }}</span>
+      <span class="text-xs text-slate-500">last sync: {{ settings.last_sync_at }}</span>
     {% endif %}
   </form>
 </div>
@@ -20,9 +20,9 @@
 <div class="flex flex-wrap gap-1 mb-4 text-sm">
   {% for s in ['group','r32','r16','qf','sf','final'] %}
     <a href="{{ url('/admin/matches?stage=' ~ s) }}"
-       class="px-3 py-1.5 rounded-lg border transition text-xs uppercase tracking-wider font-medium
-              {{ stage == s ? 'bg-gradient-to-r from-lime-400/20 to-emerald-500/10 border-lime-400/40 text-lime-200' : 'border-white/10 text-slate-400 hover:bg-white/5 hover:text-white' }}">
-      {{ {'group':'Groepsfase','r32':'1/16','r16':'1/8','qf':'1/4','sf':'1/2','final':'Finale'}[s] }}
+       class="px-3 py-1.5 rounded-lg border-2 transition text-xs uppercase tracking-wider font-bold
+              {{ stage == s ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white border-slate-200 text-slate-600 hover:border-emerald-300' }}">
+      {{ {'group':'Group stage','r32':'R32','r16':'R16','qf':'QF','sf':'SF','final':'Final'}[s] }}
     </a>
   {% endfor %}
 </div>
@@ -30,24 +30,24 @@
 <form method="post" action="{{ url('/admin/matches') }}">
   <input type="hidden" name="_csrf" value="{{ csrf }}">
   <input type="hidden" name="stage" value="{{ stage }}">
-  <div class="glass rounded-2xl overflow-x-auto">
+  <div class="card overflow-x-auto">
     <table class="w-full text-sm min-w-[800px]">
-      <thead class="bg-white/[0.03] border-b border-white/5">
-        <tr class="text-xs uppercase tracking-wider text-slate-400">
+      <thead class="bg-slate-50 border-b-2 border-slate-100">
+        <tr class="text-xs uppercase tracking-wider text-slate-500 font-bold">
           <th class="p-2 text-left">#</th>
-          <th class="p-2 text-left">Groep</th>
-          <th class="p-2 text-left">Thuis</th>
-          <th class="p-2 text-left">Uit</th>
-          <th class="p-2 text-left">Aftrap</th>
-          <th class="p-2 text-left">Locatie</th>
-          <th class="p-2 text-center" colspan="2">Werkelijke score</th>
+          <th class="p-2 text-left">Group</th>
+          <th class="p-2 text-left">Home</th>
+          <th class="p-2 text-left">Away</th>
+          <th class="p-2 text-left">Kick-off</th>
+          <th class="p-2 text-left">Venue</th>
+          <th class="p-2 text-center" colspan="2">Actual score</th>
         </tr>
       </thead>
       <tbody>
         {% for m in matches %}
-          <tr class="border-t border-white/5">
-            <td class="p-2 text-slate-400 font-mono">{{ m.match_number }}</td>
-            <td class="p-2 text-lime-300">{{ m.group_code ?? '' }}</td>
+          <tr class="border-t border-slate-100">
+            <td class="p-2 text-slate-500 font-mono">{{ m.match_number }}</td>
+            <td class="p-2 text-emerald-700">{{ m.group_code ?? '' }}</td>
             <td class="p-2">
               <select name="match[{{ m.id }}][home_team_id]" class="w-44 px-2 py-1.5">
                 <option value="">—</option>
@@ -69,6 +69,6 @@
       </tbody>
     </table>
   </div>
-  <button class="mt-4 btn-neon">💾 Bewaren</button>
+  <button class="mt-4 btn btn-primary">💾 Save</button>
 </form>
 {% endblock %}

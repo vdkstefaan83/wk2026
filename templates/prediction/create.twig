@@ -1,22 +1,22 @@
 {% extends 'layout/base.twig' %}
-{% block title %}Nieuwe voorspelling · {{ app.name }}{% endblock %}
+{% block title %}New prediction · {{ app.name }}{% endblock %}
 {% block content %}
 <div class="max-w-md mx-auto mt-10">
   <div class="card-thick p-8">
     <div class="banner banner-green mb-6">
       <span class="text-2xl">⚽</span>
-      <span>Nieuwe voorspelling</span>
+      <span>New prediction</span>
     </div>
-    <p class="text-slate-600">Geef je formulier een naam zodat je het kan onderscheiden van de rest.</p>
+    <p class="text-slate-600">Give your form a name so you can tell it apart from your other entries.</p>
 
     <form method="post" action="{{ url('/predictions/new') }}" class="space-y-5 mt-6">
       <input type="hidden" name="_csrf" value="{{ csrf }}">
       <div>
-        <label class="field-label">📝 Naam van het formulier</label>
-        <input name="label" type="text" required value="Mijn voorspelling" placeholder="Bv. Mijn hoofdformulier">
-        <span class="field-hint">Bijv. "Mijn hoofdformulier", "Voor mijn zoon", …</span>
+        <label class="field-label">📝 Form name</label>
+        <input name="label" type="text" required value="My prediction" placeholder="e.g. My main entry">
+        <span class="field-hint">e.g. "My main entry", "For my son", …</span>
       </div>
-      <button class="btn btn-primary w-full">Aanmaken →</button>
+      <button class="btn btn-primary w-full">Create →</button>
     </form>
   </div>
 </div>

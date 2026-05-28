@@ -29,14 +29,14 @@ if ($reset) {
 
 $squads = [
     // ----- Group A -----
-    'Zuid-Afrika' => [
+    'South Africa' => [
         'Ronwen Williams','Ricardo Goss','Sipho Chaine','Khuliso Mudau','Nkosinathi Sibisi','Ime Okon',
         'Khulumani Ndamane','Aubrey Modiba','Samukele Kabini','Thabang Matuludi','Olwethu Makhanya',
         'Kamogelo Sebelebele','Bradley Cross','Mbekezeli Mbokazi','Teboho Mokoena','Thalente Mbatha',
         'Sphephelo Sithole','Jayden Adams','Oswin Appollis','Iqraam Rayners','Tshepang Moremi',
         'Relebohile Mofokeng','Evidence Makgopa','Themba Zwane','Lyle Foster','Thapelo Maseko',
     ],
-    'Zuid-Korea' => [
+    'South Korea' => [
         'Seung-Gyu Kim','Bum-keun Song','Hyeon-woo Jo','Moon-hwan Kim','Min-jae Kim','Tae-hyeon Kim',
         'Jin-seob Park','Young-woo Seol','Jens Castrop','Ki-hyuk Lee','Tae-seok Lee','Han-beom Lee',
         'Yu-min Cho','Jin-gyu Kim','Jun-ho Bae','Seung-ho Paik','Hyun-jun Yang','Ji-sung Eom',
@@ -44,7 +44,7 @@ $squads = [
         'Hyeon-gyu Oh','Gue-sung Cho',
     ],
     // ----- Group B -----
-    'Bosnië en Herzegovina' => [
+    'Bosnia and Herzegovina' => [
         'Nikola Vasilj','Martin Zlomislić','Osman Hadžikić','Sead Kolašinac','Amar Dedić','Nihad Mujakić',
         'Nikola Katić','Tarik Muharemović','Stjepan Radeljić','Dennis Hadžikadunić','Nidal Čelik',
         'Amir Hadžiahmetović','Ivan Šunjić','Ivan Bašić','Dženis Burnić','Ermin Mahmić','Benjamin Tahirović',
@@ -52,13 +52,13 @@ $squads = [
         'Jovo Lukić','Samed Baždar','Haris Tabaković','Edin Džeko',
     ],
     // ----- Group C -----
-    'Brazilië' => [
+    'Brazil' => [
         'Alisson Becker','Ederson','Weverton','Alex Sandro','Bremer','Danilo','Douglas Santos',
         'Gabriel Magalhães','Leo Pereira','Marquinhos','Roger Ibañez','Wesley','Bruno Guimarães',
         'Casemiro','Fabinho','Lucas Paqueta','Endrick','Gabriel Martinelli','Igor Thiago',
         'Luiz Henrique','Matheus Cunha','Neymar','Raphinha','Rayan','Vinicius Junior',
     ],
-    'Marokko' => [
+    'Morocco' => [
         'Mounir El Kajoui','Yassine Bounou','Ahmed Reda Tagnaouti','Achraf Hakimi','Nayef Aguerd',
         'Issa Diop','Anass Salah-Eddine','Chadi Riad','Redouane Halhal','Zakaria El Ouahdi',
         'Youssef Belammari','Noussair Mazraoui','Azzeddine Ounahi','Bilal El Khannouss','Ismael Saibari',
@@ -66,7 +66,7 @@ $squads = [
         'Abdessamad Ezzalzouli','Yassine Gessime','Chemsdine Talbi','Soufiane Rahimi','Ayoub El Kaabi',
         'Ayoube Amaimouni',
     ],
-    'Haïti' => [
+    'Haiti' => [
         'Johny Placide','Alexandre Pierre','Josué Duverger','Carlens Arcus','Wilguens Paugain',
         'Ricardo Adé','Jean Kévin Duverne','Hannes Delcroix','Keeto Thermoncy','Martin Expérience',
         'Duke Lacroix','Josué Casimir','Leverton Pierre','Dominique Simon','Woodensky Pierre',
@@ -74,14 +74,14 @@ $squads = [
         'Frantzdy Pierrot','Deedson Louicius','Ruben Providence','Yassin Fortuné','Wilson Isidor',
         'Lenny Joseph','Derrick Etienne jr.',
     ],
-    'Schotland' => [
+    'Scotland' => [
         'Craig Gordon','Angus Gunn','Liam Kelly','Grant Hanley','Jack Hendry','Aaron Hickey','Dom Hyam',
         'Scott McKenna','Nathan Patterson','Anthony Ralston','Andy Robertson','John Souttar','Kieran Tierney',
         'Ryan Christie','Finlay Curtis','Lewis Ferguson','Ben Gannon-Doak','Billy Gilmour','John McGinn',
         'Kenny McLean','Scott McTominay','Che Adams','Lyndon Dykes','George Hirst','Lawrence Shankland','Ross Stewart',
     ],
     // ----- Group D -----
-    'Verenigde Staten' => [
+    'United States' => [
         'Chris Brady','Matt Freese','Matt Turner','Max Arfsten','Sergiño Dest','Alex Freeman','Mark McKenzie',
         'Tim Ream','Chris Richards','Antonee Robinson','Miles Robinson','Joe Scally','Auston Trusty',
         'Tyler Adams','Sebastian Berhalter','Weston McKennie','Cristian Roldan','Malik Tillman',
@@ -89,7 +89,7 @@ $squads = [
         'Giovanni Reyna','Timothy Weah','Alejandro Zendejas',
     ],
     // ----- Group E -----
-    'Duitsland' => [
+    'Germany' => [
         'Manuel Neuer','Oliver Baumann','Alexander Nübel','Nico Schlotterbeck','Antonio Rüdiger','David Raum',
         'Jonathan Tah','Waldemar Anton','Nathaniel Brown','Malick Thiaw','Joshua Kimmich','Jamal Musiala',
         'Pascal Gross','Leon Goretzka','Florian Wirtz','Aleksander Pavlovic','Felix Nmecha','Angelo Stiller',
@@ -103,7 +103,7 @@ $squads = [
         'Godfried Roemeratoe','Jeremy Antonisse','Tahith Chong','Kenji Gorré','Sontje Hansen',
         'Gervane Kastaneer','Brandley Kuwas','Jürgen Locadia','Jearl Margaritha',
     ],
-    'Ivoorkust' => [
+    'Ivory Coast' => [
         'Yahia Fofana','Mohamed Koné','Alban Lafont','Ousmane Diomandé','Ghislain Konan','Odilon Kossounou',
         'Guéla Doué','Emmanuel Agbadou','Evan Ndicka','Clement Akpa','Wilfried Singo','Jean Michaël Seri',
         'Seko Fofana','Franck Kessié','Ibrahim Sangaré','Christ Inao Oulaï','Parfait Guiagon',
@@ -111,7 +111,7 @@ $squads = [
         'Yan Diomande','Bazoumana Toure','Elye Wahi',
     ],
     // ----- Group F -----
-    'Nederland' => [
+    'Netherlands' => [
         'Bart Verbruggen','Robin Roefs','Mark Flekken','Denzel Dumfries','Jurrien Timber','Virgil van Dijk',
         'Micky van de Ven','Nathan Aké','Jorrel Hato','Jan Paul van Hecke','Mats Wieffer','Ryan Gravenberch',
         'Frenkie de Jong','Tijjani Reijnders','Teun Koopmeiners','Marten de Roon','Guus Til',
@@ -125,14 +125,14 @@ $squads = [
         'Kaishu Sano','Yuito Suzuki','Kōki Ogawa','Daizen Maeda','Ayase Ueda','Kento Shiogai',
         'Keisuke Gotō','Keito Nakamura','Takefusa Kubo',
     ],
-    'Zweden' => [
+    'Sweden' => [
         'Kristoffer Nordfeldt','Viktor Johansson','Jacob Widell Zetterström','Daniel Svensson',
         'Victor Lindelöf','Isak Hien','Carl Starfelt','Elliot Stroud','Gustaf Lagerbielke',
         'Gabriel Gudmundsson','Emil Holm','Hjalmar Ekdal','Eric Smith','Yasin Ayari','Lucas Bergvall',
         'Jesper Karlström','Mattias Svanberg','Besfort Zeneli','Taha Ali','Anthony Elanga','Viktor Gyökeres',
         'Gustaf Nilsson','Benjamin Nygren','Alexander Isak','Alexander Bernhardsson','Ken Sema',
     ],
-    'Tunesië' => [
+    'Tunisia' => [
         'Aymen Dahmen','Sabri Ben Hassen','Abdelmouhib Chamakh','Yan Valéry','Moutaz Neffati','Dylan Bronn',
         'Raed Chikhaoui','Montassar Talbi','Adem Arous','Omar Rekik','Ali Abdi','Mohamed Ben Hmida',
         'Ellyes Skhiri','Anis Ben Slimane','Rani Khedira','Mortada Ben Ouanes','Ismaël Gharbi',
@@ -140,34 +140,34 @@ $squads = [
         'Sebastien Tounekti','Hazem Mastouri','Firas Chawat','Rayan Elloumi',
     ],
     // ----- Group G -----
-    'België' => [
+    'Belgium' => [
         'Thibaut Courtois','Senne Lammens','Mike Penders','Arthur Theate','Brandon Mechele','Nathan Ngoy',
         'Koni De Winter','Zeno Debast','Maxim De Cuyper','Joaquin Seys','Thomas Meunier','Timothy Castagne',
         'Nicolas Raskin','Axel Witsel','Hans Vanaken','Kevin De Bruyne','Youri Tielemans','Amadou Onana',
         'Jeremy Doku','Alexis Saelemaekers','Matías Fernández Pardo','Diego Moreira','Romelu Lukaku',
         'Leandro Trossard','Charles De Ketelaere','Dodi Lukebakio',
     ],
-    'Egypte' => [
+    'Egypt' => [
         'Mohamed Elshenawy','Mostafa Shobeir','El-Mahdy Soliman','Mohamed Alaa','Mohamed Hany','Ramy Rabia',
         'Yasser Ibrahim','Tarek Alaa','Mohamed Abdelmonem','Karim Hafez','Hossam Abdelmeguid','Ahmed Fatouh',
         'Marwan Attia','Hamdy Fathy','Mohanad Lasheen','Mahmoud Saber','Emam Ashour','Ahmed Sayed Zizo',
         'Ibrahim Adel','Mostafa Ziko','Nabil Emad Donga','Omar Marmoush','Mahmoud Trézéguet','Mohamed Salah',
         'Hamza Abdelkarim','Aqtay Abdallah','Haissem Hassen',
     ],
-    'Nieuw-Zeeland' => [
+    'New Zealand' => [
         'Max Crocombe','Alex Paulsen','Michael Woud','Tim Payne','Francis De Vries','Tyler Bindon',
         'Michael Boxall','Liberato Cacace','Nando Pijnaker','Finn Surman','Callan Elliot','Tommy Smith',
         'Joe Bell','Matt Garbett','Marko Stamenic','Sarpreet Singh','Alex Rufer','Ryan Thomas','Chris Wood',
         'Eli Just','Kosta Barbarouses','Ben Waine','Ben Old','Callum McCowatt','Jesse Randall','Lachlan Bayliss',
     ],
     // ----- Group H -----
-    'Spanje' => [
+    'Spain' => [
         'Unai Simón','David Raya','Joan Garcia','Marc Cucurella','Alejandro Grimaldo','Pau Cubarsí',
         'Aymeric Laporte','Marc Pubill','Eric Garcia','Marcos Llorente','Pedro Porro','Pedri','Fabián Ruiz',
         'Martín Zubimendi','Gavi','Rodri','Álex Baena','Mikel Merino','Mikel Oyarzabal','Dani Olmo',
         'Nico Williams','Yeremy Pino','Ferran Torres','Borja Iglesias','Victor Munoz','Lamine Yamal',
     ],
-    'Kaapverdië' => [
+    'Cape Verde' => [
         'Carlos dos Santos','Marcio Rosa','Vozinha','Sidny Cabral','Diney Borges','Logan Costa',
         'Roberto Lopes','Steven Moreira','Wagner Pina','Kelvin Pires','Stopira','Telmo Arcanjo',
         'Deroy Duarte','Laros Duarte','Joao Paulo Fernandes','Jamiro Monteiro','Kevin Pina','Yannick Semedo',
@@ -175,7 +175,7 @@ $squads = [
         'Willy Semedo','Helio Varela',
     ],
     // ----- Group I -----
-    'Frankrijk' => [
+    'France' => [
         'Mike Maignan','Robin Risser Birckel','Brice Samba','Lucas Digne','Malo Gusto','Lucas Hernandez',
         'Théo Hernandez','Ibrahima Konaté','Jules Koundé','Maxence Lacroix','William Saliba','Dayot Upamecano',
         'N\'Golo Kanté','Manu Koné','Adrien Rabiot','Aurélien Tchouaméni','Warren Zaïre-Emery',
@@ -189,7 +189,7 @@ $squads = [
         'Pathé Ciss','Pape Matar Sarr','Bara Sapoko Ndiaye','Sadio Mané','Ismaïla Sarr','Iliman Ndiaye',
         'Assane Diao','Ibrahim Mbaye','Nicolas Jackson','Bamba Dieng','Cherif Ndiaye',
     ],
-    'Noorwegen' => [
+    'Norway' => [
         'Orjan Haskjold Nyland','Egil Selvik','Sander Tangvik','Julian Ryerson','Marcus Holmgren Pedersen',
         'David Moller Wolfe','Fredrik Bjorkan','Kristoffer Ajer','Torbjorn Heggem','Leo Skiri Ostigard',
         'Sondre Langas','Henrik Falchener','Martin Odegaard','Sander Berge','Fredrik Aursnes','Patrick Berg',
@@ -197,7 +197,7 @@ $squads = [
         'Andreas Schjelderup','Jens Petter Hauge','Erling Haaland','Alexander Sørloth','Jørgen Strand Larsen',
     ],
     // ----- Group J -----
-    'Oostenrijk' => [
+    'Austria' => [
         'Patrick Pentz','Alexander Schlager','Florian Wiegele','David Affengruber','David Alaba','Kevin Danso',
         'Marco Friedl','Philipp Lienhart','Phillipp Mwene','Stefan Posch','Alexander Prass','Michael Svoboda',
         'Christoph Baumgartner','Carney Chukwuemeka','Florian Grillitsch','Konrad Laimer','Marcel Sabitzer',
@@ -227,13 +227,13 @@ $squads = [
         'Luis Díaz','Luis Suárez','Carlos Andrés Gómez','Jhon Córdoba',
     ],
     // ----- Group L -----
-    'Engeland' => [
+    'England' => [
         'Jordan Pickford','Dean Henderson','James Trafford','Ezri Konsa','Jarell Quansah','Tino Livramento',
         'Dan Burn','Marc Guéhi','John Stones','Djed Spence','Nico O\'Reilly','Reece James','Kobbie Mainoo',
         'Elliot Anderson','Declan Rice','Jude Bellingham','Jordan Henderson','Eberechi Eze','Morgan Rogers',
         'Bukayo Saka','Noni Madueke','Anthony Gordon','Marcus Rashford','Harry Kane','Ivan Toney','Ollie Watkins',
     ],
-    'Kroatië' => [
+    'Croatia' => [
         'Dominik Livaković','Dominik Kotarski','Ivor Pandur','Joško Gvardiol','Duje Ćaleta-Car','Josip Šutalo',
         'Josip Stanišić','Marin Pongračić','Martin Erlić','Luka Vušković','Luka Modrić','Mateo Kovačić',
         'Mario Pašalić','Nikola Vlašić','Luka Sučić','Martin Baturina','Kristijan Jakić','Petar Sučić',
@@ -269,10 +269,10 @@ foreach ($squads as $teamName => $players) {
     }
 }
 
-echo "✓ {$inserted} spelers toegevoegd, {$skipped} bestonden al.\n";
+echo "✓ {$inserted} players added, {$skipped} already existed.\n";
 if ($missingTeams) {
-    echo "⚠ Teams niet gevonden (controleer namen in /admin/teams):\n  - " . implode("\n  - ", $missingTeams) . "\n";
+    echo "⚠ Teams not found (check the names in /admin/teams):\n  - " . implode("\n  - ", $missingTeams) . "\n";
 }
-echo "ℹ Selecties van Tsjechië, Mexico, Canada, Qatar, Paraguay, Australië, Turkije, Ecuador, Iran,\n";
-echo "  Saoedi-Arabië, Uruguay, Irak, Argentinië, Algerije, Jordanië, Oezbekistan, Ghana\n";
-echo "  zijn nog niet bekend bij ESPN — vul ze later aan via /admin/players.\n";
+echo "ℹ Squads for Czech Republic, Mexico, Canada, Qatar, Paraguay, Australia, Turkey, Ecuador,\n";
+echo "  Iran, Saudi Arabia, Uruguay, Iraq, Argentina, Algeria, Jordan, Uzbekistan, Ghana\n";
+echo "  were not yet published by ESPN — add them later via /admin/players.\n";

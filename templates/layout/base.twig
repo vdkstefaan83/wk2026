@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="nl" class="h-full">
+<html lang="en" class="h-full">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -18,7 +18,7 @@
       <a href="{{ url('/') }}" class="flex items-center gap-3 group">
         <span class="relative inline-flex items-center justify-center w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white text-xl shadow-lg shadow-emerald-200 group-hover:scale-105 transition">⚽</span>
         <span class="font-display font-extrabold text-xl tracking-tight">
-          <span class="text-slate-900">WK</span>
+          <span class="text-slate-900">World Cup</span>
           <span class="text-emerald-600">2026</span>
           <span class="text-slate-400 font-bold text-sm hidden sm:inline ml-1.5">· pool</span>
         </span>
@@ -30,16 +30,16 @@
           {% if user.is_admin %}
             <a href="{{ url('/admin') }}" class="hidden sm:inline px-3 py-2 rounded-full text-slate-700 hover:bg-slate-100 font-semibold">⚙️ Admin</a>
           {% endif %}
-          <a href="{{ url('/predictions/new') }}" class="btn btn-primary btn-sm">+ Voorspelling</a>
+          <a href="{{ url('/predictions/new') }}" class="btn btn-primary btn-sm">+ Prediction</a>
           <span class="hidden md:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-800 border-2 border-emerald-100 text-xs font-semibold">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
             {{ user.name }}
           </span>
-          <a href="{{ url('/logout') }}" class="btn btn-secondary btn-sm">Uitloggen</a>
+          <a href="{{ url('/logout') }}" class="btn btn-secondary btn-sm">Log out</a>
         {% else %}
-          <a href="{{ url('/login') }}" class="btn btn-secondary btn-sm">Inloggen</a>
+          <a href="{{ url('/login') }}" class="btn btn-secondary btn-sm">Sign in</a>
           {% if settings.auth_provider == 'db' and settings.registration_open == '1' %}
-            <a href="{{ url('/register') }}" class="btn btn-primary btn-sm">Account aanmaken</a>
+            <a href="{{ url('/register') }}" class="btn btn-primary btn-sm">Sign up</a>
           {% endif %}
         {% endif %}
       </nav>
@@ -55,7 +55,7 @@
     <div class="max-w-6xl mx-auto px-4 py-4 text-xs text-slate-500 flex flex-wrap items-center justify-between gap-2">
       <span class="flex items-center gap-2">
         <span class="live-dot"></span>
-        <span>© {{ "now"|date("Y") }} · PSB WK2026 Pool</span>
+        <span>© {{ "now"|date("Y") }} · PSB World Cup 2026 Pool</span>
       </span>
       {% if settings.predictions_deadline %}
         <span>Deadline: <span class="text-slate-700 font-semibold">{{ settings.predictions_deadline }}</span></span>

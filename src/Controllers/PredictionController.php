@@ -18,7 +18,7 @@ final class PredictionController extends Controller
     {
         $user = $this->requireAuth();
         if (Setting::get('predictions_open', '1') !== '1') {
-            Session::flash('error', 'Voorspellingen zijn gesloten.');
+            Session::flash('error', 'Predictions are closed.');
             $this->redirect('/dashboard');
         }
         $this->render('prediction/create.twig');
@@ -29,11 +29,11 @@ final class PredictionController extends Controller
         $user = $this->requireAuth();
         $this->requireCsrf();
         if (Setting::get('predictions_open', '1') !== '1') {
-            Session::flash('error', 'Voorspellingen zijn gesloten.');
+            Session::flash('error', 'Predictions are closed.');
             $this->redirect('/dashboard');
         }
-        $label = trim((string) $this->input('label', 'Mijn voorspelling'));
-        if ($label === '') $label = 'Mijn voorspelling';
+        $label = trim((string) $this->input('label', 'My prediction'));
+        if ($label === '') $label = 'My prediction';
 
         $id = Database::insert('forms', [
             'user_id'    => (int) $user['id'],
@@ -49,7 +49,7 @@ final class PredictionController extends Controller
     {
         $form = $this->loadOwnForm((int) $id);
         if ($form['status'] === 'submitted') {
-            Session::flash('info', 'Dit formulier is reeds verzonden.');
+            Session::flash('info', 'This entry has already been submitted.');
         }
 
         $groups = Database::fetchAll('SELECT * FROM team_groups ORDER BY sort_order');
@@ -101,11 +101,11 @@ final class PredictionController extends Controller
         $form = $this->loadOwnForm((int) $id);
         $this->requireCsrf();
         if ($form['status'] === 'submitted') {
-            Session::flash('error', 'Formulier is al verzonden.');
+            Session::flash('error', 'Entry has already been submitted.');
             $this->redirect('/predictions/' . $form['id']);
         }
         $this->persistAll((int) $form['id'], $_POST);
-        Session::flash('success', 'Tussentijds bewaard.');
+        Session::flash('success', 'Saved as draft.');
         $this->redirect('/predictions/' . $form['id']);
     }
 
@@ -114,11 +114,11 @@ final class PredictionController extends Controller
         $form = $this->loadOwnForm((int) $id);
         $this->requireCsrf();
         if ($form['status'] === 'submitted') {
-            Session::flash('error', 'Formulier is al verzonden.');
+            Session::flash('error', 'Entry has already been submitted.');
             $this->redirect('/predictions/' . $form['id']);
         }
         if (Setting::get('predictions_open', '1') !== '1') {
-            Session::flash('error', 'Voorspellingen zijn gesloten.');
+            Session::flash('error', 'Predictions are closed.');
             $this->redirect('/predictions/' . $form['id']);
         }
         $this->persistAll((int) $form['id'], $_POST);
@@ -144,7 +144,7 @@ final class PredictionController extends Controller
         $this->sendSubmissionEmails((int) $form['id'], $pdfPath);
 
         Session::flash('success', sprintf(
-            'Voorspelling verzonden! Vergeet niet %s %s aan %s te betalen.',
+            'Prediction submitted! Don\'t forget to pay %s %s to %s.',
             Setting::get('payment_amount', '10.00'),
             Setting::get('payment_currency', 'EUR'),
             Setting::get('payment_recipient', 'Jonah')
@@ -160,7 +160,7 @@ final class PredictionController extends Controller
             Database::update('forms', ['pdf_path' => $form['pdf_path']], ['id' => $form['id']]);
         }
         header('Content-Type: application/pdf');
-        header('Content-Disposition: inline; filename="wk2026-voorspelling-' . $form['id'] . '.pdf"');
+        header('Content-Disposition: inline; filename="wc2026-prediction-' . $form['id'] . '.pdf"');
         readfile($form['pdf_path']);
     }
 
@@ -169,11 +169,11 @@ final class PredictionController extends Controller
         $form = $this->loadOwnForm((int) $id);
         $this->requireCsrf();
         if ($form['status'] === 'submitted') {
-            Session::flash('error', 'Een verzonden formulier kan niet meer verwijderd worden.');
+            Session::flash('error', 'A submitted entry can no longer be deleted.');
             $this->redirect('/dashboard');
         }
         Database::delete('forms', ['id' => $form['id']]);
-        Session::flash('success', 'Formulier verwijderd.');
+        Session::flash('success', 'Entry deleted.');
         $this->redirect('/dashboard');
     }
 
@@ -331,7 +331,7 @@ final class PredictionController extends Controller
             [$formId]
         );
         if ($unfilled > 0) {
-            $missing[] = "Je hebt nog {$unfilled} groepswedstrijden niet ingevuld.";
+            $missing[] = "You still have {$unfilled} group matches without a score.";
         }
         foreach (['R32' => 16, 'R16' => 8, 'QF' => 4, 'SF' => 2, 'F' => 1] as $prefix => $count) {
             $filled = (int) Database::fetchColumn(
@@ -339,15 +339,15 @@ final class PredictionController extends Controller
                 [$formId, $prefix . '%']
             );
             if ($filled < $count) {
-                $missing[] = "Knock-out ronde {$prefix}: {$filled}/{$count} ingevuld.";
+                $missing[] = "Knockout round {$prefix}: {$filled}/{$count} filled in.";
             }
         }
         $form = Database::fetch('SELECT topscorer_player_id, tiebreaker_value FROM forms WHERE id = ?', [$formId]);
         if (empty($form['topscorer_player_id'])) {
-            $missing[] = 'Kies een topscorer.';
+            $missing[] = 'Pick a top scorer.';
         }
         if ($form['tiebreaker_value'] === null) {
-            $missing[] = 'Vul de tiebreak in (numerieke waarde).';
+            $missing[] = 'Fill in the tiebreaker (numeric value).';
         }
         return $missing;
     }
@@ -382,7 +382,7 @@ final class PredictionController extends Controller
         $dir = \App\Core\Config::basePath('storage/pdfs');
         if (!is_dir($dir)) mkdir($dir, 0775, true);
         $path = $dir . "/form-{$formId}.pdf";
-        PdfGenerator::fromHtml($html, $path, "WK2026 voorspelling – {$form['label']}");
+        PdfGenerator::fromHtml($html, $path, "World Cup 2026 prediction – {$form['label']}");
         return $path;
     }
 

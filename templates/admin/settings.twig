@@ -1,7 +1,7 @@
 {% extends 'admin/_layout.twig' %}
 {% block admin_content %}
 <p class="text-xs uppercase tracking-widest text-slate-500 font-bold">Admin</p>
-<h1 class="font-display text-4xl font-extrabold mt-1 mb-6 text-slate-900">Instellingen</h1>
+<h1 class="font-display text-4xl font-extrabold mt-1 mb-6 text-slate-900">Settings</h1>
 
 <form method="post" action="{{ url('/admin/settings') }}" class="space-y-5 max-w-2xl">
   <input type="hidden" name="_csrf" value="{{ csrf }}">
@@ -9,18 +9,18 @@
   <div class="card p-6 space-y-5">
     <div class="banner banner-blue">
       <span class="text-2xl">🔐</span>
-      <span>Authenticatie</span>
+      <span>Authentication</span>
     </div>
     <div>
-      <label class="field-label">Login-methode</label>
+      <label class="field-label">Login method</label>
       <select name="auth_provider">
-        <option value="db" {{ settings.auth_provider == 'db' ? 'selected' : '' }}>Database (e-mail + wachtwoord)</option>
+        <option value="db" {{ settings.auth_provider == 'db' ? 'selected' : '' }}>Database (email + password)</option>
         <option value="keycloak" {{ settings.auth_provider == 'keycloak' ? 'selected' : '' }}>Keycloak SSO</option>
       </select>
     </div>
     <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
       <input type="checkbox" name="registration_open" value="1" {{ settings.registration_open == '1' ? 'checked' : '' }}>
-      Registraties toestaan
+      Allow registrations
     </label>
   </div>
 
@@ -31,7 +31,7 @@
     </div>
     <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
       <input type="checkbox" name="predictions_open" value="1" {{ settings.predictions_open == '1' ? 'checked' : '' }}>
-      Voorspellingen open
+      Predictions open
     </label>
     <div>
       <label class="field-label">Deadline (YYYY-MM-DD HH:MM:SS)</label>
@@ -42,28 +42,28 @@
   <div class="card p-6 space-y-5">
     <div class="banner banner-orange">
       <span class="text-2xl">💰</span>
-      <span>Betaling</span>
+      <span>Payment</span>
     </div>
     <div class="grid sm:grid-cols-2 gap-4">
       <div>
-        <label class="field-label">Bedrag</label>
+        <label class="field-label">Amount</label>
         <input name="payment_amount" value="{{ settings.payment_amount }}">
       </div>
       <div>
-        <label class="field-label">Munteenheid</label>
+        <label class="field-label">Currency</label>
         <input name="payment_currency" value="{{ settings.payment_currency }}">
       </div>
       <div>
-        <label class="field-label">Te betalen aan</label>
+        <label class="field-label">Pay to</label>
         <input name="payment_recipient" value="{{ settings.payment_recipient }}">
       </div>
       <div>
-        <label class="field-label">IBAN (optioneel)</label>
+        <label class="field-label">IBAN (optional)</label>
         <input name="payment_iban" value="{{ settings.payment_iban }}">
       </div>
     </div>
     <div>
-      <label class="field-label">Instructies (verschijnt in mail + na verzenden)</label>
+      <label class="field-label">Instructions (shown in email + after submit)</label>
       <textarea name="payment_instructions" rows="3">{{ settings.payment_instructions }}</textarea>
     </div>
   </div>
@@ -74,7 +74,7 @@
       <span>Mail</span>
     </div>
     <div>
-      <label class="field-label">Admin ontvangstadres</label>
+      <label class="field-label">Admin recipient address</label>
       <input name="admin_mail_to" value="{{ settings.admin_mail_to }}">
     </div>
   </div>
@@ -82,20 +82,20 @@
   <div class="card p-6 space-y-5">
     <div class="banner banner-blue">
       <span class="text-2xl">🎲</span>
-      <span>Tiebreak</span>
+      <span>Tiebreaker</span>
     </div>
     <div>
-      <label class="field-label">Vraag (verschijnt op de samenvatting van het formulier)</label>
+      <label class="field-label">Question (shown on the summary tab)</label>
       <input name="tiebreaker_question" value="{{ settings.tiebreaker_question }}">
-      <span class="field-hint">Bv. "Hoeveel doelpunten worden er in totaal gemaakt tijdens het toernooi?"</span>
+      <span class="field-hint">e.g. "How many goals will be scored in the entire tournament?"</span>
     </div>
     <div>
-      <label class="field-label">Juiste antwoord (na het toernooi in te vullen)</label>
+      <label class="field-label">Correct answer (fill in after the tournament)</label>
       <input type="number" min="0" step="1" name="tiebreaker_correct_value" value="{{ settings.tiebreaker_correct_value }}" class="max-w-xs">
-      <span class="field-hint">Wordt gebruikt om gelijke scores te scheiden in het leaderboard. Mag leeg blijven tot na de finale.</span>
+      <span class="field-hint">Used to break ties in the leaderboard. May stay empty until after the final.</span>
     </div>
   </div>
 
-  <button class="btn btn-primary">💾 Bewaren</button>
+  <button class="btn btn-primary">💾 Save</button>
 </form>
 {% endblock %}

@@ -1,14 +1,14 @@
 {% extends 'admin/_layout.twig' %}
 {% block admin_content %}
 <p class="text-xs uppercase tracking-widest text-slate-500 font-bold">Admin</p>
-<h1 class="font-display text-4xl font-extrabold mt-1 mb-8 text-slate-900">Overzicht</h1>
+<h1 class="font-display text-4xl font-extrabold mt-1 mb-8 text-slate-900">Overview</h1>
 
 <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
   {% set tiles = [
-    {label:'Gebruikers',  value: stats.users,          icon:'👥', color:'green'},
-    {label:'Formulieren', value: stats.forms_total,    icon:'📝', color:'blue'},
-    {label:'Verzonden',   value: stats.forms_submitted,icon:'✅', color:'orange'},
-    {label:'Betaald',     value: stats.forms_paid,     icon:'💰', color:'pink'}
+    {label:'Users',     value: stats.users,           icon:'👥', color:'green'},
+    {label:'Entries',   value: stats.forms_total,     icon:'📝', color:'blue'},
+    {label:'Submitted', value: stats.forms_submitted, icon:'✅', color:'orange'},
+    {label:'Paid',      value: stats.forms_paid,      icon:'💰', color:'pink'}
   ] %}
   {% for t in tiles %}
     <div class="card card-hover p-5">

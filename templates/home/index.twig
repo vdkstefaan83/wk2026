@@ -4,32 +4,32 @@
 <section class="relative py-12 sm:py-20 text-center">
   <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border-2 border-emerald-100 text-xs font-bold text-emerald-700 mb-6">
     <span class="live-dot"></span>
-    11 JUNI → 19 JULI 2026 · USA · CANADA · MEXICO
+    JUNE 11 → JULY 19 2026 · USA · CANADA · MEXICO
   </span>
 
   <h1 class="font-display text-5xl sm:text-7xl font-extrabold leading-[0.95] tracking-tight">
-    <span class="text-slate-900">Voorspel het</span><br>
-    <span class="text-gradient">wereldkampioenschap</span>
+    <span class="text-slate-900">Predict the</span><br>
+    <span class="text-gradient">FIFA World Cup</span>
   </h1>
 
   <p class="mt-6 text-slate-600 max-w-2xl mx-auto text-lg">
-    48 landen. 12 groepen. Eén beker.<br>
-    Vul je voorspellingen in, zie je groepsstanden live evolueren, en strijd voor de top.
+    48 nations. 12 groups. One trophy.<br>
+    Fill in your predictions, watch your group standings update live, and battle for the top.
   </p>
 
   <div class="mt-10 flex flex-wrap justify-center gap-3">
-    <a href="{{ url('/login') }}" class="btn btn-primary text-base">⚽ Speel mee</a>
+    <a href="{{ url('/login') }}" class="btn btn-primary text-base">⚽ Play now</a>
     {% if settings.auth_provider == 'db' and settings.registration_open == '1' %}
-      <a href="{{ url('/register') }}" class="btn btn-secondary text-base">Account aanmaken</a>
+      <a href="{{ url('/register') }}" class="btn btn-secondary text-base">Create account</a>
     {% endif %}
   </div>
 </section>
 
 <section class="grid sm:grid-cols-3 gap-4 mt-4">
   {% set features = [
-    {icon:'🏆', title:'Punten per ronde', desc:'Van 1 punt per correcte groepswedstrijd tot 100 voor de wereldkampioen.', color:'green'},
-    {icon:'📈', title:'Live ranking',     desc:'Zie je groepsstanden updaten volgens de officiële FIFA-tiebreakers terwijl je invult.', color:'blue'},
-    {icon:'🥅', title:'Auto-bracket',     desc:'De knock-out fase verschijnt automatisch — inclusief de beste derdes.', color:'orange'}
+    {icon:'🏆', title:'Points per round', desc:'From 1 point per correct group result up to 100 for the world champion.', color:'green'},
+    {icon:'📈', title:'Live standings',   desc:'Watch your group tables recalculate using the official FIFA tiebreakers as you type.', color:'blue'},
+    {icon:'🥅', title:'Auto bracket',     desc:'The knockout stage appears automatically — including the best third-placed teams.', color:'orange'}
   ] %}
   {% for f in features %}
     <div class="card card-hover p-6">
@@ -46,18 +46,18 @@
 <section class="mt-6 card p-6 sm:p-8">
   <div class="banner banner-orange mb-6">
     <span class="text-2xl">🎯</span>
-    <span>Hoe werkt de score?</span>
+    <span>How does scoring work?</span>
   </div>
   <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
     {% set rules = [
-      {label:'Groep · juiste 1-X-2',     pts:'1',  color:'pill-blue'},
-      {label:'Groep · exacte score',     pts:'+2', color:'pill-blue'},
-      {label:'1/16 finale · per land',   pts:'5',  color:'pill-grey'},
-      {label:'1/8 finale · per land',    pts:'10', color:'pill-grey'},
-      {label:'1/4 finale · per land',    pts:'15', color:'pill-orange'},
-      {label:'1/2 finale · per land',    pts:'25', color:'pill-orange'},
-      {label:'Finalist · per land',      pts:'50', color:'pill-pink'},
-      {label:'Wereldkampioen',           pts:'100',color:'pill-green'}
+      {label:'Group · correct 1-X-2',  pts:'1',  color:'pill-blue'},
+      {label:'Group · exact score',    pts:'+2', color:'pill-blue'},
+      {label:'Round of 32 · per team', pts:'5',  color:'pill-grey'},
+      {label:'Round of 16 · per team', pts:'10', color:'pill-grey'},
+      {label:'Quarter-final · per team', pts:'15', color:'pill-orange'},
+      {label:'Semi-final · per team',  pts:'25', color:'pill-orange'},
+      {label:'Finalist · per team',    pts:'50', color:'pill-pink'},
+      {label:'World champion',         pts:'100',color:'pill-green'}
     ] %}
     {% for r in rules %}
       <div class="flex items-center justify-between gap-3 p-4 rounded-2xl bg-slate-50 border border-slate-100">
@@ -68,7 +68,7 @@
   </div>
   <p class="text-sm text-slate-600 mt-5 flex items-start gap-2">
     <span class="text-lg">⚽</span>
-    <span><strong class="text-slate-800">Topscorer:</strong> 10 ptn voor de juiste speler + 3 ptn per goal die hij maakt.</span>
+    <span><strong class="text-slate-800">Top scorer:</strong> 10 pts for the correct player + 3 pts per goal he scores.</span>
   </p>
 </section>
 {% endblock %}

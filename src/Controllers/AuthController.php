@@ -24,29 +24,29 @@ final class AuthController extends Controller
         $password = (string) $this->input('password', '');
 
         $v = new Validator(['email' => $email, 'password' => $password]);
-        $v->required('email', 'E-mail')->email('email', 'E-mail')->required('password', 'Wachtwoord');
+        $v->required('email', 'Email')->email('email', 'Email')->required('password', 'Password');
         if ($v->fails()) {
             $v->flashErrors();
             $this->redirect('/login');
         }
         $user = Auth::attemptDb($email, $password);
         if (!$user) {
-            Session::flash('error', 'Onjuiste login.');
+            Session::flash('error', 'Invalid login.');
             $this->redirect('/login');
         }
         Session::clearOld();
-        Session::flash('success', 'Welkom terug, ' . $user['name'] . '.');
+        Session::flash('success', 'Welcome back, ' . $user['name'] . '.');
         $this->redirect('/dashboard');
     }
 
     public function showRegister(): void
     {
         if (Setting::get('auth_provider', 'db') !== 'db') {
-            Session::flash('error', 'Registratie via deze pagina is uitgeschakeld; gebruik je SSO-account.');
+            Session::flash('error', 'Registration via this page is disabled; please use your SSO account.');
             $this->redirect('/login');
         }
         if (Setting::get('registration_open', '1') !== '1') {
-            Session::flash('error', 'Registraties zijn momenteel gesloten.');
+            Session::flash('error', 'Registrations are currently closed.');
             $this->redirect('/login');
         }
         $this->render('auth/register.twig');
@@ -60,9 +60,9 @@ final class AuthController extends Controller
         $password = (string) $this->input('password', '');
 
         $v = new Validator(['email' => $email, 'name' => $name, 'password' => $password]);
-        $v->required('email', 'E-mail')->email('email', 'E-mail')
-          ->required('name', 'Naam')
-          ->required('password', 'Wachtwoord')->min('password', 8, 'Wachtwoord');
+        $v->required('email', 'Email')->email('email', 'Email')
+          ->required('name', 'Name')
+          ->required('password', 'Password')->min('password', 8, 'Password');
         if ($v->fails()) {
             $v->flashErrors();
             $this->redirect('/register');
@@ -74,7 +74,7 @@ final class AuthController extends Controller
             Session::setOld(['email' => $email, 'name' => $name]);
             $this->redirect('/register');
         }
-        Session::flash('success', 'Account aangemaakt!');
+        Session::flash('success', 'Account created!');
         $this->redirect('/dashboard');
     }
 
@@ -92,7 +92,7 @@ final class AuthController extends Controller
     public function keycloakLogin(): void
     {
         if (!KeycloakClient::isEnabled()) {
-            Session::flash('error', 'Keycloak is niet actief.');
+            Session::flash('error', 'Keycloak is not enabled.');
             $this->redirect('/login');
         }
         $provider = KeycloakClient::provider();
@@ -104,7 +104,7 @@ final class AuthController extends Controller
     public function keycloakCallback(): void
     {
         if (!KeycloakClient::isEnabled()) {
-            Session::flash('error', 'Keycloak is niet actief.');
+            Session::flash('error', 'Keycloak is not enabled.');
             $this->redirect('/login');
         }
         $state = (string)($_GET['state'] ?? '');
@@ -125,10 +125,10 @@ final class AuthController extends Controller
             Session::set('auth_via', 'keycloak');
             Auth::upsertFromOidc($claims);
         } catch (\Throwable $e) {
-            Session::flash('error', 'OIDC login mislukt: ' . $e->getMessage());
+            Session::flash('error', 'OIDC login failed: ' . $e->getMessage());
             $this->redirect('/login');
         }
-        Session::flash('success', 'Ingelogd via Keycloak.');
+        Session::flash('success', 'Signed in via Keycloak.');
         $this->redirect('/dashboard');
     }
 }

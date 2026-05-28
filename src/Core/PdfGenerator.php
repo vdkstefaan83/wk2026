@@ -7,7 +7,7 @@ use Mpdf\Mpdf;
 
 final class PdfGenerator
 {
-    public static function fromHtml(string $html, string $outputPath, string $title = 'WK2026 voorspelling'): string
+    public static function fromHtml(string $html, string $outputPath, string $title = 'World Cup 2026 prediction'): string
     {
         $tmp = Config::basePath('storage/cache/mpdf');
         if (!is_dir($tmp)) {

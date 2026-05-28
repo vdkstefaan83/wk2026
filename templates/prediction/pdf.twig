@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="nl">
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>WK2026 voorspelling – {{ form.label }}</title>
+  <title>World Cup 2026 prediction – {{ form.label }}</title>
   <style>
     body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #1e293b; }
     h1 { font-size: 18px; margin: 0 0 4px; }
@@ -18,24 +18,27 @@
   </style>
 </head>
 <body>
-  <h1>WK2026 voorspelling – {{ form.label }}</h1>
+  <h1>World Cup 2026 prediction – {{ form.label }}</h1>
   <div class="small">
-    Ingediend door {{ form.user_name }} ({{ form.user_email }}) op {{ form.submitted_at|date('d/m/Y H:i') }} · gegenereerd op {{ now }}
+    Submitted by {{ form.user_name }} ({{ form.user_email }}) on {{ form.submitted_at|date('Y-m-d H:i') }} · generated on {{ now }}
   </div>
 
-  <h2>Eindkeuzes</h2>
+  <h2>Final picks</h2>
   <table>
-    <tr><th style="width:30%">Wereldkampioen</th><td>{{ winner ? winner.flag_emoji ~ ' ' ~ winner.name : '—' }}</td></tr>
-    <tr><th>Topscorer</th><td>{{ topscorer ? topscorer.name ~ ' (' ~ (topscorer.team_name ?? '?') ~ ')' : '—' }}</td></tr>
-    <tr><th>Verwachte betaling</th><td>{{ settings.payment_amount }} {{ settings.payment_currency }} aan {{ settings.payment_recipient }}</td></tr>
+    <tr><th style="width:30%">World champion</th><td>{{ winner ? winner.flag_emoji ~ ' ' ~ winner.name : '—' }}</td></tr>
+    <tr><th>Top scorer</th><td>{{ topscorer ? topscorer.name ~ ' (' ~ (topscorer.team_name ?? '?') ~ ')' : '—' }}</td></tr>
+    <tr><th>Expected payment</th><td>{{ settings.payment_amount }} {{ settings.payment_currency }} to {{ settings.payment_recipient }}</td></tr>
+    {% if form.tiebreaker_value is not null %}
+    <tr><th>Tiebreaker</th><td>{{ settings.tiebreaker_question }} → <strong>{{ form.tiebreaker_value }}</strong></td></tr>
+    {% endif %}
   </table>
 
-  <h2>Groepsfase</h2>
+  <h2>Group stage</h2>
   {% for code, rows in resolved.standings %}
     <div class="group-box">
-      <h3>Groep {{ code }}</h3>
+      <h3>Group {{ code }}</h3>
       <table>
-        <thead><tr><th>#</th><th>Team</th><th>G</th><th>+/-</th><th>Pt</th></tr></thead>
+        <thead><tr><th>#</th><th>Team</th><th>P</th><th>GD</th><th>Pt</th></tr></thead>
         <tbody>
         {% for r in rows %}
           <tr>
@@ -52,7 +55,7 @@
   {% endfor %}
 
   <h2>Knock-out picks</h2>
-  {% for label, stage in {'1/16 finale': 'r32', '1/8 finale':'r16', '1/4 finale':'qf', '1/2 finale':'sf', 'Finale':'final'} %}
+  {% for label, stage in {'Round of 32': 'r32', 'Round of 16':'r16', 'Quarter-finals':'qf', 'Semi-finals':'sf', 'Final':'final'} %}
     <h3>{{ label }}</h3>
     {% set anyPick = false %}
     {% for slot, teamId in resolved.picks %}
@@ -67,7 +70,7 @@
         </div>
       {% endif %}
     {% endfor %}
-    {% if not anyPick %}<div class="small">Geen keuzes ingevuld.</div>{% endif %}
+    {% if not anyPick %}<div class="small">No picks entered.</div>{% endif %}
   {% endfor %}
 </body>
 </html>

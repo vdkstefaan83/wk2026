@@ -1,26 +1,26 @@
 {% extends 'admin/_layout.twig' %}
 {% block admin_content %}
-<p class="text-xs uppercase tracking-wider text-slate-500">Admin · template</p>
+<p class="text-xs uppercase tracking-widest text-slate-500 font-bold">Admin · template</p>
 <h1 class="font-display text-3xl font-extrabold mt-1 mb-6">
-  <span class="font-mono text-lime-300">{{ template.key }}</span>
+  <span class="font-mono text-emerald-700">{{ template.key }}</span>
 </h1>
 
 <form method="post" action="{{ url('/admin/email-templates/' ~ template.key) }}" class="space-y-4 max-w-3xl">
   <input type="hidden" name="_csrf" value="{{ csrf }}">
-  <div class="glass rounded-2xl p-6 space-y-4">
+  <div class="card p-6 space-y-4">
     <div>
-      <label class="text-xs uppercase tracking-wider font-medium">Onderwerp</label>
-      <input name="subject" value="{{ template.subject }}" class="mt-1 w-full px-3 py-2.5">
+      <label class="field-label">Subject</label>
+      <input name="subject" value="{{ template.subject }}">
     </div>
     <div>
-      <label class="text-xs uppercase tracking-wider font-medium">Body (HTML)</label>
+      <label class="field-label">Body (HTML)</label>
       <div id="editor" class="mt-1">{{ template.body_html|raw }}</div>
       <textarea name="body_html" id="body_html" hidden>{{ template.body_html }}</textarea>
     </div>
   </div>
   <div class="flex gap-2">
-    <button class="btn-neon">💾 Bewaren</button>
-    <a href="{{ url('/admin/email-templates') }}" class="btn-ghost">← Terug</a>
+    <button class="btn btn-primary">💾 Save</button>
+    <a href="{{ url('/admin/email-templates') }}" class="btn btn-secondary">← Back</a>
   </div>
 </form>
 {% endblock %}

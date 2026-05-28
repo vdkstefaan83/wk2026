@@ -53,7 +53,7 @@ final class Auth
         $email = strtolower(trim($email));
         $exists = Database::fetchColumn('SELECT id FROM users WHERE email = ?', [$email]);
         if ($exists) {
-            throw new \RuntimeException('Er bestaat al een account met dit e-mailadres.');
+            throw new \RuntimeException('An account with this email address already exists.');
         }
         $id = Database::insert('users', [
             'email'         => $email,
@@ -74,7 +74,7 @@ final class Auth
         $sub   = (string) ($claims['sub'] ?? '');
 
         if ($email === '' || $sub === '') {
-            throw new \RuntimeException('OIDC claims missen email of sub.');
+            throw new \RuntimeException('OIDC claims are missing email or sub.');
         }
         $user = Database::fetch('SELECT * FROM users WHERE oidc_sub = ? OR email = ? LIMIT 1', [$sub, $email]);
         if ($user) {

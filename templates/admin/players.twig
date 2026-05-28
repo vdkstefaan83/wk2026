@@ -1,35 +1,35 @@
 {% extends 'admin/_layout.twig' %}
 {% block admin_content %}
-<p class="text-xs uppercase tracking-wider text-slate-500">Admin</p>
-<h1 class="font-display text-3xl font-extrabold mt-1 mb-6">Spelers <span class="text-base font-normal text-slate-500">(topscorer-keuze)</span></h1>
+<p class="text-xs uppercase tracking-widest text-slate-500 font-bold">Admin</p>
+<h1 class="font-display text-4xl font-extrabold mt-1 mb-6 text-slate-900">Players <span class="text-base font-normal text-slate-500">(top scorer pool)</span></h1>
 
-<form method="post" action="{{ url('/admin/players') }}" class="glass rounded-2xl p-5 mb-5">
+<form method="post" action="{{ url('/admin/players') }}" class="card p-5 mb-5">
   <input type="hidden" name="_csrf" value="{{ csrf }}">
-  <h2 class="font-display font-bold mb-3">+ Nieuwe speler</h2>
+  <h2 class="font-display font-bold mb-3">+ New player</h2>
   <div class="flex flex-wrap gap-2">
-    <input name="new[name]" placeholder="Naam" class="px-3 py-2 flex-1 min-w-[200px]">
+    <input name="new[name]" placeholder="Name" class="px-3 py-2 flex-1 min-w-[200px]">
     <select name="new[team_id]" class="px-3 py-2">
       <option value="">— team —</option>
       {% for t in teams %}<option value="{{ t.id }}">{{ t.name }}</option>{% endfor %}
     </select>
-    <button class="btn-neon">Toevoegen</button>
+    <button class="btn btn-primary">Add</button>
   </div>
 </form>
 
 <form method="post" action="{{ url('/admin/players') }}">
   <input type="hidden" name="_csrf" value="{{ csrf }}">
-  <div class="glass rounded-2xl overflow-hidden">
+  <div class="card overflow-hidden">
     <table class="w-full text-sm">
-      <thead class="bg-white/[0.03] border-b border-white/5">
+      <thead class="bg-slate-50 border-b-2 border-slate-100">
         <tr>
-          <th class="p-3 text-left text-xs uppercase tracking-wider text-slate-400">Speler</th>
-          <th class="p-3 text-left text-xs uppercase tracking-wider text-slate-400 w-48">Team</th>
+          <th class="p-3 text-left text-xs uppercase tracking-wider text-slate-500 font-bold">Player</th>
+          <th class="p-3 text-left text-xs uppercase tracking-wider text-slate-500 font-bold w-48">Team</th>
           <th class="p-3 w-20"></th>
         </tr>
       </thead>
       <tbody>
         {% for p in players %}
-          <tr class="border-t border-white/5">
+          <tr class="border-t border-slate-100">
             <td class="p-2"><input name="player[{{ p.id }}][name]" value="{{ p.name }}" class="w-full px-2 py-1.5"></td>
             <td class="p-2">
               <select name="player[{{ p.id }}][team_id]" class="w-full px-2 py-1.5">
@@ -38,14 +38,14 @@
               </select>
             </td>
             <td class="p-2 text-right">
-              <button name="delete" value="{{ p.id }}" onclick="return confirm('Speler verwijderen?')"
-                      class="text-rose-300 hover:text-rose-200 text-xs">verwijder</button>
+              <button name="delete" value="{{ p.id }}" onclick="return confirm('Delete player?')"
+                      class="text-rose-600 hover:text-rose-700 text-xs font-semibold">delete</button>
             </td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
-  <button class="mt-4 btn-neon">💾 Bewaren</button>
+  <button class="mt-4 btn btn-primary">💾 Save</button>
 </form>
 {% endblock %}

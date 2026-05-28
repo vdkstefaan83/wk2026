@@ -1,23 +1,23 @@
 {% extends 'admin/_layout.twig' %}
 {% block admin_content %}
-<p class="text-xs uppercase tracking-wider text-slate-500">Admin</p>
-<h1 class="font-display text-3xl font-extrabold mt-1 mb-6">Teams & groepen</h1>
+<p class="text-xs uppercase tracking-widest text-slate-500 font-bold">Admin</p>
+<h1 class="font-display text-4xl font-extrabold mt-1 mb-6 text-slate-900">Teams & groups</h1>
 
 <form method="post" action="{{ url('/admin/teams') }}">
   <input type="hidden" name="_csrf" value="{{ csrf }}">
-  <div class="glass rounded-2xl overflow-x-auto">
+  <div class="card overflow-x-auto">
     <table class="w-full text-sm">
-      <thead class="bg-white/[0.03] border-b border-white/5">
+      <thead class="bg-slate-50 border-b-2 border-slate-100">
         <tr>
-          <th class="text-left p-3 text-xs uppercase tracking-wider text-slate-400">Naam</th>
-          <th class="text-left p-3 text-xs uppercase tracking-wider text-slate-400 w-20">ISO3</th>
-          <th class="text-left p-3 text-xs uppercase tracking-wider text-slate-400 w-24">Vlag</th>
-          <th class="text-left p-3 text-xs uppercase tracking-wider text-slate-400 w-32">Groep</th>
+          <th class="text-left p-3 text-xs uppercase tracking-wider text-slate-500 font-bold">Name</th>
+          <th class="text-left p-3 text-xs uppercase tracking-wider text-slate-500 font-bold w-20">ISO3</th>
+          <th class="text-left p-3 text-xs uppercase tracking-wider text-slate-500 font-bold w-24">Flag</th>
+          <th class="text-left p-3 text-xs uppercase tracking-wider text-slate-500 font-bold w-32">Group</th>
         </tr>
       </thead>
       <tbody>
         {% for t in teams %}
-          <tr class="border-t border-white/5">
+          <tr class="border-t border-slate-100">
             <td class="p-2"><input name="team[{{ t.id }}][name]" value="{{ t.name }}" class="w-full px-2 py-1.5"></td>
             <td class="p-2"><input name="team[{{ t.id }}][iso3]" value="{{ t.iso3 }}" class="w-full px-2 py-1.5 font-mono"></td>
             <td class="p-2"><input name="team[{{ t.id }}][flag_emoji]" value="{{ t.flag_emoji }}" class="w-full px-2 py-1.5 text-center"></td>
@@ -25,7 +25,7 @@
               <select name="team[{{ t.id }}][group_id]" class="w-full px-2 py-1.5">
                 <option value="">—</option>
                 {% for g in groups %}
-                  <option value="{{ g.id }}" {{ t.group_id == g.id ? 'selected' : '' }}>Groep {{ g.code }}</option>
+                  <option value="{{ g.id }}" {{ t.group_id == g.id ? 'selected' : '' }}>Group {{ g.code }}</option>
                 {% endfor %}
               </select>
             </td>
@@ -34,6 +34,6 @@
       </tbody>
     </table>
   </div>
-  <button class="mt-4 btn-neon">💾 Bewaren</button>
+  <button class="mt-4 btn btn-primary">💾 Save</button>
 </form>
 {% endblock %}

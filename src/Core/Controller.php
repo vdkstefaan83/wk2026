@@ -62,7 +62,7 @@ abstract class Controller
     {
         $user = Auth::user();
         if (!$user) {
-            Session::flash('error', 'Je moet eerst inloggen.');
+            Session::flash('error', 'You need to sign in first.');
             $this->redirect('/login');
         }
         return $user;

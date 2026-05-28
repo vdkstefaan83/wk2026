@@ -1,35 +1,35 @@
 {% extends 'layout/base.twig' %}
-{% block title %}Inloggen · {{ app.name }}{% endblock %}
+{% block title %}Sign in · {{ app.name }}{% endblock %}
 {% block content %}
 <div class="max-w-md mx-auto mt-10">
   <div class="card-thick p-8">
     <div class="banner banner-green mb-6">
       <span class="text-2xl">👋</span>
-      <span>Welkom terug</span>
+      <span>Welcome back</span>
     </div>
 
     {% if settings.auth_provider == 'keycloak' and keycloak %}
       <a href="{{ url('/auth/keycloak/login') }}" class="btn btn-primary w-full">
-        Inloggen met Keycloak SSO →
+        Sign in with Keycloak SSO →
       </a>
-      <p class="text-sm text-slate-500 mt-4 text-center">DB-login uitgeschakeld door de beheerder.</p>
+      <p class="text-sm text-slate-500 mt-4 text-center">Database login disabled by the administrator.</p>
     {% else %}
       <form method="post" action="{{ url('/login') }}" class="space-y-5">
         <input type="hidden" name="_csrf" value="{{ csrf }}">
         <div>
-          <label class="field-label">📧 E-mailadres</label>
-          <input name="email" type="email" required autofocus value="{{ old('email') }}" placeholder="jij@example.com">
+          <label class="field-label">📧 Email</label>
+          <input name="email" type="email" required autofocus value="{{ old('email') }}" placeholder="you@example.com">
         </div>
         <div>
-          <label class="field-label">🔑 Wachtwoord</label>
+          <label class="field-label">🔑 Password</label>
           <input name="password" type="password" required placeholder="••••••••">
         </div>
-        <button class="btn btn-primary w-full">Inloggen →</button>
+        <button class="btn btn-primary w-full">Sign in →</button>
       </form>
       {% if settings.registration_open == '1' %}
         <p class="text-sm text-slate-600 mt-6 text-center">
-          Nog geen account?
-          <a href="{{ url('/register') }}" class="text-emerald-600 hover:text-emerald-700 font-bold">Registreer hier</a>
+          No account yet?
+          <a href="{{ url('/register') }}" class="text-emerald-600 hover:text-emerald-700 font-bold">Sign up here</a>
         </p>
       {% endif %}
     {% endif %}

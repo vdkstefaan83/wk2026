@@ -13,7 +13,7 @@ final class Validator
     {
         $val = trim((string)($this->data[$key] ?? ''));
         if ($val === '') {
-            $this->errors[$key][] = ($label ?? $key) . ' is verplicht.';
+            $this->errors[$key][] = ($label ?? $key) . ' is required.';
         }
         return $this;
     }
@@ -22,7 +22,7 @@ final class Validator
     {
         $val = trim((string)($this->data[$key] ?? ''));
         if ($val !== '' && !filter_var($val, FILTER_VALIDATE_EMAIL)) {
-            $this->errors[$key][] = ($label ?? $key) . ' is geen geldig e-mailadres.';
+            $this->errors[$key][] = ($label ?? $key) . ' is not a valid email address.';
         }
         return $this;
     }
@@ -31,7 +31,7 @@ final class Validator
     {
         $val = (string)($this->data[$key] ?? '');
         if ($val !== '' && mb_strlen($val) < $min) {
-            $this->errors[$key][] = ($label ?? $key) . " moet minstens {$min} tekens lang zijn.";
+            $this->errors[$key][] = ($label ?? $key) . " must be at least {$min} characters long.";
         }
         return $this;
     }
@@ -40,7 +40,7 @@ final class Validator
     {
         $val = $this->data[$key] ?? null;
         if ($val !== null && !in_array($val, $allowed, true)) {
-            $this->errors[$key][] = ($label ?? $key) . ' is ongeldig.';
+            $this->errors[$key][] = ($label ?? $key) . ' is invalid.';
         }
         return $this;
     }

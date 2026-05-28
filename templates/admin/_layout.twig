@@ -7,14 +7,14 @@
       <p class="px-3 pt-1 pb-2 text-xs uppercase tracking-widest text-slate-500 font-bold">Admin menu</p>
       <nav class="space-y-0.5 text-sm">
         {% set links = [
-          {url:'/admin',                 label:'Overzicht',        icon:'📊'},
-          {url:'/admin/settings',        label:'Instellingen',     icon:'⚙️'},
-          {url:'/admin/email-templates', label:'E-mail templates', icon:'✉️'},
-          {url:'/admin/teams',           label:'Teams & groepen',  icon:'🏳️'},
-          {url:'/admin/players',         label:'Spelers',          icon:'👟'},
-          {url:'/admin/matches',         label:'Wedstrijden',      icon:'🥅'},
-          {url:'/admin/forms',           label:'Formulieren',      icon:'📝'},
-          {url:'/admin/leaderboard',     label:'Leaderboard',      icon:'🏆'}
+          {url:'/admin',                 label:'Overview',          icon:'📊'},
+          {url:'/admin/settings',        label:'Settings',          icon:'⚙️'},
+          {url:'/admin/email-templates', label:'Email templates',   icon:'✉️'},
+          {url:'/admin/teams',           label:'Teams & groups',    icon:'🏳️'},
+          {url:'/admin/players',         label:'Players',           icon:'👟'},
+          {url:'/admin/matches',         label:'Matches',           icon:'🥅'},
+          {url:'/admin/forms',           label:'Entries',           icon:'📝'},
+          {url:'/admin/leaderboard',     label:'Leaderboard',       icon:'🏆'}
         ] %}
         {% for l in links %}
           {% set active = app.request_uri starts with l.url and (l.url != '/admin' or app.request_uri == '/admin') %}

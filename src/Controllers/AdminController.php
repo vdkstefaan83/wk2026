@@ -47,7 +47,7 @@ final class AdminController extends Controller
                 Setting::set($f, (string)$_POST[$f]);
             }
         }
-        Session::flash('success', 'Instellingen bewaard.');
+        Session::flash('success', 'Settings saved.');
         $this->redirect('/admin/settings');
     }
 
@@ -64,7 +64,7 @@ final class AdminController extends Controller
     {
         $this->requireAdmin();
         $tpl = Database::fetch('SELECT * FROM email_templates WHERE `key` = ?', [$key]);
-        if (!$tpl) { Session::flash('error', 'Template niet gevonden.'); $this->redirect('/admin/email-templates'); }
+        if (!$tpl) { Session::flash('error', 'Template not found.'); $this->redirect('/admin/email-templates'); }
         $this->render('admin/email_template_edit.twig', ['template' => $tpl]);
     }
 
@@ -75,13 +75,13 @@ final class AdminController extends Controller
         $subject = (string) ($_POST['subject'] ?? '');
         $body    = (string) ($_POST['body_html'] ?? '');
         $tpl = Database::fetch('SELECT id FROM email_templates WHERE `key` = ?', [$key]);
-        if (!$tpl) { Session::flash('error', 'Template niet gevonden.'); $this->redirect('/admin/email-templates'); }
+        if (!$tpl) { Session::flash('error', 'Template not found.'); $this->redirect('/admin/email-templates'); }
         Database::update('email_templates', [
             'subject'    => $subject,
             'body_html'  => $body,
             'updated_at' => date('Y-m-d H:i:s'),
         ], ['id' => $tpl['id']]);
-        Session::flash('success', 'Template bewaard.');
+        Session::flash('success', 'Template saved.');
         $this->redirect('/admin/email-templates/' . $key);
     }
 
@@ -110,7 +110,7 @@ final class AdminController extends Controller
                 ], ['id' => (int)$id]);
             }
         }
-        Session::flash('success', 'Teams bewaard.');
+        Session::flash('success', 'Teams saved.');
         $this->redirect('/admin/teams');
     }
 
@@ -153,7 +153,7 @@ final class AdminController extends Controller
                 Database::update('matches', $patch, ['id' => (int)$id]);
             }
         }
-        Session::flash('success', 'Wedstrijden bewaard.');
+        Session::flash('success', 'Matches saved.');
         $stage = (string)($this->input('stage', 'group'));
         $this->redirect('/admin/matches?stage=' . urlencode($stage));
     }
@@ -190,7 +190,7 @@ final class AdminController extends Controller
                 ], ['id' => (int)$id]);
             }
         }
-        Session::flash('success', 'Spelers bewaard.');
+        Session::flash('success', 'Players saved.');
         $this->redirect('/admin/players');
     }
 
@@ -220,7 +220,7 @@ final class AdminController extends Controller
             'paid_amount'=> $paid ? (float)$amount : null,
             'paid_note'  => $note,
         ], ['id' => (int)$id]);
-        Session::flash('success', 'Betaalstatus bijgewerkt.');
+        Session::flash('success', 'Payment status updated.');
         $this->redirect('/admin/forms');
     }
 
@@ -264,7 +264,7 @@ final class AdminController extends Controller
         $this->requireAdmin();
         $this->requireCsrf();
         ScoringService::recomputeAll();
-        Session::flash('success', 'Scores opnieuw berekend.');
+        Session::flash('success', 'Scores recalculated.');
         $this->redirect('/admin/leaderboard');
     }
 
@@ -277,17 +277,17 @@ final class AdminController extends Controller
             $svc = new MatchSyncService();
             $r = $svc->sync($force);
             $msg = sprintf(
-                'Sync klaar: %d wedstrijd(en) bijgewerkt%s%s.',
+                'Sync complete: %d match(es) updated%s%s.',
                 $r['updated'],
-                $r['finals_recomputed'] ? ', scores herberekend' : '',
-                $r['topscorer'] ? ', topscorer: ' . $r['topscorer']['player'] . ' (' . $r['topscorer']['goals'] . ')' : ''
+                $r['finals_recomputed'] ? ', scores recalculated' : '',
+                $r['topscorer'] ? ', top scorer: ' . $r['topscorer']['player'] . ' (' . $r['topscorer']['goals'] . ')' : ''
             );
             Session::flash('success', $msg);
             foreach ($r['errors'] as $e) {
-                Session::flash('error', 'Sync waarschuwing: ' . $e);
+                Session::flash('error', 'Sync warning: ' . $e);
             }
         } catch (\Throwable $e) {
-            Session::flash('error', 'Sync mislukt: ' . $e->getMessage());
+            Session::flash('error', 'Sync failed: ' . $e->getMessage());
         }
         $this->redirect('/admin/matches');
     }
