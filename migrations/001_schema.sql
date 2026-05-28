@@ -106,8 +106,10 @@ CREATE TABLE forms (
     paid_note       VARCHAR(255) NULL,
     pdf_path        VARCHAR(255) NULL,
     -- knockout slot picks (team_id per slot)
-    topscorer_player_id INT UNSIGNED NULL,
-    winner_team_id      INT UNSIGNED NULL,
+    topscorer_player_id   INT UNSIGNED NULL,
+    topscorer_custom_name VARCHAR(128) NULL,
+    tiebreaker_value      INT NULL,
+    winner_team_id        INT UNSIGNED NULL,
     score              INT NOT NULL DEFAULT 0,
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

@@ -123,6 +123,9 @@ final class PredictionController extends Controller
         }
         $this->persistAll((int) $form['id'], $_POST);
 
+        // Convert any free-text topscorer into a real player row
+        $this->resolveCustomTopscorer((int) $form['id']);
+
         // Completeness validation
         $missing = $this->validateComplete((int) $form['id']);
         if (!empty($missing)) {
@@ -222,10 +225,16 @@ final class PredictionController extends Controller
             // Winner + topscorer
             $winner = $post['winner_team_id'] ?? null;
             $top    = $post['topscorer_player_id'] ?? null;
+            $custom = trim((string)($post['topscorer_custom_name'] ?? ''));
             $label  = trim((string)($post['label'] ?? ''));
             $patch = [];
-            $patch['winner_team_id']      = ($winner === '' || $winner === null) ? null : (int) $winner;
-            $patch['topscorer_player_id'] = ($top === '' || $top === null) ? null : (int) $top;
+            $patch['winner_team_id']        = ($winner === '' || $winner === null) ? null : (int) $winner;
+            $patch['topscorer_player_id']   = ($top === '' || $top === null) ? null : (int) $top;
+            $patch['topscorer_custom_name'] = $custom === '' ? null : mb_substr($custom, 0, 128);
+
+            $tb = $post['tiebreaker_value'] ?? null;
+            $patch['tiebreaker_value'] = ($tb === '' || $tb === null) ? null : max(0, (int) $tb);
+
             if ($label !== '') $patch['label'] = $label;
             $patch['updated_at'] = date('Y-m-d H:i:s');
             Database::update('forms', $patch, ['id' => $formId]);
@@ -235,6 +244,27 @@ final class PredictionController extends Controller
             Database::rollBack();
             throw $e;
         }
+    }
+
+    private function resolveCustomTopscorer(int $formId): void
+    {
+        $form = Database::fetch('SELECT topscorer_player_id, topscorer_custom_name FROM forms WHERE id = ?', [$formId]);
+        if (!$form) return;
+        if (!empty($form['topscorer_player_id'])) {
+            // Already linked to a real player; drop any leftover custom name
+            if (!empty($form['topscorer_custom_name'])) {
+                Database::update('forms', ['topscorer_custom_name' => null], ['id' => $formId]);
+            }
+            return;
+        }
+        $name = trim((string)($form['topscorer_custom_name'] ?? ''));
+        if ($name === '') return;
+        $existing = (int) Database::fetchColumn('SELECT id FROM players WHERE LOWER(name) = LOWER(?) LIMIT 1', [$name]);
+        $playerId = $existing ?: Database::insert('players', ['name' => $name, 'team_id' => null]);
+        Database::update('forms', [
+            'topscorer_player_id'   => $playerId,
+            'topscorer_custom_name' => null,
+        ], ['id' => $formId]);
     }
 
     public static function stageFromSlot(string $slot): string
@@ -305,8 +335,13 @@ final class PredictionController extends Controller
                 $missing[] = "Knock-out ronde {$prefix}: {$filled}/{$count} ingevuld.";
             }
         }
-        $form = Database::fetch('SELECT topscorer_player_id FROM forms WHERE id = ?', [$formId]);
-        if (empty($form['topscorer_player_id'])) $missing[] = 'Kies een topscorer.';
+        $form = Database::fetch('SELECT topscorer_player_id, tiebreaker_value FROM forms WHERE id = ?', [$formId]);
+        if (empty($form['topscorer_player_id'])) {
+            $missing[] = 'Kies een topscorer.';
+        }
+        if ($form['tiebreaker_value'] === null) {
+            $missing[] = 'Vul de tiebreak in (numerieke waarde).';
+        }
         return $missing;
     }
 

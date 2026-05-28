@@ -40,6 +40,7 @@ final class AdminController extends Controller
             'auth_provider','registration_open','predictions_open','predictions_deadline',
             'payment_amount','payment_currency','payment_recipient','payment_iban',
             'payment_instructions','admin_mail_to',
+            'tiebreaker_question','tiebreaker_correct_value',
         ];
         foreach ($fields as $f) {
             if (array_key_exists($f, $_POST)) {
@@ -226,14 +227,36 @@ final class AdminController extends Controller
     public function leaderboard(): void
     {
         $this->requireAdmin();
-        $rows = Database::fetchAll(
-            'SELECT f.id, f.label, f.score, f.paid_at, u.name AS user_name, u.email AS user_email
-               FROM forms f
-               JOIN users u ON u.id = f.user_id
-              WHERE f.status = "submitted"
-              ORDER BY f.score DESC, u.name'
-        );
-        $this->render('admin/leaderboard.twig', ['rows' => $rows]);
+        $correct = Setting::get('tiebreaker_correct_value', '');
+        if ($correct === '' || $correct === null) {
+            $rows = Database::fetchAll(
+                'SELECT f.id, f.label, f.score, f.tiebreaker_value, f.paid_at,
+                        u.name AS user_name, u.email AS user_email,
+                        NULL AS tiebreak_diff
+                   FROM forms f
+                   JOIN users u ON u.id = f.user_id
+                  WHERE f.status = "submitted"
+               ORDER BY f.score DESC, u.name'
+            );
+        } else {
+            $rows = Database::fetchAll(
+                'SELECT f.id, f.label, f.score, f.tiebreaker_value, f.paid_at,
+                        u.name AS user_name, u.email AS user_email,
+                        ABS(f.tiebreaker_value - ?) AS tiebreak_diff
+                   FROM forms f
+                   JOIN users u ON u.id = f.user_id
+                  WHERE f.status = "submitted"
+               ORDER BY f.score DESC,
+                        (tiebreak_diff IS NULL) ASC,
+                        tiebreak_diff ASC,
+                        u.name',
+                [(int) $correct]
+            );
+        }
+        $this->render('admin/leaderboard.twig', [
+            'rows'            => $rows,
+            'correct_tiebreak'=> $correct,
+        ]);
     }
 
     public function recompute(): void

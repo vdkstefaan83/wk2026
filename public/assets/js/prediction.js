@@ -24,7 +24,9 @@ function predictionWizard(cfg) {
     picks: {},
     winnerTeamId: '',
     topscorerPlayerId: '',
-    topscorerSearch: '',
+    topscorerSearch: '', // legacy, kept for older bindings
+    topscorerQuery: '',
+    tiebreakerValue: '',
     lastSaved: null,
 
     init() {
@@ -34,7 +36,9 @@ function predictionWizard(cfg) {
       this.picks     = cfg.initial.picks || {};
       this.label     = (document.querySelector('h1 input')?.value) || '';
       this.winnerTeamId     = (document.querySelector('select[x-model="winnerTeamId"]')?.value) || '';
-      this.topscorerPlayerId = (document.querySelector('select[x-model="topscorerPlayerId"]')?.value) || '';
+      this.topscorerPlayerId = cfg.initial.topscorerPlayerId || '';
+      this.topscorerQuery    = cfg.initial.topscorerCustomName || this.lookupPlayerName(this.topscorerPlayerId) || '';
+      this.tiebreakerValue   = cfg.initial.tiebreakerValue ?? '';
 
       // Seed groupMatches from server-rendered initial data
       const initial = window.__initialGroupMatches || {};
@@ -361,13 +365,55 @@ function predictionWizard(cfg) {
     },
 
     get filteredPlayers() {
-      const q = (this.topscorerSearch || '').toLowerCase().trim();
+      const q = (this.topscorerQuery || this.topscorerSearch || '').toLowerCase().trim();
       const all = window.__players || [];
-      if (!q) return all.slice(0, 200);
+      if (!q) return [];
       return all.filter(p =>
         (p.name || '').toLowerCase().includes(q)
         || (p.team_name || '').toLowerCase().includes(q)
-      ).slice(0, 200);
+      ).slice(0, 8);
+    },
+
+    get hasExactPlayerMatch() {
+      const q = (this.topscorerQuery || '').trim().toLowerCase();
+      if (!q) return false;
+      return (window.__players || []).some(p => (p.name || '').toLowerCase() === q);
+    },
+
+    get topscorerCustomName() {
+      // Custom-name pathway disabled: topscorer must be picked from list.
+      return '';
+    },
+
+    pickTopscorer(p) {
+      if (this.readonly) return;
+      this.topscorerPlayerId = p.id;
+      this.topscorerQuery = p.name;
+      this.scheduleAutosave();
+    },
+
+    clearTopscorer() {
+      if (this.readonly) return;
+      this.topscorerPlayerId = '';
+      this.topscorerQuery = '';
+      this.scheduleAutosave();
+    },
+
+    onTopscorerInput() {
+      // If user edits the text away from the selected player's name, unlink the player.
+      if (this.topscorerPlayerId) {
+        const p = (window.__players || []).find(x => x.id == this.topscorerPlayerId);
+        if (!p || (p.name || '').toLowerCase() !== (this.topscorerQuery || '').toLowerCase()) {
+          this.topscorerPlayerId = '';
+        }
+      }
+      this.scheduleAutosave();
+    },
+
+    lookupPlayerName(id) {
+      if (!id) return '';
+      const p = (window.__players || []).find(x => x.id == id);
+      return p ? p.name : '';
     },
 
     get winnerLabel() {
@@ -379,7 +425,7 @@ function predictionWizard(cfg) {
     get topscorerLabel() {
       if (!this.topscorerPlayerId) return '';
       const p = (window.__players || []).find(x => x.id == this.topscorerPlayerId);
-      return p ? `${p.name} (${p.team_name || '?'})` : '';
+      return p ? `${p.name}${p.team_name ? ' (' + p.team_name + ')' : ''}` : '';
     },
 
     get lastSavedLabel() {
@@ -403,6 +449,8 @@ function predictionWizard(cfg) {
         slots:  Object.keys(this.picks).map(s => ({ slot: s, team_id: this.picks[s] })),
         winner_team_id: this.winnerTeamId || null,
         topscorer_player_id: this.topscorerPlayerId || null,
+        topscorer_custom_name: this.topscorerCustomName || null,
+        tiebreaker_value: this.tiebreakerValue === '' ? null : Number(this.tiebreakerValue),
         label: this.label || undefined,
       };
       try {

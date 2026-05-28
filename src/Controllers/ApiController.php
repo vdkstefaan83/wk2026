@@ -72,6 +72,14 @@ final class ApiController extends Controller
                 $patch['topscorer_player_id'] = $payload['topscorer_player_id'] === '' || $payload['topscorer_player_id'] === null
                     ? null : (int)$payload['topscorer_player_id'];
             }
+            if (array_key_exists('topscorer_custom_name', $payload)) {
+                $val = trim((string)$payload['topscorer_custom_name']);
+                $patch['topscorer_custom_name'] = $val === '' ? null : mb_substr($val, 0, 128);
+            }
+            if (array_key_exists('tiebreaker_value', $payload)) {
+                $val = $payload['tiebreaker_value'];
+                $patch['tiebreaker_value'] = ($val === '' || $val === null) ? null : max(0, (int)$val);
+            }
             if (array_key_exists('label', $payload) && trim((string)$payload['label']) !== '') {
                 $patch['label'] = trim((string)$payload['label']);
             }

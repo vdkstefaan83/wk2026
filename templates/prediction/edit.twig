@@ -50,10 +50,12 @@
     csrf: {{ csrf|json_encode|raw }},
     readonly: {{ readonly ? 'true' : 'false' }},
     initial: {
-      standings:  {{ resolved.standings|json_encode|raw }},
-      bracket:    {{ resolved.bracket|json_encode|raw }},
-      downstream: {{ resolved.downstream|json_encode|raw }},
-      picks:      {{ resolved.picks|json_encode|raw }}
+      standings:           {{ resolved.standings|json_encode|raw }},
+      bracket:             {{ resolved.bracket|json_encode|raw }},
+      downstream:          {{ resolved.downstream|json_encode|raw }},
+      picks:               {{ resolved.picks|json_encode|raw }},
+      topscorerPlayerId:   {{ form.topscorer_player_id ? form.topscorer_player_id : 'null' }},
+      topscorerCustomName: {{ (form.topscorer_custom_name ?? '')|json_encode|raw }}
     }
   };
 </script>
@@ -113,6 +115,8 @@
     <input type="hidden" name="label" x-model="label">
     <input type="hidden" name="winner_team_id" x-model="winnerTeamId">
     <input type="hidden" name="topscorer_player_id" x-model="topscorerPlayerId">
+    <input type="hidden" name="topscorer_custom_name" :value="topscorerCustomName">
+    <input type="hidden" name="tiebreaker_value" x-model="tiebreakerValue">
 
     {# ---------------- Group stage ---------------- #}
     <section x-show="step==='groups'" class="space-y-5">
@@ -270,18 +274,46 @@
         <span class="text-2xl">👟</span>
         <span>Kies jouw topscorer · 10 ptn juiste speler + 3 ptn per goal</span>
       </div>
+
       <div class="card p-6 max-w-2xl">
         <label class="field-label">🔎 Zoek speler op naam of team</label>
-        <input type="text" x-model="topscorerSearch" placeholder="bv. Mbappé of Frankrijk..." :disabled="readonly">
+        <input type="text" x-model="topscorerQuery" @input="onTopscorerInput()"
+               placeholder="bv. Mbappé, Haaland, Brazilië..."
+               :disabled="readonly" autocomplete="off">
 
-        <label class="field-label mt-5">👟 Topscorer</label>
-        <select x-model="topscorerPlayerId" :disabled="readonly" size="10">
-          <template x-for="p in filteredPlayers" :key="p.id">
-            <option :value="p.id" x-text="p.name + ' — ' + (p.team_name || 'onbekend team')"></option>
+        {# Live suggestions #}
+        <div x-show="topscorerQuery.trim() !== ''" x-cloak class="mt-3">
+          <template x-if="filteredPlayers.length === 0">
+            <div class="text-sm text-slate-500 italic px-3 py-4">Geen spelers gevonden — pas je zoekterm aan.</div>
           </template>
-        </select>
-        <span class="field-hint" x-show="!topscorerPlayerId">Tip: typ in de zoekbalk om snel te filteren.</span>
-        <span class="field-hint pill pill-green mt-3" x-show="topscorerPlayerId" x-text="'✓ Gekozen: ' + topscorerLabel"></span>
+          <template x-if="filteredPlayers.length > 0">
+            <div class="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+              <template x-for="p in filteredPlayers" :key="p.id">
+                <button type="button" @click="pickTopscorer(p)"
+                        :class="topscorerPlayerId == p.id ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white hover:bg-emerald-50 border-slate-200 hover:border-emerald-300'"
+                        class="w-full text-left px-4 py-3 rounded-2xl border-2 flex items-center justify-between gap-3 transition">
+                  <span class="font-semibold" x-text="p.name"></span>
+                  <span class="text-xs opacity-75" x-text="p.team_name || ''"></span>
+                </button>
+              </template>
+            </div>
+          </template>
+        </div>
+
+        <div class="mt-5">
+          <template x-if="topscorerPlayerId">
+            <div class="flex items-center justify-between gap-2 px-4 py-3 rounded-2xl bg-emerald-50 border-2 border-emerald-200">
+              <div>
+                <div class="text-xs uppercase tracking-widest text-emerald-700 font-bold">✓ Gekozen</div>
+                <div class="font-display font-extrabold text-emerald-800 mt-0.5" x-text="topscorerLabel"></div>
+              </div>
+              <button type="button" @click="clearTopscorer()" class="btn btn-secondary btn-sm" :disabled="readonly">× wissen</button>
+            </div>
+          </template>
+          <template x-if="!topscorerPlayerId">
+            <p class="field-hint">Typ een naam of team om suggesties te zien, en klik je topscorer aan.</p>
+          </template>
+        </div>
       </div>
     </section>
 
@@ -320,6 +352,20 @@
           <div class="text-xs uppercase tracking-wider text-orange-700 font-bold">👟 Topscorer</div>
           <div class="font-display font-extrabold text-2xl text-orange-700 mt-2" x-text="topscorerLabel || '— nog niet gekozen —'"></div>
         </div>
+      </div>
+
+      <div class="card-thick border-sky-300 bg-gradient-to-br from-sky-50 to-white p-5">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="text-3xl">🎲</span>
+          <div>
+            <div class="text-xs uppercase tracking-wider text-sky-700 font-bold">Tiebreak</div>
+            <div class="font-display font-extrabold text-lg text-sky-900">{{ settings.tiebreaker_question }}</div>
+          </div>
+        </div>
+        <label class="field-label">Jouw antwoord (getal)</label>
+        <input type="number" min="0" step="1" x-model="tiebreakerValue"
+               placeholder="bv. 158" :disabled="readonly" class="max-w-xs">
+        <p class="field-hint">Bij gelijke score wint wie het dichtst bij het juiste antwoord zit.</p>
       </div>
 
       <div class="card-thick border-amber-300 bg-amber-50 p-5 flex items-start gap-4">

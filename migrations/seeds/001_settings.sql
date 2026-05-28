@@ -9,7 +9,9 @@ INSERT INTO settings (`key`, `value`) VALUES
 ('payment_recipient',   'Jonah'),
 ('payment_iban',        ''),
 ('payment_instructions','Gelieve het bedrag in cash aan Jonah te overhandigen.'),
-('admin_mail_to',       'wk2026@psb.ugent.be')
+('admin_mail_to',       'wk2026@psb.ugent.be'),
+('tiebreaker_question', 'Hoeveel doelpunten worden er in totaal gemaakt tijdens het toernooi?'),
+('tiebreaker_correct_value','')
 ;
 
 -- Default email templates (Quill-editable)
