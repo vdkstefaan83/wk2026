@@ -1,26 +1,34 @@
 {% extends 'layout/base.twig' %}
 {% block title %}Registreren · {{ app.name }}{% endblock %}
 {% block content %}
-<div class="max-w-md mx-auto bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-  <h1 class="text-2xl font-bold mb-4">Account aanmaken</h1>
-  <form method="post" action="{{ url('/register') }}" class="space-y-4">
-    <input type="hidden" name="_csrf" value="{{ csrf }}">
-    <div>
-      <label class="text-sm font-medium">Naam</label>
-      <input name="name" type="text" required value="{{ old('name') }}"
-             class="mt-1 w-full rounded border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
-    </div>
-    <div>
-      <label class="text-sm font-medium">E-mail</label>
-      <input name="email" type="email" required value="{{ old('email') }}"
-             class="mt-1 w-full rounded border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
-    </div>
-    <div>
-      <label class="text-sm font-medium">Wachtwoord (min. 8 tekens)</label>
-      <input name="password" type="password" minlength="8" required
-             class="mt-1 w-full rounded border-slate-300 focus:border-indigo-500 focus:ring-indigo-500">
-    </div>
-    <button class="w-full px-4 py-2.5 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600">Registreren</button>
-  </form>
+<div class="max-w-md mx-auto mt-10">
+  <div class="glass rounded-3xl p-8 relative overflow-hidden">
+    <div class="absolute -top-12 -left-12 w-40 h-40 rounded-full bg-sky-500/15 blur-3xl pointer-events-none"></div>
+
+    <h1 class="font-display text-3xl font-extrabold text-slate-100">Account aanmaken</h1>
+    <p class="text-sm text-slate-400 mt-1">Speel mee in de WK2026 pool.</p>
+
+    <form method="post" action="{{ url('/register') }}" class="space-y-4 mt-6">
+      <input type="hidden" name="_csrf" value="{{ csrf }}">
+      <div>
+        <label class="text-xs uppercase tracking-wider font-medium">Naam</label>
+        <input name="name" type="text" required value="{{ old('name') }}" class="mt-1 w-full px-3 py-2.5">
+      </div>
+      <div>
+        <label class="text-xs uppercase tracking-wider font-medium">E-mail</label>
+        <input name="email" type="email" required value="{{ old('email') }}" class="mt-1 w-full px-3 py-2.5">
+      </div>
+      <div>
+        <label class="text-xs uppercase tracking-wider font-medium">Wachtwoord (min. 8 tekens)</label>
+        <input name="password" type="password" minlength="8" required class="mt-1 w-full px-3 py-2.5">
+      </div>
+      <button class="btn-neon w-full mt-2">Registreren</button>
+    </form>
+
+    <p class="text-sm text-slate-400 mt-6 text-center">
+      Reeds een account?
+      <a href="{{ url('/login') }}" class="text-lime-400 hover:text-lime-300 font-medium">Inloggen</a>
+    </p>
+  </div>
 </div>
 {% endblock %}

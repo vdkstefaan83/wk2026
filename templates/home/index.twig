@@ -1,34 +1,69 @@
 {% extends 'layout/base.twig' %}
 {% block content %}
-<section class="text-center py-16">
-  <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight">Voorspel het WK 2026</h1>
-  <p class="mt-4 text-slate-600 max-w-2xl mx-auto">
-    48 landen, 12 groepen, één wereldkampioen. Vul je voorspelling in, zie de groepsstand live veranderen,
-    en strijd mee voor de top van de pool.
+
+<section class="relative py-16 sm:py-24 text-center">
+  <div class="absolute inset-0 -z-10 pointer-events-none">
+    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[720px] h-[720px] rounded-full bg-lime-400/10 blur-3xl"></div>
+    <div class="absolute left-1/4 top-1/3 w-[420px] h-[420px] rounded-full bg-sky-500/10 blur-3xl"></div>
+  </div>
+
+  <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs tracking-wide text-slate-300 mb-6">
+    <span class="live-dot"></span>
+    11 juni → 19 juli 2026 · USA · Canada · Mexico
+  </span>
+
+  <h1 class="font-display text-5xl sm:text-7xl font-extrabold leading-none">
+    <span class="text-gradient">Voorspel</span><br>
+    <span class="text-slate-100">het wereldkampioenschap</span>
+  </h1>
+
+  <p class="mt-6 text-slate-400 max-w-2xl mx-auto text-lg">
+    48 landen. 12 groepen. Eén beker. Vul je voorspellingen in, zie je groepsstanden live evolueren, en strijd voor de top.
   </p>
-  <div class="mt-8 flex justify-center gap-3">
-    <a href="{{ url('/login') }}" class="px-5 py-2.5 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700">Inloggen</a>
+
+  <div class="mt-10 flex flex-wrap justify-center gap-3">
+    <a href="{{ url('/login') }}" class="btn-neon text-base">Speel mee</a>
     {% if settings.auth_provider == 'db' and settings.registration_open == '1' %}
-      <a href="{{ url('/register') }}" class="px-5 py-2.5 rounded-lg bg-emerald-500 text-white font-medium hover:bg-emerald-600">Account aanmaken</a>
+      <a href="{{ url('/register') }}" class="btn-ghost text-base">Account aanmaken</a>
     {% endif %}
   </div>
 </section>
 
-<section class="grid sm:grid-cols-3 gap-4 mt-6">
-  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-    <div class="text-3xl">🏆</div>
-    <h3 class="font-semibold mt-2">Punten per ronde</h3>
-    <p class="text-sm text-slate-600 mt-1">1/2 ptn per groepswedstrijd, oplopend tot 50 ptn per finalist en 100 voor de wereldkampioen.</p>
+<section class="grid sm:grid-cols-3 gap-4 mt-8">
+  {% set features = [
+    {icon:'🏆', title:'Punten per ronde', desc:'Van 1 punt per correcte groepswedstrijd tot 100 voor de wereldkampioen.'},
+    {icon:'📈', title:'Live ranking',     desc:'Zie je groepsstanden updaten volgens de officiële FIFA-tiebreakers terwijl je invult.'},
+    {icon:'🥅', title:'Auto-bracket',     desc:'Knock-out fase verschijnt automatisch — inclusief de beste derdes.'}
+  ] %}
+  {% for f in features %}
+    <div class="glass rounded-2xl p-6 card-hover">
+      <div class="text-3xl">{{ f.icon }}</div>
+      <h3 class="font-display font-bold text-lg mt-3 text-slate-100">{{ f.title }}</h3>
+      <p class="text-sm text-slate-400 mt-1.5 leading-relaxed">{{ f.desc }}</p>
+    </div>
+  {% endfor %}
+</section>
+
+<section class="mt-10 glass rounded-2xl p-6 sm:p-8">
+  <h3 class="font-display font-bold text-xl mb-4 text-slate-100">Hoe werkt de score?</h3>
+  <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+    {% set rules = [
+      {label:'Groep · juiste 1-X-2',     pts:'1'},
+      {label:'Groep · exacte score',     pts:'+2'},
+      {label:'1/16 finale · per land',   pts:'5'},
+      {label:'1/8 finale · per land',    pts:'10'},
+      {label:'1/4 finale · per land',    pts:'15'},
+      {label:'1/2 finale · per land',    pts:'25'},
+      {label:'Finalist · per land',      pts:'50'},
+      {label:'Wereldkampioen',           pts:'100'}
+    ] %}
+    {% for r in rules %}
+      <div class="flex items-center justify-between gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5">
+        <span class="text-slate-300">{{ r.label }}</span>
+        <span class="font-display text-2xl text-gradient font-extrabold">{{ r.pts }}</span>
+      </div>
+    {% endfor %}
   </div>
-  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-    <div class="text-3xl">📈</div>
-    <h3 class="font-semibold mt-2">Live ranking</h3>
-    <p class="text-sm text-slate-600 mt-1">Terwijl je scores invult zie je de groepsstand updaten volgens de FIFA-tiebreakers.</p>
-  </div>
-  <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-    <div class="text-3xl">🥅</div>
-    <h3 class="font-semibold mt-2">Knock-out</h3>
-    <p class="text-sm text-slate-600 mt-1">Na de groepen verschijnt automatisch je 16de finale incl. beste derdes.</p>
-  </div>
+  <p class="text-xs text-slate-500 mt-4">+ topscorer: 10 ptn voor de juiste speler en 3 ptn per goal die jouw topscorer maakt.</p>
 </section>
 {% endblock %}

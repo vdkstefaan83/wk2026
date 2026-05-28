@@ -1,53 +1,66 @@
 {% extends 'layout/base.twig' %}
 {% block title %}Dashboard · {{ app.name }}{% endblock %}
 {% block content %}
-<div class="flex items-center justify-between mb-4">
-  <h1 class="text-2xl font-bold">Mijn voorspellingen</h1>
-  <a href="{{ url('/predictions/new') }}"
-     class="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">+ Nieuwe voorspelling</a>
+<div class="flex items-center justify-between mb-8">
+  <div>
+    <p class="text-xs uppercase tracking-wider text-slate-500">Dashboard</p>
+    <h1 class="font-display text-3xl sm:text-4xl font-extrabold mt-1">Mijn voorspellingen</h1>
+  </div>
+  <a href="{{ url('/predictions/new') }}" class="btn-neon">+ Nieuwe voorspelling</a>
 </div>
 
 {% if forms is empty %}
-  <div class="bg-white border border-dashed border-slate-300 rounded-xl p-10 text-center text-slate-500">
-    Nog geen voorspellingen. Maak je eerste aan!
+  <div class="glass rounded-3xl p-12 text-center">
+    <div class="text-5xl mb-3">⚽</div>
+    <h2 class="font-display text-xl font-bold text-slate-100">Nog geen voorspellingen</h2>
+    <p class="text-slate-400 text-sm mt-2 max-w-md mx-auto">Maak je eerste voorspelling aan en zie hoe ver je geraakt richting wereldkampioen.</p>
+    <a href="{{ url('/predictions/new') }}" class="btn-neon mt-6 inline-block">Begin nu</a>
   </div>
 {% else %}
   <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
     {% for f in forms %}
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col">
-        <div class="flex items-start justify-between">
-          <div>
-            <div class="font-semibold">{{ f.label }}</div>
+      <div class="glass rounded-2xl p-5 card-hover flex flex-col">
+        <div class="flex items-start justify-between gap-2">
+          <div class="min-w-0">
+            <div class="font-display font-bold text-lg text-slate-100 truncate">{{ f.label }}</div>
             <div class="text-xs text-slate-500 mt-0.5">{{ f.created_at|date('d/m/Y H:i') }}</div>
           </div>
           {% if f.status == 'submitted' %}
-            <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">verzonden</span>
+            <span class="text-[10px] uppercase tracking-wider font-semibold px-2 py-1 rounded-full bg-emerald-400/15 text-emerald-300 border border-emerald-400/20">verzonden</span>
           {% else %}
-            <span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">concept</span>
+            <span class="text-[10px] uppercase tracking-wider font-semibold px-2 py-1 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/20">concept</span>
           {% endif %}
         </div>
-        <div class="text-sm text-slate-600 mt-3">
+
+        <div class="text-sm mt-4 flex items-center gap-2">
           {% if f.paid_at %}
-            <span class="text-emerald-700">✓ Betaald op {{ f.paid_at|date('d/m/Y') }}</span>
+            <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-300 text-xs">
+              ✓ Betaald · {{ f.paid_at|date('d/m/Y') }}
+            </span>
           {% elseif f.status == 'submitted' %}
-            <span class="text-amber-700">Wacht op betaling</span>
+            <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-500/10 text-amber-300 text-xs">
+              ⏳ Wacht op betaling
+            </span>
           {% else %}
-            <span class="text-slate-500">Concept, nog niet verzonden</span>
+            <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/5 text-slate-400 text-xs">
+              ✎ Concept
+            </span>
+          {% endif %}
+          {% if f.status == 'submitted' and f.score is defined %}
+            <span class="ml-auto font-display font-extrabold text-lg text-gradient">{{ f.score }} <span class="text-xs text-slate-500 font-medium">pt</span></span>
           {% endif %}
         </div>
-        <div class="flex gap-2 mt-4 text-sm">
-          <a href="{{ url('/predictions/' ~ f.id) }}"
-             class="px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700">
+
+        <div class="flex gap-2 mt-5 pt-4 border-t border-white/5">
+          <a href="{{ url('/predictions/' ~ f.id) }}" class="btn-neon text-xs flex-1 text-center">
             {{ f.status == 'submitted' ? 'Bekijken' : 'Bewerken' }}
           </a>
           {% if f.status == 'submitted' %}
-            <a href="{{ url('/predictions/' ~ f.id ~ '/pdf') }}" target="_blank"
-               class="px-3 py-1.5 rounded border border-slate-300 hover:bg-slate-50">PDF</a>
+            <a href="{{ url('/predictions/' ~ f.id ~ '/pdf') }}" target="_blank" class="btn-ghost text-xs">PDF</a>
           {% else %}
-            <form method="post" action="{{ url('/predictions/' ~ f.id ~ '/delete') }}"
-                  onsubmit="return confirm('Concept verwijderen?')">
+            <form method="post" action="{{ url('/predictions/' ~ f.id ~ '/delete') }}" onsubmit="return confirm('Concept verwijderen?')">
               <input type="hidden" name="_csrf" value="{{ csrf }}">
-              <button class="px-3 py-1.5 rounded border border-rose-300 text-rose-600 hover:bg-rose-50">Verwijder</button>
+              <button class="btn-ghost text-xs text-rose-300 hover:text-rose-200">Verwijder</button>
             </form>
           {% endif %}
         </div>

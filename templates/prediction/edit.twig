@@ -61,37 +61,37 @@
      x-init="init()"
      class="space-y-6">
 
-  <div class="flex flex-wrap items-center justify-between gap-2">
-    <div>
-      <h1 class="text-2xl font-bold">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div class="min-w-0">
+      <p class="text-xs uppercase tracking-wider text-slate-500">Voorspelling</p>
+      <h1 class="font-display text-2xl sm:text-3xl font-extrabold">
         <input x-model="label" @change="autosave()" :disabled="readonly"
-               class="bg-transparent border-b border-dashed border-slate-300 focus:border-indigo-500 focus:outline-none"
+               class="bg-transparent border-b border-dashed border-white/20 focus:border-lime-400 focus:outline-none px-1 -ml-1"
                value="{{ form.label }}">
       </h1>
-      <p class="text-xs text-slate-500 mt-1">
+      <p class="text-xs text-slate-500 mt-2 flex flex-wrap items-center gap-2">
         {% if readonly %}
-          Verzonden op {{ form.submitted_at|date('d/m/Y H:i') }}
+          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-400/15 text-emerald-300 text-[10px] uppercase tracking-wider font-semibold">verzonden</span>
+          op {{ form.submitted_at|date('d/m/Y H:i') }}
         {% else %}
-          Concept · laatste autosave: <span x-text="lastSavedLabel"></span>
+          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-400/15 text-amber-300 text-[10px] uppercase tracking-wider font-semibold">concept</span>
+          laatste autosave: <span class="text-slate-300" x-text="lastSavedLabel"></span>
         {% endif %}
-        {% if deadline %} · Deadline: {{ deadline }}{% endif %}
+        {% if deadline %}<span class="text-slate-600">·</span> deadline: <span class="text-slate-300">{{ deadline }}</span>{% endif %}
       </p>
     </div>
     <div class="flex gap-2 text-sm">
-      <a href="{{ url('/dashboard') }}" class="px-3 py-1.5 rounded border border-slate-300 hover:bg-slate-50">← Dashboard</a>
+      <a href="{{ url('/dashboard') }}" class="btn-ghost text-xs">← Dashboard</a>
       {% if not readonly %}
-        <button type="button" @click="save()" class="px-3 py-1.5 rounded border border-indigo-300 text-indigo-700 hover:bg-indigo-50">
-          Tussentijds bewaren
-        </button>
+        <button type="button" @click="save()" class="btn-ghost text-xs">💾 Bewaren</button>
       {% else %}
-        <a href="{{ url('/predictions/' ~ form.id ~ '/pdf') }}" target="_blank"
-           class="px-3 py-1.5 rounded bg-slate-800 text-white hover:bg-slate-900">PDF</a>
+        <a href="{{ url('/predictions/' ~ form.id ~ '/pdf') }}" target="_blank" class="btn-neon text-xs">PDF</a>
       {% endif %}
     </div>
   </div>
 
   {# Step tabs #}
-  <div class="flex flex-wrap gap-1 border-b border-slate-200">
+  <div class="flex flex-wrap gap-0 border-b border-white/10 overflow-x-auto -mx-1 px-1">
     {% for step in [
       {key:'groups',  label:'Groepsfase'},
       {key:'r32',     label:'1/16 finale'},
@@ -103,8 +103,8 @@
       {key:'summary', label:'Samenvatting'}
     ] %}
       <button type="button" @click="step='{{ step.key }}'"
-              :class="step==='{{ step.key }}' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-600 hover:text-slate-900'"
-              class="px-3 py-2 -mb-px border-b-2 text-sm font-medium">{{ step.label }}</button>
+              :class="step==='{{ step.key }}' ? 'is-active' : ''"
+              class="tab-btn whitespace-nowrap">{{ step.label }}</button>
     {% endfor %}
   </div>
 
@@ -115,74 +115,75 @@
     <input type="hidden" name="topscorer_player_id" x-model="topscorerPlayerId">
 
     {# ---------------- Group stage ---------------- #}
-    <section x-show="step==='groups'" class="space-y-6">
-      <p class="text-sm text-slate-600">
+    <section x-show="step==='groups'" class="space-y-5">
+      <p class="text-sm text-slate-400">
         Vul voor elke wedstrijd je score-voorspelling in. De ranking past zich live aan volgens de FIFA-regels.
       </p>
       {% for g in groups %}
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm">
-          <div class="flex items-center justify-between px-4 py-2 border-b border-slate-100">
-            <h2 class="font-semibold">Groep {{ g.code }}</h2>
-            <span class="text-xs text-slate-500" x-text="completionForGroup('{{ g.code }}')"></span>
+        <div class="glass rounded-2xl overflow-hidden">
+          <div class="flex items-center justify-between px-5 py-3 border-b border-white/5 bg-white/[0.02]">
+            <h2 class="font-display font-bold text-lg">
+              <span class="text-gradient">Groep {{ g.code }}</span>
+            </h2>
+            <span class="text-xs text-slate-500 font-mono" x-text="completionForGroup('{{ g.code }}')"></span>
           </div>
           <div class="grid md:grid-cols-2">
-            <div class="p-4 space-y-2">
+            <div class="p-5 space-y-1">
               {% for m in matches_by_group[g.code] %}
-                <div class="flex items-center justify-between gap-2 py-1.5 border-b last:border-0 border-slate-100">
+                <div class="flex items-center justify-between gap-2 py-2 border-b last:border-0 border-white/5">
                   <div class="flex items-center gap-2 text-sm w-2/5 justify-end text-right">
-                    <span>{{ m.home_flag }}</span>
-                    <span>{{ m.home_name }}</span>
+                    <span class="text-slate-200">{{ m.home_name }}</span>
+                    <span class="text-base">{{ m.home_flag }}</span>
                   </div>
-                  <div class="flex items-center gap-1">
+                  <div class="score-pill">
                     <input type="number" min="0" max="20" name="score[{{ m.id }}][home]"
                            value="{{ m.home_goals }}"
                            @input="onScoreChange({{ m.id }}, {{ m.home_id }}, {{ m.away_id }}, '{{ g.code }}', $event)"
-                           :disabled="readonly"
-                           class="w-12 text-center rounded border-slate-300">
-                    <span class="text-slate-400">–</span>
+                           :disabled="readonly">
+                    <span class="text-slate-500 font-bold">·</span>
                     <input type="number" min="0" max="20" name="score[{{ m.id }}][away]"
                            value="{{ m.away_goals }}"
                            @input="onScoreChange({{ m.id }}, {{ m.home_id }}, {{ m.away_id }}, '{{ g.code }}', $event)"
-                           :disabled="readonly"
-                           class="w-12 text-center rounded border-slate-300">
+                           :disabled="readonly">
                   </div>
                   <div class="flex items-center gap-2 text-sm w-2/5">
-                    <span>{{ m.away_name }}</span>
-                    <span>{{ m.away_flag }}</span>
+                    <span class="text-base">{{ m.away_flag }}</span>
+                    <span class="text-slate-200">{{ m.away_name }}</span>
                   </div>
                 </div>
               {% endfor %}
             </div>
 
             {# Live standings #}
-            <div class="p-4 bg-slate-50 border-l border-slate-100">
+            <div class="p-5 bg-black/20 border-l border-white/5">
               <table class="w-full text-sm">
                 <thead>
-                  <tr class="text-xs uppercase text-slate-500">
-                    <th class="text-left font-medium pb-1">#</th>
-                    <th class="text-left font-medium pb-1">Team</th>
-                    <th class="text-right font-medium pb-1 w-8">G</th>
-                    <th class="text-right font-medium pb-1 w-8">DV</th>
-                    <th class="text-right font-medium pb-1 w-8">+/-</th>
-                    <th class="text-right font-medium pb-1 w-8">Pt</th>
+                  <tr class="text-[10px] uppercase tracking-wider text-slate-500">
+                    <th class="text-left font-medium pb-2">#</th>
+                    <th class="text-left font-medium pb-2">Team</th>
+                    <th class="text-right font-medium pb-2 w-8">G</th>
+                    <th class="text-right font-medium pb-2 w-12">DV</th>
+                    <th class="text-right font-medium pb-2 w-10">+/-</th>
+                    <th class="text-right font-medium pb-2 w-10">Pt</th>
                   </tr>
                 </thead>
                 <tbody>
                   <template x-for="(row, idx) in standings['{{ g.code }}']" :key="row.team_id">
-                    <tr :class="idx<2 ? 'bg-emerald-50' : (idx===2 ? 'bg-amber-50' : '')">
-                      <td class="py-1 pr-2" x-text="idx+1"></td>
-                      <td class="py-1 pr-2" x-text="row.name"></td>
-                      <td class="py-1 text-right" x-text="row.played"></td>
-                      <td class="py-1 text-right" x-text="row.gf+':'+row.ga"></td>
-                      <td class="py-1 text-right" x-text="(row.gd>=0?'+':'')+row.gd"></td>
-                      <td class="py-1 text-right font-semibold" x-text="row.points"></td>
+                    <tr :class="idx<2 ? 'bg-lime-400/[0.06]' : (idx===2 ? 'bg-amber-400/[0.06]' : '')"
+                        class="border-t border-white/5">
+                      <td class="py-1.5 pr-2 text-slate-400 font-mono" x-text="idx+1"></td>
+                      <td class="py-1.5 pr-2 text-slate-200" x-text="row.name"></td>
+                      <td class="py-1.5 text-right text-slate-300" x-text="row.played"></td>
+                      <td class="py-1.5 text-right text-slate-400 font-mono" x-text="row.gf+':'+row.ga"></td>
+                      <td class="py-1.5 text-right text-slate-300 font-mono" x-text="(row.gd>=0?'+':'')+row.gd"></td>
+                      <td class="py-1.5 text-right font-display font-extrabold text-lime-300" x-text="row.points"></td>
                     </tr>
                   </template>
                 </tbody>
               </table>
-              <p class="text-[10px] text-slate-500 mt-2">
-                <span class="inline-block w-2 h-2 bg-emerald-500 rounded-sm mr-1"></span>Top 2 →
-                <span class="inline-block w-2 h-2 bg-amber-400 rounded-sm ml-2 mr-1"></span>3de (mogelijk door)
+              <p class="text-[10px] text-slate-500 mt-3 flex items-center gap-3">
+                <span class="inline-flex items-center gap-1"><span class="inline-block w-2 h-2 bg-lime-400 rounded-sm"></span>Top 2 door</span>
+                <span class="inline-flex items-center gap-1"><span class="inline-block w-2 h-2 bg-amber-400 rounded-sm"></span>3de (mogelijk door)</span>
               </p>
             </div>
           </div>
@@ -193,33 +194,48 @@
     {# ---------------- Knockout rounds ---------------- #}
     {% for ko in ['r32','r16','qf','sf','final'] %}
       <section x-show="step==='{{ ko }}'" class="space-y-4">
-        <p class="text-sm text-slate-600" x-show="bracket && bracket.r32 && bracket.r32.length">
-          Klik per wedstrijd op het team dat doorgaat. Volgende ronde verschijnt automatisch.
-        </p>
+        {% if ko == 'final' %}
+          <div class="glass rounded-2xl p-5 border-lime-400/30 bg-gradient-to-br from-lime-400/[0.08] via-emerald-500/[0.04] to-transparent flex items-center gap-4">
+            <div class="text-4xl">🏆</div>
+            <div class="flex-1">
+              <div class="text-[10px] uppercase tracking-widest text-lime-300/80">Wereldkampioen</div>
+              <div class="font-display font-extrabold text-2xl text-gradient" x-text="winnerLabel || 'Klik je winnaar aan ↓'"></div>
+              <div class="text-xs text-slate-400 mt-0.5">De winnaar van de finale wordt automatisch jouw wereldkampioen (+100 ptn).</div>
+            </div>
+          </div>
+        {% else %}
+          <p class="text-sm text-slate-400" x-show="bracket && bracket.r32 && bracket.r32.length">
+            Klik per wedstrijd op het team dat doorgaat. De volgende ronde verschijnt automatisch.
+          </p>
+        {% endif %}
         <template x-if="!isGroupsComplete()">
-          <div class="bg-amber-50 border border-amber-200 text-amber-800 rounded p-3 text-sm">
-            Vul eerst alle groepswedstrijden in om deze ronde te zien.
+          <div class="glass rounded-2xl p-5 text-sm flex items-start gap-3">
+            <span class="text-2xl">🔒</span>
+            <div>
+              <div class="font-display font-bold text-amber-300">Nog niet beschikbaar</div>
+              <p class="text-slate-400 mt-0.5">Vul eerst alle groepswedstrijden in om deze ronde te ontgrendelen.</p>
+            </div>
           </div>
         </template>
         <template x-if="isGroupsComplete()">
           <div class="grid sm:grid-cols-2 gap-3">
             <template x-for="match in matchesForStage('{{ ko }}')" :key="match.slot">
-              <div class="bg-white rounded-lg border border-slate-200 p-3">
-                <div class="text-xs text-slate-500 mb-2" x-text="match.slot"></div>
-                <div class="space-y-1">
+              <div class="glass rounded-xl p-4 card-hover">
+                <div class="text-[10px] tracking-widest uppercase text-slate-500 font-mono mb-3" x-text="match.slot"></div>
+                <div class="space-y-2">
                   <template x-for="side in ['home','away']" :key="side">
                     <button type="button"
                             @click="pickSlot(match.slot, match[side]?.team_id)"
                             :disabled="!match[side] || readonly"
                             :class="picks[match.slot] && match[side] && picks[match.slot]===match[side].team_id
-                                       ? 'bg-emerald-500 text-white border-emerald-500'
-                                       : 'bg-white hover:bg-slate-50 border-slate-300'"
-                            class="w-full text-left px-3 py-2 rounded border flex items-center justify-between">
-                      <span class="flex items-center gap-2">
-                        <span x-text="match[side]?.flag_emoji || ''"></span>
-                        <span x-text="match[side]?.name || '–'"></span>
+                                       ? 'bg-gradient-to-r from-lime-400/20 to-emerald-500/20 border-lime-400/50 text-lime-100 shadow-[0_0_20px_-5px_rgba(132,204,22,0.5)]'
+                                       : 'bg-white/[0.03] hover:bg-white/[0.08] border-white/10 text-slate-200'"
+                            class="w-full text-left px-3 py-2.5 rounded-xl border transition-all flex items-center justify-between disabled:opacity-40 disabled:cursor-not-allowed">
+                      <span class="flex items-center gap-2.5">
+                        <span class="text-lg" x-text="match[side]?.flag_emoji || ''"></span>
+                        <span class="font-medium" x-text="match[side]?.name || '–'"></span>
                       </span>
-                      <span class="text-xs opacity-70" x-text="match[side]?.group ? 'Groep '+match[side].group : ''"></span>
+                      <span class="text-[10px] uppercase tracking-wider text-slate-500" x-text="match[side]?.group ? 'Groep '+match[side].group : ''"></span>
                     </button>
                   </template>
                 </div>
@@ -235,63 +251,72 @@
 
     {# ---------------- Topscorer ---------------- #}
     <section x-show="step==='topscorer'" class="space-y-4">
-      <div class="bg-white rounded-xl border border-slate-200 p-5 max-w-xl">
-        <h2 class="font-semibold mb-2">Wereldkampioen</h2>
-        <select x-model="winnerTeamId" :disabled="readonly"
-                class="w-full rounded border-slate-300">
-          <option value="">– kies een team –</option>
-          {% for t in teams %}
-            <option value="{{ t.id }}">{{ t.flag_emoji }} {{ t.name }} {% if t.group_code %}(Groep {{ t.group_code }}){% endif %}</option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <div class="bg-white rounded-xl border border-slate-200 p-5 max-w-xl">
-        <h2 class="font-semibold mb-2">Topscorer van het toernooi</h2>
-        <input type="text" x-model="topscorerSearch" placeholder="Zoek speler op naam of team..."
-               :disabled="readonly"
-               class="w-full rounded border-slate-300 mb-2">
-        <select x-model="topscorerPlayerId" :disabled="readonly"
-                class="w-full rounded border-slate-300" size="8">
+      <div class="glass rounded-2xl p-6 max-w-2xl">
+        <div class="flex items-start gap-3">
+          <div class="text-3xl">⚽</div>
+          <div>
+            <h2 class="font-display font-bold text-lg text-slate-100">Topscorer van het toernooi</h2>
+            <p class="text-xs text-slate-400 mt-0.5">10 ptn voor de juiste speler + 3 ptn per goal die hij scoort.</p>
+          </div>
+        </div>
+        <input type="text" x-model="topscorerSearch" placeholder="🔎 Zoek speler op naam of team..."
+               :disabled="readonly" class="mt-4 w-full px-3 py-2.5">
+        <select x-model="topscorerPlayerId" :disabled="readonly" class="mt-2 w-full px-3 py-2" size="10">
           <template x-for="p in filteredPlayers" :key="p.id">
             <option :value="p.id" x-text="p.name + ' — ' + (p.team_name || 'onbekend team')"></option>
           </template>
         </select>
-        <p class="text-xs text-slate-500 mt-2">
-          10 punten voor de juiste topscorer + 3 punten per goal die jouw topscorer maakt.
-        </p>
+        <p class="text-xs text-slate-500 mt-2" x-show="!topscorerPlayerId">Tip: typ in de zoekbalk om snel te filteren.</p>
       </div>
     </section>
 
     {# ---------------- Summary / submit ---------------- #}
-    <section x-show="step==='summary'" class="space-y-4">
-      <div class="bg-white rounded-xl border border-slate-200 p-5">
-        <h2 class="font-semibold mb-3">Samenvatting</h2>
-        <ul class="text-sm space-y-1 text-slate-700">
-          <li>Groepswedstrijden ingevuld: <strong x-text="groupCompletion().filled + ' / ' + groupCompletion().total"></strong></li>
-          <li>R32 picks: <strong x-text="countPicks('R32') + ' / 16'"></strong></li>
-          <li>R16 picks: <strong x-text="countPicks('R16') + ' / 8'"></strong></li>
-          <li>QF picks: <strong x-text="countPicks('QF') + ' / 4'"></strong></li>
-          <li>SF picks: <strong x-text="countPicks('SF') + ' / 2'"></strong></li>
-          <li>Finale pick: <strong x-text="countPicks('F') + ' / 1'"></strong></li>
-          <li>Wereldkampioen: <strong x-text="winnerLabel || '— niet gekozen —'"></strong></li>
-          <li>Topscorer: <strong x-text="topscorerLabel || '— niet gekozen —'"></strong></li>
-        </ul>
+    <section x-show="step==='summary'" class="space-y-5">
+      <div class="glass rounded-2xl p-6">
+        <h2 class="font-display font-bold text-xl mb-4 text-slate-100">Samenvatting</h2>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {% set items = [
+            {label:'Groepswedstrijden', expr:"groupCompletion().filled + ' / ' + groupCompletion().total"},
+            {label:'1/16 finale', expr:"countPicks('R32') + ' / 16'"},
+            {label:'1/8 finale',  expr:"countPicks('R16') + ' / 8'"},
+            {label:'1/4 finale',  expr:"countPicks('QF') + ' / 4'"},
+            {label:'1/2 finale',  expr:"countPicks('SF') + ' / 2'"},
+            {label:'Finale',      expr:"countPicks('F') + ' / 1'"}
+          ] %}
+          {% for it in items %}
+            <div class="p-3 rounded-xl bg-white/[0.03] border border-white/5">
+              <div class="text-[10px] uppercase tracking-wider text-slate-500">{{ it.label }}</div>
+              <div class="font-display text-2xl font-extrabold text-slate-100 mt-1" x-text="{{ it.expr }}"></div>
+            </div>
+          {% endfor %}
+          <div class="p-3 rounded-xl bg-white/[0.03] border border-white/5 sm:col-span-2">
+            <div class="text-[10px] uppercase tracking-wider text-slate-500">🏆 Wereldkampioen</div>
+            <div class="font-display text-lg font-extrabold text-gradient mt-1" x-text="winnerLabel || '— niet gekozen —'"></div>
+          </div>
+          <div class="p-3 rounded-xl bg-white/[0.03] border border-white/5 sm:col-span-2">
+            <div class="text-[10px] uppercase tracking-wider text-slate-500">⚽ Topscorer</div>
+            <div class="font-display text-lg font-extrabold text-gradient mt-1" x-text="topscorerLabel || '— niet gekozen —'"></div>
+          </div>
+        </div>
       </div>
 
-      <div class="bg-amber-50 border border-amber-200 text-amber-900 rounded p-4 text-sm">
-        <strong>Let op:</strong> na verzenden kan je je voorspelling niet meer wijzigen. Je ontvangt een PDF
-        per mail en moet <strong>{{ settings.payment_amount }} {{ settings.payment_currency }}</strong>
-        aan <strong>{{ settings.payment_recipient }}</strong> betalen om mee te dingen.
+      <div class="glass rounded-2xl p-5 border-amber-400/30 bg-amber-400/[0.04] text-sm flex items-start gap-3">
+        <span class="text-2xl">⚠️</span>
+        <div>
+          <div class="font-display font-bold text-amber-200">Let op</div>
+          <p class="text-slate-300 mt-1">Na verzenden kan je je voorspelling niet meer wijzigen. Je ontvangt een PDF per mail en moet
+          <strong class="text-lime-300">{{ settings.payment_amount }} {{ settings.payment_currency }}</strong>
+          aan <strong class="text-lime-300">{{ settings.payment_recipient }}</strong> betalen om mee te dingen.</p>
+        </div>
       </div>
 
       {% if not readonly %}
-        <div class="flex gap-2">
-          <button type="submit" class="px-4 py-2 rounded border border-slate-300 hover:bg-slate-50">Bewaren als concept</button>
+        <div class="flex flex-wrap gap-2">
+          <button type="submit" class="btn-ghost">💾 Bewaren als concept</button>
           <button type="submit" formaction="{{ url('/predictions/' ~ form.id ~ '/submit') }}"
                   onclick="return confirm('Definitief verzenden? Dit kan niet ongedaan gemaakt worden.')"
-                  class="px-4 py-2 rounded bg-emerald-500 text-white hover:bg-emerald-600 font-medium">
-            Definitief verzenden
+                  class="btn-neon">
+            🚀 Definitief verzenden
           </button>
         </div>
       {% endif %}

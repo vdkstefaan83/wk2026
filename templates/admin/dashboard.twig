@@ -1,22 +1,26 @@
 {% extends 'admin/_layout.twig' %}
 {% block admin_content %}
-<h1 class="text-2xl font-bold mb-4">Admin overzicht</h1>
-<div class="grid sm:grid-cols-4 gap-3">
-  <div class="bg-white rounded-xl border border-slate-200 p-4">
-    <div class="text-xs text-slate-500">Gebruikers</div>
-    <div class="text-2xl font-bold">{{ stats.users }}</div>
-  </div>
-  <div class="bg-white rounded-xl border border-slate-200 p-4">
-    <div class="text-xs text-slate-500">Formulieren</div>
-    <div class="text-2xl font-bold">{{ stats.forms_total }}</div>
-  </div>
-  <div class="bg-white rounded-xl border border-slate-200 p-4">
-    <div class="text-xs text-slate-500">Verzonden</div>
-    <div class="text-2xl font-bold">{{ stats.forms_submitted }}</div>
-  </div>
-  <div class="bg-white rounded-xl border border-slate-200 p-4">
-    <div class="text-xs text-slate-500">Betaald</div>
-    <div class="text-2xl font-bold">{{ stats.forms_paid }}</div>
-  </div>
+<p class="text-xs uppercase tracking-wider text-slate-500">Admin</p>
+<h1 class="font-display text-3xl sm:text-4xl font-extrabold mt-1 mb-8">Overzicht</h1>
+
+<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+  {% set tiles = [
+    {label:'Gebruikers',  value: stats.users,          icon:'👥', color:'from-sky-400/20 to-sky-600/0'},
+    {label:'Formulieren', value: stats.forms_total,    icon:'📝', color:'from-indigo-400/20 to-indigo-600/0'},
+    {label:'Verzonden',   value: stats.forms_submitted,icon:'✅', color:'from-lime-400/20 to-emerald-600/0'},
+    {label:'Betaald',     value: stats.forms_paid,     icon:'💰', color:'from-amber-400/20 to-amber-600/0'}
+  ] %}
+  {% for t in tiles %}
+    <div class="glass rounded-2xl p-5 card-hover relative overflow-hidden">
+      <div class="absolute inset-0 bg-gradient-to-br {{ t.color }} pointer-events-none"></div>
+      <div class="relative">
+        <div class="flex items-center justify-between">
+          <div class="text-xs uppercase tracking-wider text-slate-400">{{ t.label }}</div>
+          <span class="text-2xl">{{ t.icon }}</span>
+        </div>
+        <div class="font-display text-4xl font-extrabold text-slate-100 mt-2">{{ t.value }}</div>
+      </div>
+    </div>
+  {% endfor %}
 </div>
 {% endblock %}

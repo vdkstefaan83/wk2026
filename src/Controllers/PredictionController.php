@@ -305,8 +305,7 @@ final class PredictionController extends Controller
                 $missing[] = "Knock-out ronde {$prefix}: {$filled}/{$count} ingevuld.";
             }
         }
-        $form = Database::fetch('SELECT winner_team_id, topscorer_player_id FROM forms WHERE id = ?', [$formId]);
-        if (empty($form['winner_team_id']))      $missing[] = 'Kies de wereldkampioen.';
+        $form = Database::fetch('SELECT topscorer_player_id FROM forms WHERE id = ?', [$formId]);
         if (empty($form['topscorer_player_id'])) $missing[] = 'Kies een topscorer.';
         return $missing;
     }

@@ -1,19 +1,27 @@
 {% extends 'admin/_layout.twig' %}
 {% block admin_content %}
-<h1 class="text-2xl font-bold mb-4">Template: <span class="font-mono">{{ template.key }}</span></h1>
-<form method="post" action="{{ url('/admin/email-templates/' ~ template.key) }}" class="space-y-4 max-w-3xl bg-white rounded-xl border border-slate-200 p-5">
+<p class="text-xs uppercase tracking-wider text-slate-500">Admin · template</p>
+<h1 class="font-display text-3xl font-extrabold mt-1 mb-6">
+  <span class="font-mono text-lime-300">{{ template.key }}</span>
+</h1>
+
+<form method="post" action="{{ url('/admin/email-templates/' ~ template.key) }}" class="space-y-4 max-w-3xl">
   <input type="hidden" name="_csrf" value="{{ csrf }}">
-  <div>
-    <label class="text-sm font-medium">Onderwerp</label>
-    <input name="subject" value="{{ template.subject }}" class="mt-1 w-full rounded border-slate-300">
+  <div class="glass rounded-2xl p-6 space-y-4">
+    <div>
+      <label class="text-xs uppercase tracking-wider font-medium">Onderwerp</label>
+      <input name="subject" value="{{ template.subject }}" class="mt-1 w-full px-3 py-2.5">
+    </div>
+    <div>
+      <label class="text-xs uppercase tracking-wider font-medium">Body (HTML)</label>
+      <div id="editor" class="mt-1">{{ template.body_html|raw }}</div>
+      <textarea name="body_html" id="body_html" hidden>{{ template.body_html }}</textarea>
+    </div>
   </div>
-  <div>
-    <label class="text-sm font-medium">Body (HTML)</label>
-    <div id="editor" style="height: 280px;">{{ template.body_html|raw }}</div>
-    <textarea name="body_html" id="body_html" hidden>{{ template.body_html }}</textarea>
+  <div class="flex gap-2">
+    <button class="btn-neon">💾 Bewaren</button>
+    <a href="{{ url('/admin/email-templates') }}" class="btn-ghost">← Terug</a>
   </div>
-  <button class="px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700">Bewaren</button>
-  <a href="{{ url('/admin/email-templates') }}" class="ml-2 text-sm text-slate-500 hover:underline">Terug</a>
 </form>
 {% endblock %}
 

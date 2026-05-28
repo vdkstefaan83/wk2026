@@ -1,50 +1,67 @@
 <!doctype html>
-<html lang="nl" class="h-full bg-slate-50">
+<html lang="nl" class="h-full">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{{ app.name }}{% endblock %}</title>
   <meta name="csrf-token" content="{{ csrf }}">
+  <meta name="theme-color" content="#020617">
   <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
   <link rel="stylesheet" href="{{ asset('css/app.css') }}">
   {% block head %}{% endblock %}
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.5/dist/cdn.min.js"></script>
 </head>
-<body class="h-full flex flex-col text-slate-800">
-  <header class="bg-gradient-to-r from-indigo-600 to-emerald-500 text-white shadow">
+<body class="h-full flex flex-col bg-mesh">
+
+  <header class="sticky top-0 z-30 glass border-b border-white/5">
     <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-      <a href="{{ url('/') }}" class="font-bold text-lg tracking-tight flex items-center gap-2">
-        <span class="text-2xl">⚽</span>
-        <span>{{ app.name }}</span>
+      <a href="{{ url('/') }}" class="flex items-center gap-2.5 group">
+        <span class="relative">
+          <span class="absolute inset-0 rounded-full bg-lime-400/30 blur-md group-hover:bg-lime-400/50 transition"></span>
+          <span class="relative inline-flex items-center justify-center w-9 h-9 rounded-full bg-gradient-to-br from-lime-400 to-emerald-500 text-slate-950 text-lg">⚽</span>
+        </span>
+        <span class="font-display font-extrabold text-lg sm:text-xl tracking-tight">
+          <span class="text-gradient">WK 2026</span>
+          <span class="text-slate-400 font-medium text-sm hidden sm:inline ml-1">· pool</span>
+        </span>
       </a>
-      <nav class="flex items-center gap-4 text-sm">
+
+      <nav class="flex items-center gap-2 sm:gap-3 text-sm">
         {% if user %}
-          <a href="{{ url('/dashboard') }}" class="hover:underline">Dashboard</a>
-          <a href="{{ url('/predictions/new') }}" class="hover:underline">Nieuwe voorspelling</a>
+          <a href="{{ url('/dashboard') }}" class="hidden sm:inline px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/5">Dashboard</a>
+          <a href="{{ url('/predictions/new') }}" class="btn-neon text-xs sm:text-sm">+ Voorspelling</a>
           {% if user.is_admin %}
-            <a href="{{ url('/admin') }}" class="hover:underline">Admin</a>
+            <a href="{{ url('/admin') }}" class="hidden sm:inline px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/5">Admin</a>
           {% endif %}
-          <span class="opacity-80 hidden sm:inline">{{ user.name }}</span>
-          <a href="{{ url('/logout') }}" class="bg-white/20 hover:bg-white/30 px-3 py-1 rounded">Uitloggen</a>
+          <span class="hidden md:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs">
+            <span class="w-1.5 h-1.5 rounded-full bg-lime-400"></span>
+            {{ user.name }}
+          </span>
+          <a href="{{ url('/logout') }}" class="btn-ghost text-xs">Uitloggen</a>
         {% else %}
-          <a href="{{ url('/login') }}" class="hover:underline">Inloggen</a>
+          <a href="{{ url('/login') }}" class="btn-ghost text-xs sm:text-sm">Inloggen</a>
           {% if settings.auth_provider == 'db' and settings.registration_open == '1' %}
-            <a href="{{ url('/register') }}" class="bg-white/20 hover:bg-white/30 px-3 py-1 rounded">Account aanmaken</a>
+            <a href="{{ url('/register') }}" class="btn-neon text-xs sm:text-sm">Account</a>
           {% endif %}
         {% endif %}
       </nav>
     </div>
   </header>
 
-  <main class="flex-1 max-w-6xl mx-auto w-full px-4 py-6">
+  <main class="flex-1 max-w-6xl mx-auto w-full px-4 py-8">
     {% include 'partials/flash.twig' %}
     {% block content %}{% endblock %}
   </main>
 
-  <footer class="bg-white border-t border-slate-200 mt-auto">
-    <div class="max-w-6xl mx-auto px-4 py-3 text-xs text-slate-500 flex flex-wrap items-center justify-between gap-2">
-      <span>© {{ "now"|date("Y") }} PSB · WK2026 Pool</span>
-      <span>{{ settings.predictions_deadline ? 'Deadline: ' ~ settings.predictions_deadline : '' }}</span>
+  <footer class="border-t border-white/5 mt-auto">
+    <div class="max-w-6xl mx-auto px-4 py-4 text-xs text-slate-500 flex flex-wrap items-center justify-between gap-2">
+      <span class="flex items-center gap-2">
+        <span class="live-dot"></span>
+        <span>© {{ "now"|date("Y") }} · PSB WK2026 Pool</span>
+      </span>
+      {% if settings.predictions_deadline %}
+        <span>Deadline: <span class="text-slate-300">{{ settings.predictions_deadline }}</span></span>
+      {% endif %}
     </div>
   </footer>
 

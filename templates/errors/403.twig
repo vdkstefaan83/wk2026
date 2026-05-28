@@ -1,7 +1,9 @@
 {% extends 'layout/base.twig' %}
 {% block content %}
-<div class="text-center py-20">
-  <h1 class="text-3xl font-bold">Geen toegang</h1>
-  <p class="text-slate-600 mt-2">Je hebt geen rechten voor deze pagina.</p>
+<div class="text-center py-24">
+  <div class="text-7xl mb-4">🔒</div>
+  <h1 class="font-display text-5xl font-extrabold text-gradient">403</h1>
+  <p class="text-slate-400 mt-3 text-lg">Geen toegang.</p>
+  <a href="{{ url('/') }}" class="btn-neon mt-8 inline-block">Terug naar home</a>
 </div>
 {% endblock %}

@@ -1,51 +1,55 @@
 {% extends 'admin/_layout.twig' %}
 {% block admin_content %}
-<h1 class="text-2xl font-bold mb-4">Formulieren & betalingen</h1>
-<div class="bg-white rounded-xl border border-slate-200 overflow-x-auto">
+<p class="text-xs uppercase tracking-wider text-slate-500">Admin</p>
+<h1 class="font-display text-3xl font-extrabold mt-1 mb-6">Formulieren & betalingen</h1>
+
+<div class="glass rounded-2xl overflow-x-auto">
   <table class="w-full text-sm">
-    <thead class="bg-slate-50">
-      <tr>
-        <th class="p-2 text-left">Gebruiker</th>
-        <th class="p-2 text-left">Formulier</th>
-        <th class="p-2 text-left">Status</th>
-        <th class="p-2 text-left">Verzonden</th>
-        <th class="p-2 text-left">Betaling</th>
-        <th class="p-2 text-left">PDF</th>
-        <th class="p-2"></th>
+    <thead class="bg-white/[0.03] border-b border-white/5">
+      <tr class="text-xs uppercase tracking-wider text-slate-400">
+        <th class="p-3 text-left">Gebruiker</th>
+        <th class="p-3 text-left">Formulier</th>
+        <th class="p-3 text-left">Status</th>
+        <th class="p-3 text-left">Verzonden</th>
+        <th class="p-3 text-left">Betaling</th>
+        <th class="p-3 text-left">PDF</th>
+        <th class="p-3"></th>
       </tr>
     </thead>
     <tbody>
       {% for f in forms %}
-        <tr class="border-t border-slate-100">
-          <td class="p-2">
-            <div class="font-medium">{{ f.user_name }}</div>
+        <tr class="border-t border-white/5">
+          <td class="p-3">
+            <div class="font-medium text-slate-100">{{ f.user_name }}</div>
             <div class="text-xs text-slate-500">{{ f.user_email }}</div>
           </td>
-          <td class="p-2">{{ f.label }}</td>
-          <td class="p-2">
+          <td class="p-3 text-slate-200">{{ f.label }}</td>
+          <td class="p-3">
             {% if f.status == 'submitted' %}
-              <span class="text-emerald-700">verzonden</span>
+              <span class="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-emerald-400/15 text-emerald-300 border border-emerald-400/20">verzonden</span>
             {% else %}
-              <span class="text-slate-500">concept</span>
+              <span class="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-full bg-white/5 text-slate-400 border border-white/10">concept</span>
             {% endif %}
           </td>
-          <td class="p-2">{{ f.submitted_at ? f.submitted_at|date('d/m/Y H:i') : '—' }}</td>
-          <td class="p-2">
+          <td class="p-3 text-slate-300">{{ f.submitted_at ? f.submitted_at|date('d/m/Y H:i') : '—' }}</td>
+          <td class="p-3">
             {% if f.paid_at %}
-              <span class="text-emerald-700">✓ {{ f.paid_amount }} op {{ f.paid_at|date('d/m/Y') }}</span><br>
+              <span class="text-emerald-300">✓ {{ f.paid_amount }} op {{ f.paid_at|date('d/m/Y') }}</span><br>
               <span class="text-xs text-slate-500">{{ f.paid_note }}</span>
             {% else %}
-              <span class="text-amber-700">openstaand</span>
+              <span class="text-amber-300">openstaand</span>
             {% endif %}
           </td>
-          <td class="p-2">{{ f.pdf_path ? '✓' : '—' }}</td>
-          <td class="p-2">
+          <td class="p-3 text-slate-300">{{ f.pdf_path ? '✓' : '—' }}</td>
+          <td class="p-3">
             <form method="post" action="{{ url('/admin/forms/' ~ f.id ~ '/payment') }}" class="flex flex-col gap-1">
               <input type="hidden" name="_csrf" value="{{ csrf }}">
-              <label class="text-xs"><input type="checkbox" name="paid" value="1" {{ f.paid_at ? 'checked' : '' }}> betaald</label>
-              <input name="amount" value="{{ f.paid_amount ?: settings.payment_amount }}" class="text-xs rounded border-slate-300 w-20">
-              <input name="note" value="{{ f.paid_note }}" placeholder="notitie" class="text-xs rounded border-slate-300">
-              <button class="text-xs px-2 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700">save</button>
+              <label class="text-xs text-slate-300 flex items-center gap-1">
+                <input type="checkbox" name="paid" value="1" {{ f.paid_at ? 'checked' : '' }} class="rounded bg-white/5 border-white/20 text-lime-500"> betaald
+              </label>
+              <input name="amount" value="{{ f.paid_amount ?: settings.payment_amount }}" class="text-xs w-20 px-1.5 py-1">
+              <input name="note" value="{{ f.paid_note }}" placeholder="notitie" class="text-xs px-1.5 py-1">
+              <button class="btn-neon text-[10px] py-1">save</button>
             </form>
           </td>
         </tr>

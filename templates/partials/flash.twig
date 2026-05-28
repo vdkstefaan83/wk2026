@@ -1,12 +1,12 @@
 {% if flash is not empty %}
-  <div class="space-y-2 mb-4">
+  <div class="space-y-2 mb-6">
     {% for type, list in flash %}
       {% for msg in list %}
-        <div class="px-4 py-2 rounded border text-sm
-          {% if type == 'success' %}bg-emerald-50 border-emerald-300 text-emerald-800
-          {% elseif type == 'error' %}bg-rose-50 border-rose-300 text-rose-800
-          {% elseif type == 'info'  %}bg-sky-50 border-sky-300 text-sky-800
-          {% else %}bg-slate-50 border-slate-300 text-slate-800{% endif %}">
+        <div class="px-4 py-3 rounded-xl border text-sm backdrop-blur
+          {% if type == 'success' %}bg-emerald-500/10 border-emerald-400/30 text-emerald-200
+          {% elseif type == 'error' %}bg-rose-500/10 border-rose-400/30 text-rose-200
+          {% elseif type == 'info' %}bg-sky-500/10 border-sky-400/30 text-sky-200
+          {% else %}bg-white/5 border-white/10 text-slate-200{% endif %}">
           {{ msg|raw }}
         </div>
       {% endfor %}
