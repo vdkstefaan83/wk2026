@@ -48,9 +48,6 @@ final class PredictionController extends Controller
     public function edit(string $id): void
     {
         $form = $this->loadOwnForm((int) $id);
-        if ($form['status'] === 'submitted') {
-            Session::flash('info', 'This entry has already been submitted.');
-        }
 
         $groups = Database::fetchAll('SELECT * FROM team_groups ORDER BY sort_order');
         $matchesByGroup = [];
