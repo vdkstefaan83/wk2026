@@ -7,49 +7,71 @@ use PHPMailer\PHPMailer\PHPMailer;
 
 final class Mailer
 {
+    private static string $lastError = '';
+
+    public static function lastError(): string
+    {
+        return self::$lastError;
+    }
+
+    /** Returns true on success, false on failure. Use lastError() to inspect failures. */
     public static function send(string $to, string $subject, string $htmlBody, array $attachments = [], ?string $toName = null): bool
     {
-        $mail = new PHPMailer(true);
         try {
-            $mail->isSMTP();
-            $mail->Host       = (string) Config::get('MAIL_HOST', 'localhost');
-            $mail->Port       = (int) Config::get('MAIL_PORT', 587);
-            $user = (string) Config::get('MAIL_USERNAME', '');
-            if ($user !== '') {
-                $mail->SMTPAuth = true;
-                $mail->Username = $user;
-                $mail->Password = (string) Config::get('MAIL_PASSWORD', '');
-            }
-            $enc = strtolower((string) Config::get('MAIL_ENCRYPTION', 'tls'));
-            if ($enc === 'ssl') {
-                $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-            } elseif ($enc === 'tls') {
-                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-            } else {
-                $mail->SMTPAutoTLS = false;
-            }
-            $mail->CharSet  = 'UTF-8';
-            $mail->Encoding = 'base64';
-            $mail->setFrom(
-                (string) Config::get('MAIL_FROM_ADDRESS', 'no-reply@example.com'),
-                (string) Config::get('MAIL_FROM_NAME', 'WK2026 Pool')
-            );
-            $mail->addAddress($to, $toName ?? $to);
-            $mail->isHTML(true);
-            $mail->Subject = $subject;
-            $mail->Body    = $htmlBody;
-            $mail->AltBody = strip_tags(preg_replace('/<br\s*\/?>/i', "\n", $htmlBody) ?: $htmlBody);
-            foreach ($attachments as $att) {
-                if (is_string($att) && is_file($att)) {
-                    $mail->addAttachment($att);
-                } elseif (is_array($att) && !empty($att['path']) && is_file($att['path'])) {
-                    $mail->addAttachment($att['path'], $att['name'] ?? basename($att['path']));
-                }
-            }
-            return $mail->send();
+            self::doSend($to, $subject, $htmlBody, $attachments, $toName);
+            self::$lastError = '';
+            return true;
         } catch (\Throwable $e) {
+            self::$lastError = $e->getMessage();
             error_log('[Mailer] ' . $e->getMessage());
             return false;
         }
+    }
+
+    /** Same as send() but throws on failure — handy when the caller wants to surface the exact error. */
+    public static function sendOrThrow(string $to, string $subject, string $htmlBody, array $attachments = [], ?string $toName = null): void
+    {
+        self::doSend($to, $subject, $htmlBody, $attachments, $toName);
+    }
+
+    private static function doSend(string $to, string $subject, string $htmlBody, array $attachments, ?string $toName): void
+    {
+        $mail = new PHPMailer(true);
+        $mail->isSMTP();
+        $mail->Host = (string) Config::get('MAIL_HOST', 'localhost');
+        $mail->Port = (int)    Config::get('MAIL_PORT', 587);
+        $user = (string) Config::get('MAIL_USERNAME', '');
+        if ($user !== '') {
+            $mail->SMTPAuth = true;
+            $mail->Username = $user;
+            $mail->Password = (string) Config::get('MAIL_PASSWORD', '');
+        }
+        $enc = strtolower((string) Config::get('MAIL_ENCRYPTION', 'tls'));
+        if ($enc === 'ssl') {
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+        } elseif ($enc === 'tls') {
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        } else {
+            $mail->SMTPAutoTLS = false;
+        }
+        $mail->CharSet  = 'UTF-8';
+        $mail->Encoding = 'base64';
+        $mail->setFrom(
+            (string) Config::get('MAIL_FROM_ADDRESS', 'no-reply@example.com'),
+            (string) Config::get('MAIL_FROM_NAME', 'WK2026 Pool')
+        );
+        $mail->addAddress($to, $toName ?? $to);
+        $mail->isHTML(true);
+        $mail->Subject = $subject;
+        $mail->Body    = $htmlBody;
+        $mail->AltBody = strip_tags(preg_replace('/<br\s*\/?>/i', "\n", $htmlBody) ?: $htmlBody);
+        foreach ($attachments as $att) {
+            if (is_string($att) && is_file($att)) {
+                $mail->addAttachment($att);
+            } elseif (is_array($att) && !empty($att['path']) && is_file($att['path'])) {
+                $mail->addAttachment($att['path'], $att['name'] ?? basename($att['path']));
+            }
+        }
+        $mail->send();
     }
 }

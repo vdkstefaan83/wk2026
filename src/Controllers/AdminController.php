@@ -357,12 +357,18 @@ final class AdminController extends Controller
               . '<tr><td style="padding:3px 8px;color:#64748b">From</td><td style="padding:3px 8px">' . htmlspecialchars($cfg['from_name']) . ' &lt;' . htmlspecialchars($cfg['from_addr']) . '&gt;</td></tr>'
               . '</table>';
 
-        $ok = \App\Core\Mailer::send($to, 'WK2026 — test email', $body, [], 'WK2026 admin');
-
-        if ($ok) {
+        try {
+            \App\Core\Mailer::sendOrThrow($to, 'WK2026 — test email', $body, [], 'WK2026 admin');
             Session::flash('success', 'Test email sent to ' . $to . '. Check the inbox (and spam folder).');
-        } else {
-            Session::flash('error', 'Test email FAILED. Check storage/logs/php-error.log for the PHPMailer error.');
+        } catch (\Throwable $e) {
+            Session::flash('error',
+                'Test email FAILED — ' . $e->getMessage()
+                . ' &nbsp;|&nbsp; <span class="text-xs">host=' . htmlspecialchars($cfg['host'])
+                . ':' . htmlspecialchars($cfg['port'])
+                . ' enc=' . htmlspecialchars($cfg['encryption'] ?: 'none')
+                . ' user=' . htmlspecialchars($cfg['username'] ?: '(none)')
+                . ' from=' . htmlspecialchars($cfg['from_addr']) . '</span>'
+            );
         }
         $this->redirect('/admin/settings');
     }

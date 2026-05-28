@@ -17,7 +17,11 @@ final class App
         $debug = (bool) Config::get('APP_DEBUG', false);
         ini_set('display_errors', $debug ? '1' : '0');
         ini_set('log_errors', '1');
-        ini_set('error_log', Config::basePath('storage/logs/php-error.log'));
+        $logDir = Config::basePath('storage/logs');
+        if (!is_dir($logDir)) @mkdir($logDir, 0775, true);
+        if (is_writable($logDir)) {
+            ini_set('error_log', $logDir . '/php-error.log');
+        }
         error_reporting(E_ALL);
 
         Session::start();
