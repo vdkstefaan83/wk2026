@@ -18,6 +18,8 @@ function predictionWizard(cfg) {
     standings: {},
     // Per-group cache of match results keyed by matchId
     groupMatches: {},     // groupCode -> [{match_id, home_id, away_id, home, away}]
+    // Best thirds (all 12 ranked) — populated once groups are complete
+    thirdsRanked: [],
     // R32 bracket (16 slots) computed locally
     bracket: { r32: [] },
     downstream: { r16: [], qf: [], sf: [], final: { slot: 'F-01', feeds: ['SF-01','SF-02'] } },
@@ -202,23 +204,29 @@ function predictionWizard(cfg) {
     },
 
     refreshBracket() {
+      // Always recompute ranked thirds (even with partial group data) so the
+      // UI can show progress as the user types.
+      const allThirds = [];
+      Object.keys(this.standings).forEach(code => {
+        const rows = this.standings[code];
+        if (rows[2]) allThirds.push({ ...rows[2], group: code });
+      });
+      allThirds.sort((a, b) => this.qualityCmp(a, b));
+      this.thirdsRanked = allThirds;
+
       if (!this.isGroupsComplete()) {
         this.bracket = { r32: [] };
         return;
       }
       const firsts  = {};
       const seconds = {};
-      const thirds  = [];
       Object.keys(this.standings).forEach(code => {
         const rows = this.standings[code];
         if (rows[0]) firsts[code]  = { ...rows[0], group: code };
         if (rows[1]) seconds[code] = { ...rows[1], group: code };
-        if (rows[2]) thirds.push({ ...rows[2], group: code });
       });
 
-      // Best 8 thirds (FIFA tiebreakers: pts → gd → gf → group)
-      thirds.sort((a, b) => this.qualityCmp(a, b));
-      const qualified = thirds.slice(0, 8);
+      const qualified = allThirds.slice(0, 8);
       const thirdsByGroup = {};
       qualified.forEach(t => thirdsByGroup[t.group] = t);
 

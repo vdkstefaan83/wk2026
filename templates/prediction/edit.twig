@@ -199,6 +199,47 @@
           </div>
         </div>
       {% endfor %}
+
+      {# ---------- Best thirds (live ranking) ---------- #}
+      <div class="card overflow-hidden" x-show="thirdsRanked.length > 0" x-cloak>
+        <div class="flex items-center justify-between px-5 py-3 bg-gradient-to-r from-amber-50 to-transparent border-b-2 border-amber-100">
+          <h2 class="font-display font-extrabold text-lg text-slate-900">
+            <span class="text-2xl mr-1">🥉</span> Best thirds — who advances?
+          </h2>
+          <span class="pill pill-orange" x-text="(thirdsRanked.length >= 12 ? '8 of 12 advance' : thirdsRanked.length + ' / 12 groups filled')"></span>
+        </div>
+        <div class="p-5">
+          <p class="text-sm text-slate-600 mb-3">
+            The 8 best third-placed teams advance to the Round of 32. FIFA tiebreakers apply:
+            <strong>points</strong> → <strong>goal difference</strong> → <strong>goals scored</strong> → group order.
+          </p>
+          <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-2">
+            <template x-for="(t, idx) in thirdsRanked" :key="t.team_id">
+              <div :class="idx < 8
+                            ? 'bg-emerald-50 border-emerald-300'
+                            : 'bg-rose-50 border-rose-200 opacity-75'"
+                   class="p-3 rounded-xl border-2 flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2 text-xs text-slate-500 font-bold uppercase tracking-wider">
+                    <span x-text="'#' + (idx+1)"></span>
+                    <span :class="idx < 8 ? 'pill pill-green' : 'pill pill-grey'"
+                          x-text="idx < 8 ? '✓ Through' : '✗ Out'"></span>
+                  </div>
+                  <div class="font-display font-bold text-slate-900 truncate mt-0.5" x-text="t.name"></div>
+                  <div class="text-xs text-slate-500" x-text="'Group ' + t.group"></div>
+                </div>
+                <div class="text-right">
+                  <div class="stat-number text-2xl"
+                       :class="idx < 8 ? 'text-emerald-600' : 'text-slate-400'"
+                       x-text="t.points"></div>
+                  <div class="text-[10px] text-slate-500 font-mono"
+                       x-text="(t.gd>=0?'+':'')+t.gd + ' · ' + t.gf + 'gf'"></div>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
     </section>
 
     {# ---------------- Knockout rounds ---------------- #}
