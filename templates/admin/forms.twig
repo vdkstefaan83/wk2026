@@ -3,63 +3,153 @@
 <p class="text-xs uppercase tracking-widest text-slate-500 font-bold">Admin</p>
 <h1 class="font-display text-4xl font-extrabold mt-1 mb-6 text-slate-900">Entries & payments</h1>
 
-<div class="card overflow-x-auto">
-  <table class="w-full text-sm">
-    <thead class="bg-slate-50 border-b-2 border-slate-100">
-      <tr class="text-xs uppercase tracking-wider text-slate-500 font-bold">
-        <th class="p-3 text-left">User</th>
-        <th class="p-3 text-left">Form</th>
-        <th class="p-3 text-left">Status</th>
-        <th class="p-3 text-left">Submitted</th>
-        <th class="p-3 text-left">Payment</th>
-        <th class="p-3 text-left">PDF</th>
-        <th class="p-3"></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for f in forms %}
-        <tr class="border-t border-slate-100">
-          <td class="p-3">
-            <div class="font-semibold text-slate-900">{{ f.user_name }}</div>
-            <div class="text-xs text-slate-500">{{ f.user_email }}</div>
-          </td>
-          <td class="p-3 text-slate-700">{{ f.label }}</td>
-          <td class="p-3">
-            {% if f.status == 'submitted' %}
-              <span class="pill pill-green">Submitted</span>
-            {% else %}
-              <span class="pill pill-grey">Draft</span>
-            {% endif %}
-          </td>
-          <td class="p-3 text-slate-700">{{ f.submitted_at ? f.submitted_at|date('Y-m-d H:i') : '—' }}</td>
-          <td class="p-3">
-            {% if f.paid_at %}
-              <span class="text-emerald-700 font-semibold">✓ {{ f.paid_amount }} on {{ f.paid_at|date('Y-m-d') }}</span><br>
-              <span class="text-xs text-slate-500">{{ f.paid_note }}</span>
-            {% else %}
-              <span class="text-orange-700 font-semibold">outstanding</span>
-            {% endif %}
-          </td>
-          <td class="p-3 text-slate-700">{{ f.pdf_path ? '✓' : '—' }}</td>
-          <td class="p-3">
-            <form method="post" action="{{ url('/admin/forms/' ~ f.id ~ '/payment') }}" class="flex flex-col gap-1">
-              <input type="hidden" name="_csrf" value="{{ csrf }}">
-              <label class="text-xs text-slate-700 flex items-center gap-1 font-medium">
-                <input type="checkbox" name="paid" value="1" {{ f.paid_at ? 'checked' : '' }}> paid
-              </label>
-              <input name="amount" value="{{ f.paid_amount ?: settings.payment_amount }}" class="text-xs w-20 px-1.5 py-1">
-              <input name="note" value="{{ f.paid_note }}" placeholder="note" class="text-xs px-1.5 py-1">
-              <button class="btn btn-primary btn-sm">save</button>
-            </form>
-            <form method="post" action="{{ url('/admin/forms/' ~ f.id ~ '/delete') }}" class="mt-2"
-                  onsubmit="return confirm('Delete entry &quot;{{ f.label|e('js') }}&quot; by {{ f.user_name|e('js') }}? This is permanent.')">
-              <input type="hidden" name="_csrf" value="{{ csrf }}">
-              <button class="btn btn-danger btn-sm w-full">🗑 delete</button>
-            </form>
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+{# ---------- Summary tiles ---------- #}
+<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="card p-5">
+    <div class="flex items-center justify-between">
+      <div class="text-xs uppercase tracking-widest text-slate-500 font-bold">Total entries</div>
+      <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl text-xl bg-sky-50">📝</span>
+    </div>
+    <div class="stat-number text-4xl mt-2 text-sky-600">{{ counts.total }}</div>
+    <div class="text-xs text-slate-500 mt-1">{{ counts.draft }} draft · {{ counts.submitted }} submitted</div>
+  </div>
+
+  <div class="card p-5">
+    <div class="flex items-center justify-between">
+      <div class="text-xs uppercase tracking-widest text-slate-500 font-bold">Paid</div>
+      <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl text-xl bg-emerald-50">✅</span>
+    </div>
+    <div class="stat-number text-4xl mt-2 text-emerald-600">{{ counts.paid }}</div>
+    <div class="text-xs text-slate-500 mt-1">
+      {% if counts.submitted > 0 %}{{ (counts.paid / counts.submitted * 100)|round }}% of submitted{% else %}—{% endif %}
+    </div>
+  </div>
+
+  <div class="card p-5">
+    <div class="flex items-center justify-between">
+      <div class="text-xs uppercase tracking-widest text-slate-500 font-bold">Outstanding</div>
+      <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl text-xl bg-orange-50">⏳</span>
+    </div>
+    <div class="stat-number text-4xl mt-2 text-orange-600">{{ counts.unpaid }}</div>
+    <div class="text-xs text-slate-500 mt-1">awaiting payment</div>
+  </div>
+
+  <div class="card p-5">
+    <div class="flex items-center justify-between">
+      <div class="text-xs uppercase tracking-widest text-slate-500 font-bold">Revenue</div>
+      <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl text-xl bg-pink-50">💰</span>
+    </div>
+    <div class="stat-number text-4xl mt-2 text-pink-600">{{ counts.revenue|number_format(2, ',', '.') }}</div>
+    <div class="text-xs text-slate-500 mt-1">{{ settings.payment_currency }} collected</div>
+  </div>
 </div>
+
+{# ---------- Filter pills ---------- #}
+<div class="flex flex-wrap gap-2 mb-4">
+  {% set tabs = [
+    {key:'all',       label:'All',       count: counts.total},
+    {key:'submitted', label:'Submitted', count: counts.submitted},
+    {key:'paid',      label:'Paid',      count: counts.paid,    color:'emerald'},
+    {key:'unpaid',    label:'Unpaid',    count: counts.unpaid,  color:'orange'},
+    {key:'draft',     label:'Drafts',    count: counts.draft,   color:'slate'}
+  ] %}
+  {% for t in tabs %}
+    <a href="{{ url('/admin/forms' ~ (t.key == 'all' ? '' : '?filter=' ~ t.key)) }}"
+       class="px-4 py-2 rounded-lg border-2 transition text-sm font-bold inline-flex items-center gap-2
+              {% if filter == t.key or (filter == '' and t.key == 'all') %}
+                {% if t.color == 'emerald' %}bg-emerald-500 border-emerald-500 text-white
+                {% elseif t.color == 'orange' %}bg-orange-500 border-orange-500 text-white
+                {% elseif t.color == 'slate' %}bg-slate-700 border-slate-700 text-white
+                {% else %}bg-slate-900 border-slate-900 text-white{% endif %}
+              {% else %}
+                bg-white border-slate-200 text-slate-600 hover:border-slate-400
+              {% endif %}">
+      <span>{{ t.label }}</span>
+      <span class="px-1.5 py-0.5 rounded-md text-[10px] font-bold
+                   {% if filter == t.key or (filter == '' and t.key == 'all') %}bg-white/20{% else %}bg-slate-100 text-slate-700{% endif %}">
+        {{ t.count }}
+      </span>
+    </a>
+  {% endfor %}
+</div>
+
+{# ---------- Entries list ---------- #}
+{% if forms is empty %}
+  <div class="card p-12 text-center">
+    <div class="text-5xl mb-3">📭</div>
+    <h2 class="font-display text-xl font-bold text-slate-900">No entries match this filter</h2>
+  </div>
+{% else %}
+  <div class="space-y-3">
+    {% for f in forms %}
+      <div class="card p-5 {{ f.status == 'draft' ? 'opacity-75' : '' }}">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          {# Left: user + form name #}
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-2 flex-wrap">
+              <h3 class="font-display font-extrabold text-lg text-slate-900 truncate">{{ f.label }}</h3>
+              {% if f.status == 'submitted' %}
+                <span class="pill pill-green">✅ Submitted</span>
+              {% else %}
+                <span class="pill pill-grey">✏️ Draft</span>
+              {% endif %}
+              {% if f.paid_at %}
+                <span class="pill pill-green">💰 Paid</span>
+              {% elseif f.status == 'submitted' %}
+                <span class="pill pill-orange">⏳ Unpaid</span>
+              {% endif %}
+              {% if f.score is defined and f.status == 'submitted' %}
+                <span class="pill pill-blue">🏆 {{ f.score }} pt</span>
+              {% endif %}
+            </div>
+            <div class="text-sm text-slate-700 mt-1.5 font-medium">{{ f.user_name }}</div>
+            <div class="text-xs text-slate-500">{{ f.user_email }}</div>
+            <div class="text-xs text-slate-400 mt-2 flex flex-wrap gap-x-3">
+              <span>created {{ f.created_at|date('Y-m-d H:i') }}</span>
+              {% if f.submitted_at %}
+                <span>· submitted {{ f.submitted_at|date('Y-m-d H:i') }}</span>
+              {% endif %}
+              {% if f.paid_at %}
+                <span>· paid {{ f.paid_at|date('Y-m-d') }}{% if f.paid_note %} — {{ f.paid_note }}{% endif %}</span>
+              {% endif %}
+            </div>
+          </div>
+
+          {# Right: payment widget + actions #}
+          <div class="flex flex-col items-end gap-2 shrink-0">
+            <div class="flex items-center gap-2">
+              {% if f.pdf_path %}
+                <a href="{{ url('/predictions/' ~ f.id ~ '/pdf') }}" target="_blank"
+                   class="btn btn-secondary btn-sm">📄 PDF</a>
+              {% endif %}
+              <form method="post" action="{{ url('/admin/forms/' ~ f.id ~ '/delete') }}" class="inline"
+                    onsubmit="return confirm('Delete entry &quot;{{ f.label|e('js') }}&quot; by {{ f.user_name|e('js') }}? This is permanent.')">
+                <input type="hidden" name="_csrf" value="{{ csrf }}">
+                <button class="btn btn-danger btn-sm">🗑 delete</button>
+              </form>
+            </div>
+
+            {% if f.status == 'submitted' %}
+              <form method="post" action="{{ url('/admin/forms/' ~ f.id ~ '/payment') }}"
+                    class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl p-2">
+                <input type="hidden" name="_csrf" value="{{ csrf }}">
+                <label class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 cursor-pointer pl-1">
+                  <input type="checkbox" name="paid" value="1" {{ f.paid_at ? 'checked' : '' }}>
+                  paid
+                </label>
+                <input name="amount" value="{{ f.paid_amount ?: settings.payment_amount }}"
+                       title="amount"
+                       class="text-sm w-20 px-2 py-1 text-right font-mono">
+                <input name="note" value="{{ f.paid_note }}"
+                       placeholder="note (optional)"
+                       class="text-sm w-40 px-2 py-1">
+                <button class="btn btn-primary btn-sm">save</button>
+              </form>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
 {% endblock %}

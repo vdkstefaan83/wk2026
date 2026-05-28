@@ -199,13 +199,37 @@ final class AdminController extends Controller
     public function forms(): void
     {
         $this->requireAdmin();
+        $filter = (string) ($_GET['filter'] ?? 'all');
+        $where = '';
+        if ($filter === 'paid')        $where = ' WHERE f.paid_at IS NOT NULL';
+        elseif ($filter === 'unpaid')  $where = ' WHERE f.status = "submitted" AND f.paid_at IS NULL';
+        elseif ($filter === 'draft')   $where = ' WHERE f.status = "draft"';
+        elseif ($filter === 'submitted') $where = ' WHERE f.status = "submitted"';
+
         $forms = Database::fetchAll(
             'SELECT f.*, u.name AS user_name, u.email AS user_email
                FROM forms f
-               JOIN users u ON u.id = f.user_id
-              ORDER BY f.created_at DESC'
+               JOIN users u ON u.id = f.user_id'
+            . $where
+            . ' ORDER BY f.status = "draft" ASC, f.paid_at IS NULL ASC, f.submitted_at DESC, f.created_at DESC'
         );
-        $this->render('admin/forms.twig', compact('forms'));
+
+        $counts = Database::fetch(
+            'SELECT
+                COUNT(*) AS total,
+                SUM(status = "draft") AS draft,
+                SUM(status = "submitted") AS submitted,
+                SUM(status = "submitted" AND paid_at IS NOT NULL) AS paid,
+                SUM(status = "submitted" AND paid_at IS NULL) AS unpaid,
+                COALESCE(SUM(paid_amount), 0) AS revenue
+              FROM forms'
+        );
+
+        $this->render('admin/forms.twig', [
+            'forms'  => $forms,
+            'counts' => $counts,
+            'filter' => $filter,
+        ]);
     }
 
     public function deleteForm(string $id): void
