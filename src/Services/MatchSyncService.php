@@ -172,7 +172,7 @@ final class MatchSyncService
     private function applyTopscorer(array $top, array &$errors): ?array
     {
         if (empty($top)) {
-            $errors[] = 'topscorer: empty response';
+            // No goals scored yet — not an error, just no data to apply.
             return null;
         }
         [$teamsByIso, $teamsByName] = $this->buildTeamLookup();
