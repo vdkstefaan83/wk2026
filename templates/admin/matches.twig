@@ -1,6 +1,18 @@
 {% extends 'admin/_layout.twig' %}
 {% block admin_content %}
-<h1 class="text-2xl font-bold mb-3">Wedstrijden</h1>
+<div class="flex items-center justify-between mb-3">
+  <h1 class="text-2xl font-bold">Wedstrijden</h1>
+  <form method="post" action="{{ url('/admin/sync-matches') }}" class="flex items-center gap-2 text-sm">
+    <input type="hidden" name="_csrf" value="{{ csrf }}">
+    <label class="flex items-center gap-1 text-xs">
+      <input type="checkbox" name="topscorer" value="1"> + topscorer
+    </label>
+    <button class="px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700">↻ Sync via API-Football</button>
+    {% if settings.last_sync_at %}
+      <span class="text-xs text-slate-500">laatste sync: {{ settings.last_sync_at }}</span>
+    {% endif %}
+  </form>
+</div>
 
 <div class="flex gap-1 mb-4 text-sm">
   {% for s in ['group','r32','r16','qf','sf','final'] %}

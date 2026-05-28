@@ -7,6 +7,7 @@ use App\Core\Controller;
 use App\Core\Database;
 use App\Core\Session;
 use App\Core\Setting;
+use App\Services\MatchSyncService;
 use App\Services\ScoringService;
 
 final class AdminController extends Controller
@@ -242,5 +243,29 @@ final class AdminController extends Controller
         ScoringService::recomputeAll();
         Session::flash('success', 'Scores opnieuw berekend.');
         $this->redirect('/admin/leaderboard');
+    }
+
+    public function syncMatches(): void
+    {
+        $this->requireAdmin();
+        $this->requireCsrf();
+        $force = !empty($_POST['topscorer']);
+        try {
+            $svc = new MatchSyncService();
+            $r = $svc->sync($force);
+            $msg = sprintf(
+                'Sync klaar: %d wedstrijd(en) bijgewerkt%s%s.',
+                $r['updated'],
+                $r['finals_recomputed'] ? ', scores herberekend' : '',
+                $r['topscorer'] ? ', topscorer: ' . $r['topscorer']['player'] . ' (' . $r['topscorer']['goals'] . ')' : ''
+            );
+            Session::flash('success', $msg);
+            foreach ($r['errors'] as $e) {
+                Session::flash('error', 'Sync waarschuwing: ' . $e);
+            }
+        } catch (\Throwable $e) {
+            Session::flash('error', 'Sync mislukt: ' . $e->getMessage());
+        }
+        $this->redirect('/admin/matches');
     }
 }

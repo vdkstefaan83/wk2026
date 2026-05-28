@@ -135,6 +135,36 @@ De werkelijke topscorer en zijn goalsaldo zet je via **Admin → Instellingen** 
 | GET | `/api/predictions/{id}/state` | Gestructureerde JSON met standings + bracket + picks |
 | GET | `/api/players?q=…` | Speler-zoek (typeahead) |
 
+## Live scores via API-Football
+
+`src/Services/MatchSyncService.php` haalt wedstrijduitslagen en de topscorer op uit [API-Football](https://www.api-football.com/) en mapt ze op de lokale `matches`/`players` rijen via ISO3-code (of naam-fallback).
+
+**Setup:**
+1. Maak een gratis account op api-football.com en kopieer je key.
+2. Vul in `.env`:
+   ```env
+   API_FOOTBALL_KEY=jouw_key
+   API_FOOTBALL_LEAGUE_ID=1     # 1 = FIFA World Cup
+   API_FOOTBALL_SEASON=2026
+   ```
+3. Test handmatig:
+   ```bash
+   php bin/sync_matches.php
+   ```
+4. Of via de admin UI: knop **"↻ Sync via API-Football"** bovenaan `/admin/matches`. Vink "+ topscorer" aan om de topscorer-data te forceren (anders wordt die om de 6 uur ververst om de gratis quotum te respecteren).
+
+**Cron-opzet** (elke 15 min een lichte sync, free-tier vriendelijk):
+```cron
+*/15 * * * *  www-data  cd /var/www/html/public/wk2026 && /usr/bin/php bin/sync_matches.php >> storage/logs/sync.log 2>&1
+0 22 * * *    www-data  cd /var/www/html/public/wk2026 && /usr/bin/php bin/sync_matches.php --topscorer >> storage/logs/sync.log 2>&1
+```
+
+De synchronisatie:
+- update `actual_home_goals`/`actual_away_goals` per gewijzigde match;
+- triggert `ScoringService::recomputeAll()` zodra een match op FT/AET/PEN staat;
+- bewaart laatste sync-tijdstip + summary in `settings` (zichtbaar op `/admin/matches`);
+- bewaart de actuele topscorer in `settings.actual_topscorer_player_id` + per-speler goal-tellingen in `predicted_topscorer_goals_for_<id>` zodat de "3 ptn per goal van jouw voorspelde topscorer"-regel correct telt, ook als die speler niet de uiteindelijke topscorer is.
+
 ## Veelgestelde aanpassingen
 
 - **Wijzig bedrag** → admin → Instellingen → "Bedrag".
