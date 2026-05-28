@@ -44,6 +44,7 @@ final class Auth
         if (!password_verify($password, (string) $user['password_hash'])) {
             return null;
         }
+        Database::update('users', ['last_login_at' => date('Y-m-d H:i:s')], ['id' => $user['id']]);
         self::loginAs((int) $user['id']);
         return $user;
     }
