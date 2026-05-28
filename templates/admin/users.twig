@@ -1,0 +1,60 @@
+{% extends 'admin/_layout.twig' %}
+{% block admin_content %}
+<p class="text-xs uppercase tracking-widest text-slate-500 font-bold">Admin</p>
+<h1 class="font-display text-4xl font-extrabold mt-1 mb-6 text-slate-900">Users</h1>
+
+<div class="card overflow-x-auto">
+  <table class="w-full text-sm">
+    <thead class="bg-slate-50 border-b-2 border-slate-100">
+      <tr class="text-xs uppercase tracking-wider text-slate-500 font-bold">
+        <th class="p-3 text-left">User</th>
+        <th class="p-3 text-left">Provider</th>
+        <th class="p-3 text-left">Created</th>
+        <th class="p-3 text-left">Last login</th>
+        <th class="p-3 text-right">Entries</th>
+        <th class="p-3 text-center">Admin</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+        <tr class="border-t border-slate-100">
+          <td class="p-3">
+            <div class="font-semibold text-slate-900">{{ u.name }}</div>
+            <div class="text-xs text-slate-500">{{ u.email }}</div>
+          </td>
+          <td class="p-3">
+            {% if u.auth_provider == 'keycloak' %}
+              <span class="pill pill-blue">Keycloak</span>
+            {% else %}
+              <span class="pill pill-grey">DB</span>
+            {% endif %}
+          </td>
+          <td class="p-3 text-slate-700">{{ u.created_at|date('Y-m-d') }}</td>
+          <td class="p-3 text-slate-700">{{ u.last_login_at ? u.last_login_at|date('Y-m-d H:i') : '—' }}</td>
+          <td class="p-3 text-right">
+            <span class="font-semibold">{{ u.form_count }}</span>
+            {% if u.submitted_count > 0 %}
+              <span class="text-xs text-emerald-600">({{ u.submitted_count }} sub.)</span>
+            {% endif %}
+          </td>
+          <td class="p-3 text-center">
+            {% if u.id == user.id %}
+              <span class="pill pill-green">You · admin</span>
+            {% else %}
+              <form method="post" action="{{ url('/admin/users/' ~ u.id ~ '/admin') }}" class="inline">
+                <input type="hidden" name="_csrf" value="{{ csrf }}">
+                {% if u.is_admin %}
+                  <button onclick="return confirm('Remove admin from {{ u.name|e('js') }}?')"
+                          class="pill pill-green hover:opacity-80">✓ admin</button>
+                {% else %}
+                  <button class="pill pill-grey hover:opacity-80">make admin</button>
+                {% endif %}
+              </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

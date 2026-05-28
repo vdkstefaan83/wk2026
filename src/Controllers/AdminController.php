@@ -268,6 +268,44 @@ final class AdminController extends Controller
         $this->redirect('/admin/leaderboard');
     }
 
+    // -------- Users --------
+
+    public function users(): void
+    {
+        $this->requireAdmin();
+        $users = Database::fetchAll(
+            'SELECT u.*,
+                    (SELECT COUNT(*) FROM forms f WHERE f.user_id = u.id) AS form_count,
+                    (SELECT COUNT(*) FROM forms f WHERE f.user_id = u.id AND f.status = "submitted") AS submitted_count
+               FROM users u
+              ORDER BY u.is_admin DESC, u.name'
+        );
+        $this->render('admin/users.twig', ['users' => $users]);
+    }
+
+    public function toggleAdmin(string $id): void
+    {
+        $current = $this->requireAdmin();
+        $this->requireCsrf();
+        $target = Database::fetch('SELECT id, name, is_admin FROM users WHERE id = ?', [(int) $id]);
+        if (!$target) {
+            Session::flash('error', 'User not found.');
+            $this->redirect('/admin/users');
+        }
+        if ((int) $target['id'] === (int) $current['id'] && (int) $target['is_admin'] === 1) {
+            Session::flash('error', 'You cannot remove your own admin rights.');
+            $this->redirect('/admin/users');
+        }
+        $new = (int) $target['is_admin'] === 1 ? 0 : 1;
+        Database::update('users', ['is_admin' => $new], ['id' => $target['id']]);
+        Session::flash('success', sprintf(
+            '%s is %s admin.',
+            $target['name'],
+            $new ? 'now' : 'no longer'
+        ));
+        $this->redirect('/admin/users');
+    }
+
     public function syncMatches(): void
     {
         $this->requireAdmin();
