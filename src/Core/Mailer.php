@@ -15,10 +15,10 @@ final class Mailer
     }
 
     /** Returns true on success, false on failure. Use lastError() to inspect failures. */
-    public static function send(string $to, string $subject, string $htmlBody, array $attachments = [], ?string $toName = null, ?string $replyToEmail = null, ?string $replyToName = null): bool
+    public static function send(string $to, string $subject, string $htmlBody, array $attachments = [], ?string $toName = null, ?string $replyToEmail = null, ?string $replyToName = null, array $inlineImages = []): bool
     {
         try {
-            self::doSend($to, $subject, $htmlBody, $attachments, $toName, $replyToEmail, $replyToName);
+            self::doSend($to, $subject, $htmlBody, $attachments, $toName, $replyToEmail, $replyToName, $inlineImages);
             self::$lastError = '';
             return true;
         } catch (\Throwable $e) {
@@ -29,12 +29,12 @@ final class Mailer
     }
 
     /** Same as send() but throws on failure — handy when the caller wants to surface the exact error. */
-    public static function sendOrThrow(string $to, string $subject, string $htmlBody, array $attachments = [], ?string $toName = null, ?string $replyToEmail = null, ?string $replyToName = null): void
+    public static function sendOrThrow(string $to, string $subject, string $htmlBody, array $attachments = [], ?string $toName = null, ?string $replyToEmail = null, ?string $replyToName = null, array $inlineImages = []): void
     {
-        self::doSend($to, $subject, $htmlBody, $attachments, $toName, $replyToEmail, $replyToName);
+        self::doSend($to, $subject, $htmlBody, $attachments, $toName, $replyToEmail, $replyToName, $inlineImages);
     }
 
-    private static function doSend(string $to, string $subject, string $htmlBody, array $attachments, ?string $toName, ?string $replyToEmail = null, ?string $replyToName = null): void
+    private static function doSend(string $to, string $subject, string $htmlBody, array $attachments, ?string $toName, ?string $replyToEmail = null, ?string $replyToName = null, array $inlineImages = []): void
     {
         $mail = new PHPMailer(true);
         $mail->isSMTP();
@@ -73,6 +73,17 @@ final class Mailer
                 $mail->addAttachment($att);
             } elseif (is_array($att) && !empty($att['path']) && is_file($att['path'])) {
                 $mail->addAttachment($att['path'], $att['name'] ?? basename($att['path']));
+            }
+        }
+        foreach ($inlineImages as $img) {
+            if (is_array($img) && !empty($img['path']) && !empty($img['cid']) && is_file($img['path'])) {
+                $mail->addEmbeddedImage(
+                    $img['path'],
+                    $img['cid'],
+                    $img['name'] ?? basename($img['path']),
+                    PHPMailer::ENCODING_BASE64,
+                    $img['type'] ?? 'image/png'
+                );
             }
         }
         $mail->send();

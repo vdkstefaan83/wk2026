@@ -54,12 +54,19 @@
         <input name="payment_currency" value="{{ settings.payment_currency }}">
       </div>
       <div>
-        <label class="field-label">Pay to</label>
+        <label class="field-label">Pay to (display name)</label>
         <input name="payment_recipient" value="{{ settings.payment_recipient }}">
+        <span class="field-hint">Shown in instructions ("pay X to Jonah") — first name is fine.</span>
       </div>
       <div>
-        <label class="field-label">IBAN (optional)</label>
-        <input name="payment_iban" value="{{ settings.payment_iban }}">
+        <label class="field-label">Account holder (for the QR code)</label>
+        <input name="payment_recipient_name" value="{{ settings.payment_recipient_name }}" placeholder="Defaults to the name above">
+        <span class="field-hint">Full beneficiary name as registered with the bank, max 70 chars. Leave blank to reuse the field above.</span>
+      </div>
+      <div class="sm:col-span-2">
+        <label class="field-label">IBAN</label>
+        <input name="payment_iban" value="{{ settings.payment_iban }}" placeholder="BE12 3456 7890 1234" class="font-mono">
+        <span class="field-hint">When filled in, a SEPA QR code is generated automatically and attached to the user's confirmation email.</span>
       </div>
     </div>
     <div>

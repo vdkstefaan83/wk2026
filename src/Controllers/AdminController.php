@@ -38,7 +38,7 @@ final class AdminController extends Controller
         $this->requireCsrf();
         $fields = [
             'auth_provider','registration_open','predictions_open','predictions_deadline',
-            'payment_amount','payment_currency','payment_recipient','payment_iban',
+            'payment_amount','payment_currency','payment_recipient','payment_recipient_name','payment_iban',
             'payment_instructions','admin_mail_to',
             'tiebreaker_question','tiebreaker_correct_value',
             'prize_distribution',

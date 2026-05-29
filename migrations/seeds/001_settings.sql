@@ -25,7 +25,7 @@ Last prize: 5% of the pot')
 INSERT INTO email_templates (`key`, subject, body_html) VALUES
 ('submission_user',
  'Your World Cup 2026 prediction has been received',
- '<p>Hi {{user_name}},</p><p>Thanks for submitting your World Cup 2026 prediction <strong>"{{form_label}}"</strong>. Attached you''ll find a PDF with your final picks.</p><p><strong>Payment:</strong> Please pay <strong>{{payment_amount}} {{payment_currency}}</strong> to <strong>{{payment_recipient}}</strong> to confirm your entry.</p><p>{{payment_instructions}}</p><p>Good luck — may the best predictor win!<br/>– World Cup 2026 Pool</p>'),
+ '<p>Hi {{user_name}},</p><p>Thanks for submitting your World Cup 2026 prediction <strong>"{{form_label}}"</strong>. Attached you''ll find a PDF with your final picks.</p><p><strong>How to pay:</strong> Scan the QR code below with your banking app — it pre-fills the amount, IBAN and reference. Or transfer manually:</p><ul><li>Amount: <strong>{{payment_amount}} {{payment_currency}}</strong></li><li>To: <strong>{{payment_recipient}}</strong></li><li>IBAN: <strong>{{payment_iban}}</strong></li><li>Reference: <strong>{{payment_reference}}</strong></li></ul>{{qr_image}}<p>{{payment_instructions}}</p><p>Good luck — may the best predictor win!<br/>– World Cup 2026 Pool</p>'),
 ('submission_admin',
  'New World Cup 2026 prediction: {{user_name}} – {{form_label}}',
  '<p>A new prediction has been submitted.</p><ul><li><strong>User:</strong> {{user_name}} ({{user_email}})</li><li><strong>Form:</strong> {{form_label}}</li><li><strong>Submitted at:</strong> {{submitted_at}}</li></ul><p>The PDF is attached.</p>')

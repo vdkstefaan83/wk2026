@@ -81,6 +81,29 @@ final class PredictionController extends Controller
             ];
         }
 
+        // For submitted entries that aren't paid yet, build the SEPA payment QR
+        // so the user can re-scan it any time without digging through their inbox.
+        $qrDataUri = '';
+        $qrReference = '';
+        if ($form['status'] === 'submitted' && empty($form['paid_at'])) {
+            $iban = (string) Setting::get('payment_iban', '');
+            if ($iban !== '') {
+                $beneficiary = (string) (Setting::get('payment_recipient_name')
+                    ?: Setting::get('payment_recipient', 'Pool'));
+                $amount      = (string) Setting::get('payment_amount', '10.00');
+                $qrReference = \App\Core\QrCodeService::buildReference(
+                    (string) ($user['name'] ?? ''),
+                    (string) $form['label']
+                );
+                try {
+                    $payload = \App\Core\QrCodeService::buildEpcPayload($iban, $beneficiary, $amount, $qrReference);
+                    $qrDataUri = \App\Core\QrCodeService::pngDataUri($payload, 320);
+                } catch (\Throwable $e) {
+                    error_log('[QrCode] ' . $e->getMessage());
+                }
+            }
+        }
+
         $this->render('prediction/edit.twig', [
             'form'             => $form,
             'groups'           => $groups,
@@ -90,6 +113,8 @@ final class PredictionController extends Controller
             'players'          => $players,
             'resolved'         => $resolved,
             'deadline'         => Setting::get('predictions_deadline'),
+            'qr_data_uri'      => $qrDataUri,
+            'qr_reference'     => $qrReference,
         ]);
     }
 
@@ -454,27 +479,55 @@ final class PredictionController extends Controller
             [$formId]
         );
         $settings = \App\Core\Setting::all();
+        $iban = (string)($settings['payment_iban'] ?? '');
+        $beneficiary = (string)($settings['payment_recipient_name'] ?? $settings['payment_recipient'] ?? 'Pool');
+        $amount = (string)($settings['payment_amount'] ?? '10.00');
+        $reference = \App\Core\QrCodeService::buildReference($form['user_name'], $form['label']);
+
+        // Generate the EPC QR PNG only if an IBAN is configured.
+        $qrPath = '';
+        if ($iban !== '') {
+            try {
+                $payload = \App\Core\QrCodeService::buildEpcPayload($iban, $beneficiary, $amount, $reference);
+                $qrPath  = \App\Core\Config::basePath("storage/qrcodes/form-{$formId}.png");
+                \App\Core\QrCodeService::writePng($payload, $qrPath);
+            } catch (\Throwable $e) {
+                error_log('[QrCode] ' . $e->getMessage());
+                $qrPath = '';
+            }
+        }
+
         $vars = [
             'user_name'            => $form['user_name'],
             'user_email'           => $form['user_email'],
             'form_label'           => $form['label'],
             'submitted_at'         => $form['submitted_at'],
-            'payment_amount'       => $settings['payment_amount']       ?? '10.00',
+            'payment_amount'       => $amount,
             'payment_currency'     => $settings['payment_currency']     ?? 'EUR',
             'payment_recipient'    => $settings['payment_recipient']    ?? 'Jonah',
+            'payment_iban'         => $iban,
+            'payment_reference'    => $reference,
             'payment_instructions' => $settings['payment_instructions'] ?? '',
+            'qr_image'             => $qrPath !== ''
+                ? '<img src="cid:wk2026qr" alt="SEPA QR code" style="width:240px;height:240px;display:block;margin:12px 0;border:1px solid #e2e8f0;border-radius:8px;padding:8px;background:#fff">'
+                : '',
         ];
 
         $userTpl  = Database::fetch('SELECT * FROM email_templates WHERE `key` = "submission_user"');
         $adminTpl = Database::fetch('SELECT * FROM email_templates WHERE `key` = "submission_admin"');
 
         if ($userTpl) {
+            $inline = $qrPath !== ''
+                ? [['path' => $qrPath, 'cid' => 'wk2026qr', 'name' => "wc2026-payment-{$formId}.png"]]
+                : [];
             Mailer::send(
                 $form['user_email'],
                 $this->renderTemplate($userTpl['subject'], $vars),
                 $this->renderTemplate($userTpl['body_html'], $vars),
                 [$pdfPath],
-                $form['user_name']
+                $form['user_name'],
+                null, null,
+                $inline
             );
         }
         if ($adminTpl) {
