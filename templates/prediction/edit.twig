@@ -22,7 +22,7 @@
         bracket:   cfg.initial.bracket   || { r32: [] },
         downstream:cfg.initial.downstream|| { r16: [], qf: [], sf: [], final: { feeds: [] } },
         picks:     cfg.initial.picks     || {},
-        lastSavedLabel: 'JS niet geladen',
+        lastSavedLabel: 'JS not loaded',
         init() {},
         onScoreChange() {},
         pickSlot() {},
@@ -39,7 +39,7 @@
         get topscorerLabel() { return ''; },
       };
     };
-    console.warn('prediction.js fallback geactiveerd – live ranking + autosave werken niet.');
+    console.warn('prediction.js fallback activated — live ranking + autosave will not work.');
   }
 </script>
 {% set readonly = form.status == 'submitted' %}

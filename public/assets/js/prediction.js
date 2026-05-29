@@ -576,7 +576,7 @@ function predictionWizard(cfg) {
     },
 
     get lastSavedLabel() {
-      if (!this.lastSaved) return 'nog niet';
+      if (!this.lastSaved) return 'not yet';
       const d = new Date(this.lastSaved);
       return d.toLocaleTimeString();
     },
