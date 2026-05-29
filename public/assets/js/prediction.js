@@ -85,6 +85,10 @@ function predictionWizard(cfg) {
       const wrapper = ev.target.parentElement;
       const homeInput = wrapper.querySelector('input[name$="[home]"]');
       const awayInput = wrapper.querySelector('input[name$="[away]"]');
+      // Strip non-digits as the user types so "-5" or "2.5" can't stay in the box.
+      const cleanRaw = s => (s || '').replace(/[^0-9]/g, '');
+      if (homeInput.value !== cleanRaw(homeInput.value)) homeInput.value = cleanRaw(homeInput.value);
+      if (awayInput.value !== cleanRaw(awayInput.value)) awayInput.value = cleanRaw(awayInput.value);
       const home = homeInput.value === '' ? null : Math.max(0, parseInt(homeInput.value, 10));
       const away = awayInput.value === '' ? null : Math.max(0, parseInt(awayInput.value, 10));
 

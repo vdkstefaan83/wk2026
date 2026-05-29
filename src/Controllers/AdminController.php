@@ -147,8 +147,8 @@ final class AdminController extends Controller
                     'away_team_id' => isset($row['away_team_id']) && $row['away_team_id'] !== '' ? (int)$row['away_team_id'] : null,
                     'kickoff_at'   => $row['kickoff_at'] ?: null,
                     'venue'        => $row['venue'] ?? null,
-                    'actual_home_goals' => isset($row['actual_home_goals']) && $row['actual_home_goals'] !== '' ? (int)$row['actual_home_goals'] : null,
-                    'actual_away_goals' => isset($row['actual_away_goals']) && $row['actual_away_goals'] !== '' ? (int)$row['actual_away_goals'] : null,
+                    'actual_home_goals' => isset($row['actual_home_goals']) && $row['actual_home_goals'] !== '' ? max(0, (int)$row['actual_home_goals']) : null,
+                    'actual_away_goals' => isset($row['actual_away_goals']) && $row['actual_away_goals'] !== '' ? max(0, (int)$row['actual_away_goals']) : null,
                 ];
                 Database::update('matches', $patch, ['id' => (int)$id]);
             }

@@ -149,12 +149,14 @@
                     <span class="text-xl">{{ m.home_flag }}</span>
                   </div>
                   <div class="score-pill">
-                    <input type="number" min="0" max="20" name="score[{{ m.id }}][home]"
+                    <input type="number" min="0" max="20" step="1" inputmode="numeric"
+                           name="score[{{ m.id }}][home]"
                            value="{{ m.home_goals }}"
                            @input="onScoreChange({{ m.id }}, {{ m.home_id }}, {{ m.away_id }}, '{{ g.code }}', $event)"
                            :disabled="readonly">
                     <span class="text-slate-400 font-bold">–</span>
-                    <input type="number" min="0" max="20" name="score[{{ m.id }}][away]"
+                    <input type="number" min="0" max="20" step="1" inputmode="numeric"
+                           name="score[{{ m.id }}][away]"
                            value="{{ m.away_goals }}"
                            @input="onScoreChange({{ m.id }}, {{ m.home_id }}, {{ m.away_id }}, '{{ g.code }}', $event)"
                            :disabled="readonly">
@@ -419,7 +421,7 @@
           </div>
         </div>
         <label class="field-label">Your answer (number)</label>
-        <input type="number" min="0" step="1" x-model="tiebreakerValue"
+        <input type="number" min="0" step="1" inputmode="numeric" x-model="tiebreakerValue"
                placeholder="e.g. 158" :disabled="readonly" class="max-w-xs">
         <p class="field-hint">In case of a tied score, the entry closest to the correct answer wins.</p>
       </div>

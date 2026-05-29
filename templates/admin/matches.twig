@@ -68,8 +68,8 @@
             </td>
             <td class="p-2"><input name="match[{{ m.id }}][kickoff_at]" value="{{ m.kickoff_at }}" placeholder="YYYY-MM-DD HH:MM" class="w-40 px-2 py-1.5"></td>
             <td class="p-2"><input name="match[{{ m.id }}][venue]" value="{{ m.venue }}" class="w-40 px-2 py-1.5"></td>
-            <td class="p-2"><input type="number" min="0" max="20" name="match[{{ m.id }}][actual_home_goals]" value="{{ m.actual_home_goals }}" class="w-16 px-2 py-1.5 text-center"></td>
-            <td class="p-2"><input type="number" min="0" max="20" name="match[{{ m.id }}][actual_away_goals]" value="{{ m.actual_away_goals }}" class="w-16 px-2 py-1.5 text-center"></td>
+            <td class="p-2"><input type="number" min="0" max="20" step="1" inputmode="numeric" name="match[{{ m.id }}][actual_home_goals]" value="{{ m.actual_home_goals }}" class="w-16 px-2 py-1.5 text-center"></td>
+            <td class="p-2"><input type="number" min="0" max="20" step="1" inputmode="numeric" name="match[{{ m.id }}][actual_away_goals]" value="{{ m.actual_away_goals }}" class="w-16 px-2 py-1.5 text-center"></td>
           </tr>
         {% endfor %}
       </tbody>
