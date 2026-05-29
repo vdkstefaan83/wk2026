@@ -170,6 +170,10 @@ final class PredictionController extends Controller
     {
         $form = $this->loadOwnForm((int) $id);
         $this->requireCsrf();
+        if ($form['status'] === 'submitted' && !empty($form['paid_at'])) {
+            Session::flash('error', 'A submitted and paid entry can no longer be deleted.');
+            $this->redirect('/dashboard');
+        }
         // Best-effort: also remove the cached PDF
         if (!empty($form['pdf_path']) && is_file($form['pdf_path'])) {
             @unlink($form['pdf_path']);

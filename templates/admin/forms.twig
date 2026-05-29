@@ -122,11 +122,15 @@
                 <a href="{{ url('/admin/forms/' ~ f.id ~ '/pdf') }}" target="_blank"
                    class="btn btn-secondary btn-sm">📄 PDF</a>
               {% endif %}
-              <form method="post" action="{{ url('/admin/forms/' ~ f.id ~ '/delete') }}" class="inline"
-                    onsubmit="return confirm('Delete entry &quot;{{ f.label|e('js') }}&quot; by {{ f.user_name|e('js') }}? This is permanent.')">
-                <input type="hidden" name="_csrf" value="{{ csrf }}">
-                <button class="btn btn-danger btn-sm">🗑 delete</button>
-              </form>
+              {% if f.status == 'submitted' and f.paid_at %}
+                <span class="pill pill-grey" title="Submitted and paid — locked.">🔒 locked</span>
+              {% else %}
+                <form method="post" action="{{ url('/admin/forms/' ~ f.id ~ '/delete') }}" class="inline"
+                      onsubmit="return confirm('Delete entry &quot;{{ f.label|e('js') }}&quot; by {{ f.user_name|e('js') }}? This is permanent.')">
+                  <input type="hidden" name="_csrf" value="{{ csrf }}">
+                  <button class="btn btn-danger btn-sm">🗑 delete</button>
+                </form>
+              {% endif %}
             </div>
 
             {% if f.status == 'submitted' %}

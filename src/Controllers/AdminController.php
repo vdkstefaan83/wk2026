@@ -258,9 +258,13 @@ final class AdminController extends Controller
     {
         $this->requireAdmin();
         $this->requireCsrf();
-        $form = Database::fetch('SELECT id, pdf_path, label FROM forms WHERE id = ?', [(int) $id]);
+        $form = Database::fetch('SELECT id, pdf_path, label, status, paid_at FROM forms WHERE id = ?', [(int) $id]);
         if (!$form) {
             Session::flash('error', 'Entry not found.');
+            $this->redirect('/admin/forms');
+        }
+        if ($form['status'] === 'submitted' && !empty($form['paid_at'])) {
+            Session::flash('error', 'A submitted and paid entry is locked — it can no longer be deleted.');
             $this->redirect('/admin/forms');
         }
         if (!empty($form['pdf_path']) && is_file($form['pdf_path'])) {
