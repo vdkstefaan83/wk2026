@@ -407,6 +407,34 @@ function predictionWizard(cfg) {
       return Object.keys(this.picks).filter(k => k.startsWith(prefix) && this.picks[k]).length;
     },
 
+    STEPS: [
+      { key: 'groups',    label: 'Group stage' },
+      { key: 'r32',       label: 'Round of 32' },
+      { key: 'r16',       label: 'Round of 16' },
+      { key: 'qf',        label: 'Quarter-finals' },
+      { key: 'sf',        label: 'Semi-finals' },
+      { key: 'final',     label: 'Final' },
+      { key: 'topscorer', label: 'Top scorer' },
+      { key: 'summary',   label: 'Summary' },
+    ],
+
+    get currentStepIndex() {
+      return this.STEPS.findIndex(s => s.key === this.step);
+    },
+    get prevStep() {
+      const i = this.currentStepIndex;
+      return i > 0 ? this.STEPS[i - 1] : null;
+    },
+    get nextStep() {
+      const i = this.currentStepIndex;
+      return i >= 0 && i < this.STEPS.length - 1 ? this.STEPS[i + 1] : null;
+    },
+    goToStep(key) {
+      this.step = key;
+      // Scroll to the top of the wizard so the new section is in view
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+
     get missingChecks() {
       const out = [];
       const gc = this.groupCompletion();

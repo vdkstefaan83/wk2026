@@ -448,6 +448,29 @@
       {% endif %}
     </section>
   </form>
+
+  {# ---------- Bottom step navigation ---------- #}
+  <div class="card p-3 flex items-center justify-between gap-3 mt-6">
+    <div class="min-w-[40%]">
+      <button type="button" @click="goToStep(prevStep.key)"
+              x-show="prevStep" x-cloak
+              class="btn btn-secondary btn-sm w-full sm:w-auto">
+        <span>←</span>
+        <span x-text="prevStep ? prevStep.label : ''"></span>
+      </button>
+    </div>
+    <div class="text-xs uppercase tracking-widest text-slate-500 font-bold hidden sm:block">
+      <span x-text="currentStepIndex + 1"></span> / <span x-text="STEPS.length"></span>
+    </div>
+    <div class="min-w-[40%] flex justify-end">
+      <button type="button" @click="goToStep(nextStep.key)"
+              x-show="nextStep" x-cloak
+              class="btn btn-primary btn-sm w-full sm:w-auto">
+        <span x-text="nextStep ? nextStep.label : ''"></span>
+        <span>→</span>
+      </button>
+    </div>
+  </div>
 </div>
 {% endblock %}
 
