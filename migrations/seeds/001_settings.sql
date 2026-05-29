@@ -11,7 +11,14 @@ INSERT INTO settings (`key`, `value`) VALUES
 ('payment_instructions','Please hand the payment to Jonah in cash.'),
 ('admin_mail_to',       'wk2026@psb.ugent.be'),
 ('tiebreaker_question', 'How many goals will be scored in the entire tournament?'),
-('tiebreaker_correct_value','')
+('tiebreaker_correct_value',''),
+('prize_distribution', 'Winner: 50% of the pot
+2nd prize: 30% of the pot
+3rd prize: 15% of the pot
+7th place: USB cup warmer
+17th place: USB cup warmer
+29th prize: Smoothie maker
+Last prize: 5% of the pot')
 ;
 
 -- Default email templates (Quill-editable)

@@ -1,0 +1,35 @@
+{# Render the prize_distribution setting as a pretty list.
+   Usage: {% include 'partials/prizes.twig' %}
+   Optional vars: title (default "Prize distribution"), compact (default false). #}
+{% set raw = settings.prize_distribution|default('') %}
+{% if raw|trim %}
+<div class="card p-6">
+  <div class="banner banner-pink mb-5">
+    <span class="text-2xl">🏆</span>
+    <span>{{ title|default('Prize distribution') }}</span>
+  </div>
+  <ul class="grid sm:grid-cols-2 gap-2.5">
+    {% for line in raw|split('\n') %}
+      {% set trimmed = line|trim %}
+      {% if trimmed %}
+        {% set parts = trimmed|split(':', 2) %}
+        {% set label = parts[0]|default('')|trim %}
+        {% set prize = parts[1]|default('')|trim %}
+        {% set icon = '🎁' %}
+        {% if 'winner' in label|lower or label|lower starts with '1' %}{% set icon = '🥇' %}
+        {% elseif label|lower starts with '2' %}{% set icon = '🥈' %}
+        {% elseif label|lower starts with '3' %}{% set icon = '🥉' %}
+        {% elseif 'last' in label|lower %}{% set icon = '🐌' %}
+        {% endif %}
+        <li class="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+          <span class="flex items-center gap-2 font-bold text-slate-800">
+            <span class="text-xl">{{ icon }}</span>
+            <span>{{ label }}</span>
+          </span>
+          <span class="text-slate-600 text-sm text-right">{{ prize }}</span>
+        </li>
+      {% endif %}
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}

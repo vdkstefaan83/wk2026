@@ -41,6 +41,7 @@ final class AdminController extends Controller
             'payment_amount','payment_currency','payment_recipient','payment_iban',
             'payment_instructions','admin_mail_to',
             'tiebreaker_question','tiebreaker_correct_value',
+            'prize_distribution',
         ];
         foreach ($fields as $f) {
             if (array_key_exists($f, $_POST)) {

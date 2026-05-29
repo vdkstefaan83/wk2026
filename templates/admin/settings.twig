@@ -80,6 +80,18 @@
   </div>
 
   <div class="card p-6 space-y-5">
+    <div class="banner banner-pink">
+      <span class="text-2xl">🏆</span>
+      <span>Prizes</span>
+    </div>
+    <div>
+      <label class="field-label">Prize distribution (one per line, format "Label: Prize")</label>
+      <textarea name="prize_distribution" rows="7" class="font-mono text-sm">{{ settings.prize_distribution }}</textarea>
+      <span class="field-hint">Shown on the home page, the dashboard and the wizard's summary tab. Use the "Label: Prize" format on every line.</span>
+    </div>
+  </div>
+
+  <div class="card p-6 space-y-5">
     <div class="banner banner-blue">
       <span class="text-2xl">🎲</span>
       <span>Tiebreaker</span>
