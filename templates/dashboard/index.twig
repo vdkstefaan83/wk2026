@@ -2,13 +2,26 @@
 {% block title %}Dashboard · {{ app.name }}{% endblock %}
 {% block content %}
 
-<div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+<div class="flex flex-wrap items-center justify-between gap-3 mb-4">
   <div>
     <p class="text-xs uppercase tracking-widest text-slate-500 font-bold">Dashboard</p>
     <h1 class="font-display text-4xl font-extrabold mt-1 text-slate-900">My predictions</h1>
   </div>
   <a href="{{ url('/predictions/new') }}" class="btn btn-primary">+ New prediction</a>
 </div>
+
+{# ---------- Quick-jump nav ---------- #}
+<div class="card p-2 mb-6 flex flex-wrap gap-1 overflow-x-auto">
+  <a href="#my-predictions" class="tab-btn whitespace-nowrap">📝 My predictions</a>
+  {% if leaderboard is not empty or forms is not empty %}
+    <a href="#leaderboard" class="tab-btn whitespace-nowrap">🏆 Leaderboard</a>
+  {% endif %}
+  {% if settings.prize_distribution|default('')|trim %}
+    <a href="#prizes" class="tab-btn whitespace-nowrap">🎁 Prizes</a>
+  {% endif %}
+</div>
+
+<section id="my-predictions" class="scroll-mt-20">
 
 {% if forms is empty %}
   <div class="card p-12 text-center">
@@ -17,6 +30,7 @@
     <p class="text-slate-600 mt-2 max-w-md mx-auto">Create your first prediction and see how far you can take it toward becoming world champion.</p>
     <a href="{{ url('/predictions/new') }}" class="btn btn-primary mt-6">Start now →</a>
   </div>
+</section>
 {% else %}
   <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
     {% for f in forms %}
@@ -62,11 +76,12 @@
       </div>
     {% endfor %}
   </div>
+</section>
 {% endif %}
 
 {# ---------- Public leaderboard ---------- #}
 {% if leaderboard is not empty %}
-  <div class="mt-4">
+  <section id="leaderboard" class="scroll-mt-20 mt-4">
     <div class="flex items-end justify-between mb-4">
       <div>
         <p class="text-xs uppercase tracking-widest text-slate-500 font-bold">Standings</p>
@@ -110,16 +125,16 @@
         </tbody>
       </table>
     </div>
-  </div>
+  </section>
 {% elseif forms is not empty %}
-  <div class="card p-6 text-center mt-4">
+  <section id="leaderboard" class="scroll-mt-20 card p-6 text-center mt-4">
     <div class="text-3xl mb-2">📊</div>
     <h3 class="font-display font-bold text-slate-900">Leaderboard coming soon</h3>
     <p class="text-sm text-slate-600 mt-1">As soon as the first matches are played and paid entries roll in, the standings will appear here.</p>
-  </div>
+  </section>
 {% endif %}
 
-<div class="mt-8">
+<section id="prizes" class="scroll-mt-20 mt-8">
   {% include 'partials/prizes.twig' %}
-</div>
+</section>
 {% endblock %}
