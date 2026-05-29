@@ -435,6 +435,25 @@ function predictionWizard(cfg) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
 
+    isStageComplete(key) {
+      if (this.readonly) return true;
+      switch (key) {
+        case 'groups': {
+          const gc = this.groupCompletion();
+          return gc.filled >= gc.total;
+        }
+        case 'r32':       return this.countPicks('R32') >= 16;
+        case 'r16':       return this.countPicks('R16') >= 8;
+        case 'qf':        return this.countPicks('QF')  >= 4;
+        case 'sf':        return this.countPicks('SF')  >= 2;
+        case 'final':     return this.countPicks('F')   >= 1;
+        case 'topscorer': return !!this.topscorerPlayerId;
+        case 'summary':
+          return this.tiebreakerValue !== '' && this.tiebreakerValue !== null && !isNaN(Number(this.tiebreakerValue));
+        default: return true;
+      }
+    },
+
     get missingChecks() {
       const out = [];
       const gc = this.groupCompletion();

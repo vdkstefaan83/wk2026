@@ -112,7 +112,12 @@
     ] %}
       <button type="button" @click="step='{{ step.key }}'"
               :class="step==='{{ step.key }}' ? 'is-active' : ''"
-              class="tab-btn whitespace-nowrap">{{ step.label }}</button>
+              :title="!isStageComplete('{{ step.key }}') ? 'Incomplete — needs more input' : ''"
+              class="tab-btn whitespace-nowrap relative">
+        <span>{{ step.label }}</span>
+        <span x-show="!isStageComplete('{{ step.key }}')" x-cloak
+              class="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-rose-500 text-white text-[10px] font-bold leading-none">!</span>
+      </button>
     {% endfor %}
   </div>
 
@@ -459,6 +464,8 @@
               class="btn btn-secondary btn-sm w-full sm:w-auto">
         <span>←</span>
         <span x-text="prevStep ? prevStep.label : ''"></span>
+        <span x-show="prevStep && !isStageComplete(prevStep.key)" x-cloak
+              class="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-rose-500 text-white text-[10px] font-bold leading-none">!</span>
       </button>
     </div>
     <div class="text-xs uppercase tracking-widest text-slate-500 font-bold hidden sm:block">
@@ -470,6 +477,8 @@
               class="btn btn-primary btn-sm w-full sm:w-auto">
         <span x-text="nextStep ? nextStep.label : ''"></span>
         <span>→</span>
+        <span x-show="nextStep && !isStageComplete(nextStep.key)" x-cloak
+              class="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-rose-500 text-white text-[10px] font-bold leading-none">!</span>
       </button>
     </div>
   </div>
