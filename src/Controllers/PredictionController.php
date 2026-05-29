@@ -354,7 +354,7 @@ final class PredictionController extends Controller
         return $missing;
     }
 
-    private function buildPdf(int $formId): string
+    public function buildPdf(int $formId): string
     {
         $form = Database::fetch(
             'SELECT f.*, u.name AS user_name, u.email AS user_email FROM forms f JOIN users u ON u.id = f.user_id WHERE f.id = ?',

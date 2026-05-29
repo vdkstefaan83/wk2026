@@ -232,6 +232,27 @@ final class AdminController extends Controller
         ]);
     }
 
+    public function formPdf(string $id): void
+    {
+        $this->requireAdmin();
+        $form = Database::fetch('SELECT id, label FROM forms WHERE id = ?', [(int) $id]);
+        if (!$form) {
+            http_response_code(404);
+            echo \App\Core\View::render('errors/404.twig');
+            return;
+        }
+        $path = (new \App\Controllers\PredictionController())->buildPdf((int) $form['id']);
+        if ($path !== '') {
+            Database::update('forms', ['pdf_path' => $path], ['id' => (int) $form['id']]);
+        }
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: inline; filename="wc2026-prediction-' . (int) $form['id'] . '.pdf"');
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+        readfile($path);
+    }
+
     public function deleteForm(string $id): void
     {
         $this->requireAdmin();
