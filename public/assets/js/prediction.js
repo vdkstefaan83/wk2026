@@ -477,7 +477,7 @@ function predictionWizard(cfg) {
     get submitButtonLabel() {
       if (this.canSubmit) return '🚀 Submit final';
       const n = this.missingChecks.length;
-      return n === 0 ? '🚀 Submit final' : '🚀 ' + n + ' to go';
+      return n === 0 ? '🚀 Submit final' : '⏳ Submit when complete (' + n + ' to go)';
     },
 
     submitFinal() {
