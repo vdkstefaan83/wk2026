@@ -447,7 +447,7 @@
                      ? 'border-rose-300 bg-gradient-to-br from-rose-50 to-white'
                      : 'border-sky-300 bg-gradient-to-br from-sky-50 to-white'">
         <div class="flex items-center gap-3 mb-3">
-          <span class="text-3xl">🎲</span>
+          <span class="text-3xl" aria-hidden="true">🎲</span>
           <div>
             <div class="text-xs uppercase tracking-wider font-bold"
                  :class="(tiebreakerValue === '' || tiebreakerValue === null) && !readonly ? 'text-rose-700' : 'text-sky-700'">
@@ -456,14 +456,15 @@
                 <span class="pill pill-grey ml-1" style="background:#fecaca;color:#7f1d1d">required</span>
               </template>
             </div>
-            <div class="font-display font-extrabold text-lg text-slate-900">{{ settings.tiebreaker_question }}</div>
+            <div id="tiebreaker-question" class="font-display font-extrabold text-lg text-slate-900">{{ settings.tiebreaker_question }}</div>
           </div>
         </div>
-        <label class="field-label">Your answer (number)</label>
-        <input type="number" min="0" step="1" inputmode="numeric" x-model="tiebreakerValue"
-               aria-label="Tiebreaker answer — {{ settings.tiebreaker_question }}"
+        <label class="field-label" for="tiebreaker-input">Your answer (number)</label>
+        <input id="tiebreaker-input"
+               type="number" min="0" step="1" inputmode="numeric" x-model="tiebreakerValue"
+               aria-describedby="tiebreaker-question tiebreaker-hint"
                placeholder="e.g. 158" :disabled="readonly" class="max-w-xs">
-        <p class="field-hint">In case of a tied score, the entry closest to the correct answer wins.</p>
+        <p id="tiebreaker-hint" class="field-hint">In case of a tied score, the entry closest to the correct answer wins.</p>
       </div>
 
       {% include 'partials/prizes.twig' with {title: 'What you can win'} %}
