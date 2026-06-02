@@ -9,8 +9,26 @@ final class Session
     {
         if (session_status() === PHP_SESSION_NONE) {
             $lifetime = 8 * 3600; // 8 hours
-            ini_set('session.gc_maxlifetime', (string) $lifetime);
+
+            // Use a project-local session directory so the system-wide PHP
+            // session GC cron (Debian/Ubuntu/RHEL) can't wipe our files
+            // based on its own short gc_maxlifetime.
+            $sessionDir = Config::basePath('storage/sessions');
+            if (!is_dir($sessionDir)) {
+                @mkdir($sessionDir, 0775, true);
+            }
+            if (is_writable($sessionDir)) {
+                ini_set('session.save_path', $sessionDir);
+                // Tighten GC probability so old files in our private dir
+                // still get cleaned (1/100 requests is plenty for our scale).
+                ini_set('session.gc_probability', '1');
+                ini_set('session.gc_divisor',     '100');
+            }
+
+            ini_set('session.gc_maxlifetime',   (string) $lifetime);
             ini_set('session.cookie_lifetime',  (string) $lifetime);
+            ini_set('session.use_strict_mode',  '1');
+
             session_set_cookie_params([
                 'lifetime' => $lifetime,
                 'path'     => '/',
