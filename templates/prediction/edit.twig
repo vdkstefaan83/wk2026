@@ -70,6 +70,7 @@
     formId: {{ form.id }},
     csrf: {{ csrf|json_encode|raw }},
     readonly: {{ readonly ? 'true' : 'false' }},
+    autosaveUrl: {{ url('/api/predictions/' ~ form.id ~ '/autosave')|json_encode|raw }},
     initial: {
       standings:           {{ resolved.standings|json_encode|raw }},
       bracket:             {{ resolved.bracket|json_encode|raw }},

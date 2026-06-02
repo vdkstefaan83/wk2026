@@ -12,6 +12,7 @@ function predictionWizard(cfg) {
     formId: cfg.formId,
     csrf: cfg.csrf,
     readonly: cfg.readonly,
+    autosaveUrl: cfg.autosaveUrl || ('/api/predictions/' + cfg.formId + '/autosave'),
     label: '',
 
     // Local mutable mirror of standings (groupCode -> rows[])
@@ -613,7 +614,7 @@ function predictionWizard(cfg) {
         label: this.label || undefined,
       };
       try {
-        fetch('/api/predictions/' + this.formId + '/autosave', {
+        fetch(this.autosaveUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': this.csrf },
           body: JSON.stringify(payload),
@@ -639,12 +640,13 @@ function predictionWizard(cfg) {
         label: this.label || undefined,
       };
       try {
-        const r = await fetch(`/api/predictions/${this.formId}/autosave`, {
+        const r = await fetch(this.autosaveUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': this.csrf },
           body: JSON.stringify(payload),
         });
         if (r.ok) { this.lastSaved = Date.now(); this.dirty = false; }
+        else { console.warn('autosave HTTP ' + r.status + ' on ' + this.autosaveUrl); }
       } catch (e) {
         console.warn('autosave failed', e);
       }
