@@ -8,10 +8,13 @@ final class Session
     public static function start(): void
     {
         if (session_status() === PHP_SESSION_NONE) {
+            $lifetime = 8 * 3600; // 8 hours
+            ini_set('session.gc_maxlifetime', (string) $lifetime);
+            ini_set('session.cookie_lifetime',  (string) $lifetime);
             session_set_cookie_params([
-                'lifetime' => 0,
-                'path' => '/',
-                'secure' => !empty($_SERVER['HTTPS']),
+                'lifetime' => $lifetime,
+                'path'     => '/',
+                'secure'   => !empty($_SERVER['HTTPS']),
                 'httponly' => true,
                 'samesite' => 'Lax',
             ]);
