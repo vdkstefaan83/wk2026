@@ -77,6 +77,13 @@ function predictionWizard(cfg) {
 
       this.refreshBracket();
       this.autosaveTimer = null;
+      this.dirty = false;
+
+      // Flush a pending autosave when the user closes the tab or navigates away.
+      window.addEventListener('beforeunload', () => this.flushBeforeUnload());
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') this.flushBeforeUnload();
+      });
     },
 
     // ---------- helpers ----------
@@ -584,8 +591,35 @@ function predictionWizard(cfg) {
     // ---------- autosave ----------
     scheduleAutosave() {
       if (this.readonly) return;
+      this.dirty = true;
       clearTimeout(this.autosaveTimer);
       this.autosaveTimer = setTimeout(() => this.autosave(), 800);
+    },
+
+    /** Best-effort sync save when the user is about to leave the page.
+     *  Uses fetch with keepalive so the request survives navigation. */
+    flushBeforeUnload() {
+      if (this.readonly || !this.dirty) return;
+      clearTimeout(this.autosaveTimer);
+      const winner = this.picks['F-01'] || this.winnerTeamId || null;
+      const payload = {
+        _csrf: this.csrf,
+        scores: this.flattenScores(),
+        slots:  Object.keys(this.picks).map(s => ({ slot: s, team_id: this.picks[s] })),
+        winner_team_id:        winner,
+        topscorer_player_id:   this.topscorerPlayerId || null,
+        topscorer_custom_name: this.topscorerCustomName || null,
+        tiebreaker_value:      this.tiebreakerValue === '' ? null : Number(this.tiebreakerValue),
+        label: this.label || undefined,
+      };
+      try {
+        fetch('/api/predictions/' + this.formId + '/autosave', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': this.csrf },
+          body: JSON.stringify(payload),
+          keepalive: true,
+        });
+      } catch (e) { /* nothing we can do — tab is closing */ }
     },
 
     async autosave() {
@@ -610,7 +644,7 @@ function predictionWizard(cfg) {
           headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': this.csrf },
           body: JSON.stringify(payload),
         });
-        if (r.ok) this.lastSaved = Date.now();
+        if (r.ok) { this.lastSaved = Date.now(); this.dirty = false; }
       } catch (e) {
         console.warn('autosave failed', e);
       }

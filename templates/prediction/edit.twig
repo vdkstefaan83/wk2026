@@ -462,6 +462,7 @@
         <label class="field-label" for="tiebreaker-input">Your answer (number)</label>
         <input id="tiebreaker-input"
                type="number" min="0" step="1" inputmode="numeric" x-model="tiebreakerValue"
+               @input="scheduleAutosave()"
                aria-describedby="tiebreaker-question tiebreaker-hint"
                placeholder="e.g. 158" :disabled="readonly" class="max-w-xs">
         <p id="tiebreaker-hint" class="field-hint">In case of a tied score, the entry closest to the correct answer wins.</p>
