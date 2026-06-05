@@ -443,6 +443,63 @@ function predictionWizard(cfg) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
 
+    // Rough strength tiers based on FIFA ranking around the 2026 tournament.
+    // Higher = stronger. Used only by autofillGroupScores().
+    TEAM_STRENGTH: {
+      'Argentina': 10, 'France': 10, 'Spain': 10, 'England': 10, 'Brazil': 10, 'Portugal': 10,
+      'Netherlands': 9, 'Belgium': 9, 'Germany': 9, 'Croatia': 8, 'Morocco': 8, 'Uruguay': 8,
+      'Colombia': 7, 'Switzerland': 7, 'Japan': 7, 'United States': 7, 'Senegal': 7, 'Mexico': 7,
+      'Ecuador': 6, 'South Korea': 6, 'Australia': 6, 'Austria': 6, 'Egypt': 6, 'Norway': 6,
+      'Sweden': 6, 'Ivory Coast': 6, 'Iran': 6, 'Tunisia': 5, 'Czech Republic': 5, 'Algeria': 5,
+      'Scotland': 5, 'Paraguay': 5, 'Turkey': 5, 'Saudi Arabia': 4, 'Cape Verde': 4, 'Canada': 6,
+      'Ghana': 4, 'DR Congo': 4, 'Qatar': 4, 'Uzbekistan': 4, 'Iraq': 4, 'Panama': 4,
+      'Bosnia and Herzegovina': 4, 'Jordan': 3, 'South Africa': 3, 'Haiti': 3, 'New Zealand': 3,
+      'Curaçao': 2,
+    },
+
+    autofillGroupScores() {
+      if (this.readonly) return;
+      if (!confirm('Auto-fill all group-stage scores using FIFA ranking with some random upsets?\n\nThis will OVERWRITE every score you already entered in the Group stage tab.')) return;
+
+      const teamName = (id) => ((window.__teamsById || {})[id] || {}).name || '';
+
+      Object.entries(this.groupMatches).forEach(([groupCode, matches]) => {
+        Object.values(matches).forEach(m => {
+          if (!m.home_team_id || !m.away_team_id) return;
+          const [h, a] = this.generateScore(teamName(m.home_team_id), teamName(m.away_team_id));
+          m.home = h;
+          m.away = a;
+          const homeInput = document.querySelector('input[name="score[' + m.match_id + '][home]"]');
+          const awayInput = document.querySelector('input[name="score[' + m.match_id + '][away]"]');
+          if (homeInput) homeInput.value = h;
+          if (awayInput) awayInput.value = a;
+        });
+        this.recomputeGroup(groupCode);
+      });
+      this.refreshBracket();
+      this.scheduleAutosave();
+    },
+
+    generateScore(homeName, awayName) {
+      const sH = this.TEAM_STRENGTH[homeName] ?? 5;
+      const sA = this.TEAM_STRENGTH[awayName] ?? 5;
+      // ~15% chance of an upset: temporarily swap perceived strength.
+      const upset = Math.random() < 0.15;
+      const [eHome, eAway] = upset ? [sA, sH] : [sH, sA];
+      const adv = (eHome - eAway) / 9;             // scale roughly to ±1
+      const lambdaH = Math.max(0.35, 1.3 + adv);
+      const lambdaA = Math.max(0.35, 1.3 - adv);
+      // Cap at 5 to keep scores realistic and avoid the rare Poisson tail.
+      return [Math.min(this.poisson(lambdaH), 5), Math.min(this.poisson(lambdaA), 5)];
+    },
+
+    poisson(lambda) {
+      const L = Math.exp(-lambda);
+      let k = 0, p = 1;
+      do { k++; p *= Math.random(); } while (p > L);
+      return k - 1;
+    },
+
     isStageComplete(key) {
       if (this.readonly) return true;
       switch (key) {

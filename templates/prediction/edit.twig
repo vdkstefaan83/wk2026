@@ -159,6 +159,18 @@
         <span>Enter the scores — the standings update live</span>
       </div>
 
+      {% if not readonly %}
+        <div class="card p-4 flex flex-wrap items-center justify-between gap-3">
+          <div class="text-sm text-slate-700">
+            <span class="text-base mr-1">🎲</span>
+            <strong>Quick start:</strong> let me roll a plausible set of group scores based on FIFA ranking — with a few upsets for spice.
+          </div>
+          <button type="button" @click="autofillGroupScores()" class="btn btn-secondary btn-sm">
+            🎲 Auto-fill scores
+          </button>
+        </div>
+      {% endif %}
+
       {% for g in groups %}
         <div class="card overflow-hidden">
           <div class="flex items-center justify-between px-5 py-3 bg-gradient-to-r from-emerald-50 to-transparent border-b-2 border-emerald-100">
