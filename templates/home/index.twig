@@ -22,6 +22,7 @@
     {% if settings.auth_provider == 'db' and settings.registration_open == '1' %}
       <a href="{{ url('/register') }}" class="btn btn-secondary text-base">Create account</a>
     {% endif %}
+    <a href="{{ url('/leaderboard') }}" class="btn btn-secondary text-base">🏆 Leaderboard</a>
   </div>
 </section>
 

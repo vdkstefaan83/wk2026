@@ -17,6 +17,7 @@ $admin      = AdminController::class;
 $api        = ApiController::class;
 
 $router->get('/',                  $home . '@index');
+$router->get('/leaderboard',       $home . '@leaderboard');
 
 // --- Authentication ---
 $router->get('/login',                  $auth . '@showLogin');

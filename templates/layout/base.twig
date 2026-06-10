@@ -25,6 +25,7 @@
       </a>
 
       <nav class="flex items-center gap-2 text-sm">
+        <a href="{{ url('/leaderboard') }}" class="hidden sm:inline px-3 py-2 rounded-full text-slate-700 hover:bg-slate-100 font-semibold">🏆 Leaderboard</a>
         {% if user %}
           <a href="{{ url('/dashboard') }}" class="hidden sm:inline px-3 py-2 rounded-full text-slate-700 hover:bg-slate-100 font-semibold">📊 Dashboard</a>
           {% if user.is_admin %}
