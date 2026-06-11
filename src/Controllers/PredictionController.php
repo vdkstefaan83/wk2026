@@ -17,19 +17,39 @@ final class PredictionController extends Controller
     public function create(): void
     {
         $user = $this->requireAuth();
-        if (Setting::get('predictions_open', '1') !== '1') {
-            Session::flash('error', 'Predictions are closed.');
+        if (self::predictionsClosed()) {
+            Session::flash('error', self::closedMessage());
             $this->redirect('/dashboard');
         }
         $this->render('prediction/create.twig');
+    }
+
+    /** Centralised cutoff: returns true when no further editing/submitting is allowed. */
+    public static function predictionsClosed(): bool
+    {
+        if (Setting::get('predictions_open', '1') !== '1') return true;
+        $deadline = (string) Setting::get('predictions_deadline', '');
+        if ($deadline === '') return false;
+        $ts = strtotime($deadline);
+        if (!$ts) return false;
+        return time() > $ts;
+    }
+
+    public static function closedMessage(): string
+    {
+        $deadline = (string) Setting::get('predictions_deadline', '');
+        if ($deadline !== '' && strtotime($deadline) && time() > strtotime($deadline)) {
+            return 'Predictions are closed — the deadline ' . $deadline . ' has passed.';
+        }
+        return 'Predictions are closed.';
     }
 
     public function store(): void
     {
         $user = $this->requireAuth();
         $this->requireCsrf();
-        if (Setting::get('predictions_open', '1') !== '1') {
-            Session::flash('error', 'Predictions are closed.');
+        if (self::predictionsClosed()) {
+            Session::flash('error', self::closedMessage());
             $this->redirect('/dashboard');
         }
         $label = trim((string) $this->input('label', 'My prediction'));
@@ -104,6 +124,8 @@ final class PredictionController extends Controller
             }
         }
 
+        $deadlinePassed = self::predictionsClosed();
+
         $this->render('prediction/edit.twig', [
             'form'             => $form,
             'groups'           => $groups,
@@ -113,6 +135,7 @@ final class PredictionController extends Controller
             'players'          => $players,
             'resolved'         => $resolved,
             'deadline'         => Setting::get('predictions_deadline'),
+            'deadline_passed'  => $deadlinePassed,
             'qr_data_uri'      => $qrDataUri,
             'qr_reference'     => $qrReference,
         ]);
@@ -124,6 +147,10 @@ final class PredictionController extends Controller
         $this->requireCsrf();
         if ($form['status'] === 'submitted') {
             Session::flash('error', 'Entry has already been submitted.');
+            $this->redirect('/predictions/' . $form['id']);
+        }
+        if (self::predictionsClosed()) {
+            Session::flash('error', self::closedMessage());
             $this->redirect('/predictions/' . $form['id']);
         }
         $this->persistAll((int) $form['id'], $_POST);
@@ -139,8 +166,8 @@ final class PredictionController extends Controller
             Session::flash('error', 'Entry has already been submitted.');
             $this->redirect('/predictions/' . $form['id']);
         }
-        if (Setting::get('predictions_open', '1') !== '1') {
-            Session::flash('error', 'Predictions are closed.');
+        if (self::predictionsClosed()) {
+            Session::flash('error', self::closedMessage());
             $this->redirect('/predictions/' . $form['id']);
         }
         $this->persistAll((int) $form['id'], $_POST);

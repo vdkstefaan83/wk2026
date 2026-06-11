@@ -15,6 +15,7 @@ final class ApiController extends Controller
         $form = Database::fetch('SELECT * FROM forms WHERE id = ? AND user_id = ?', [(int)$id, (int)$user['id']]);
         if (!$form) { $this->json(['ok' => false, 'error' => 'not found'], 404); return; }
         if ($form['status'] === 'submitted') { $this->json(['ok' => false, 'error' => 'locked'], 409); return; }
+        if (PredictionController::predictionsClosed()) { $this->json(['ok' => false, 'error' => 'deadline'], 410); return; }
 
         $payload = $this->jsonInput();
         $token = $payload['_csrf'] ?? null;

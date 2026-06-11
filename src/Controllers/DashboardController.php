@@ -48,9 +48,10 @@ final class DashboardController extends Controller
         unset($r);
 
         $this->render('dashboard/index.twig', [
-            'forms'       => $forms,
-            'leaderboard' => $leaderboard,
-            'user_id'     => (int) $user['id'],
+            'forms'           => $forms,
+            'leaderboard'     => $leaderboard,
+            'user_id'         => (int) $user['id'],
+            'deadline_passed' => \App\Controllers\PredictionController::predictionsClosed(),
         ]);
     }
 }

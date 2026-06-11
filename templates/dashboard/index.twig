@@ -7,7 +7,11 @@
     <p class="text-xs uppercase tracking-widest text-slate-500 font-bold">Dashboard</p>
     <h1 class="font-display text-4xl font-extrabold mt-1 text-slate-900">My predictions</h1>
   </div>
-  <a href="{{ url('/predictions/new') }}" class="btn btn-primary">+ New prediction</a>
+  {% if deadline_passed %}
+    <span class="pill pill-grey">🔒 Deadline passed — no new entries</span>
+  {% else %}
+    <a href="{{ url('/predictions/new') }}" class="btn btn-primary">+ New prediction</a>
+  {% endif %}
 </div>
 
 {# ---------- Quick-jump nav ---------- #}

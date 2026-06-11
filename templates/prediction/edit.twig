@@ -63,7 +63,20 @@
     console.warn('prediction.js fallback activated — live ranking + autosave will not work.');
   }
 </script>
-{% set readonly = form.status == 'submitted' %}
+{% set readonly = form.status == 'submitted' or deadline_passed|default(false) %}
+
+{% if deadline_passed|default(false) and form.status != 'submitted' %}
+  <div class="card-thick border-rose-300 bg-rose-50 p-5 mb-6 flex items-start gap-4">
+    <span class="text-3xl">🔒</span>
+    <div class="flex-1">
+      <div class="font-display font-extrabold text-lg text-rose-900">Deadline has passed</div>
+      <p class="text-rose-900 mt-1 text-sm">
+        The submission deadline ({{ deadline }}) has passed. You can still browse this draft,
+        but it can no longer be edited, autosaved or submitted.
+      </p>
+    </div>
+  </div>
+{% endif %}
 <script>
   // Wizard config moved out of x-data so JSON quotes don't break the HTML attribute.
   window.__wizardConfig = {
