@@ -53,32 +53,45 @@ final class ApiFootballClient
             ]
             : ['x-apisports-key: ' . $this->apiKey];
 
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTPHEADER     => $headers,
-            CURLOPT_TIMEOUT        => 20,
-            CURLOPT_FOLLOWLOCATION => true,
-        ]);
-        $body = curl_exec($ch);
-        $http = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $err  = curl_error($ch);
-        curl_close($ch);
+        $maxAttempts = 3;
+        $lastErr = '';
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HTTPHEADER     => $headers,
+                CURLOPT_CONNECTTIMEOUT => 10,
+                CURLOPT_TIMEOUT        => 25,
+                CURLOPT_FOLLOWLOCATION => true,
+            ]);
+            $body = curl_exec($ch);
+            $http = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $err  = curl_error($ch);
+            curl_close($ch);
 
-        if ($body === false) {
-            throw new \RuntimeException("API-Football request failed: {$err}");
+            if ($body !== false) {
+                if ($http === 429 && $attempt < $maxAttempts) {
+                    sleep($attempt);
+                    continue;
+                }
+                if ($http >= 400) {
+                    throw new \RuntimeException("API-Football returned HTTP {$http}: " . substr((string)$body, 0, 500));
+                }
+                $data = json_decode((string)$body, true);
+                if (!is_array($data)) {
+                    throw new \RuntimeException('API-Football returned invalid JSON');
+                }
+                if (!empty($data['errors']) && $data['errors'] !== []) {
+                    $first = is_array($data['errors']) ? json_encode($data['errors']) : (string)$data['errors'];
+                    throw new \RuntimeException('API-Football error: ' . $first);
+                }
+                return $data['response'] ?? [];
+            }
+            $lastErr = $err ?: 'unknown';
+            if ($attempt < $maxAttempts) {
+                usleep(500_000 * $attempt);
+            }
         }
-        if ($http >= 400) {
-            throw new \RuntimeException("API-Football returned HTTP {$http}: " . substr((string)$body, 0, 500));
-        }
-        $data = json_decode((string)$body, true);
-        if (!is_array($data)) {
-            throw new \RuntimeException('API-Football returned invalid JSON');
-        }
-        if (!empty($data['errors']) && $data['errors'] !== []) {
-            $first = is_array($data['errors']) ? json_encode($data['errors']) : (string)$data['errors'];
-            throw new \RuntimeException('API-Football error: ' . $first);
-        }
-        return $data['response'] ?? [];
+        throw new \RuntimeException("API-Football request failed after {$maxAttempts} attempts: {$lastErr}");
     }
 }

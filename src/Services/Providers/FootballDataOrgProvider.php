@@ -102,32 +102,49 @@ final class FootballDataOrgProvider implements MatchDataProvider
             throw new \RuntimeException('FOOTBALL_DATA_ORG_TOKEN is not configured.');
         }
         $url = $this->baseUrl . $path . ($query ? '?' . http_build_query($query) : '');
-        $ch  = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTPHEADER     => ['X-Auth-Token: ' . $this->token],
-            CURLOPT_TIMEOUT        => 20,
-            CURLOPT_FOLLOWLOCATION => true,
-        ]);
-        $body = curl_exec($ch);
-        $http = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $err  = curl_error($ch);
-        curl_close($ch);
 
-        if ($body === false) {
-            throw new \RuntimeException("football-data.org request failed: {$err}");
+        $maxAttempts = 3;
+        $lastCurlErr = '';
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            $ch  = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HTTPHEADER     => ['X-Auth-Token: ' . $this->token],
+                CURLOPT_CONNECTTIMEOUT => 10,
+                CURLOPT_TIMEOUT        => 25,
+                CURLOPT_FOLLOWLOCATION => true,
+            ]);
+            $body = curl_exec($ch);
+            $http = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $err  = curl_error($ch);
+            curl_close($ch);
+
+            if ($body !== false) {
+                if ($http === 429 && $attempt < $maxAttempts) {
+                    // Rate-limited — back off and retry.
+                    sleep($attempt);
+                    continue;
+                }
+                if ($http >= 400) {
+                    throw new \RuntimeException("football-data.org returned HTTP {$http}: " . substr((string) $body, 0, 500));
+                }
+                $data = json_decode((string) $body, true);
+                if (!is_array($data)) {
+                    throw new \RuntimeException('football-data.org returned invalid JSON');
+                }
+                if (!empty($data['errorCode'])) {
+                    throw new \RuntimeException("football-data.org error: " . (string) ($data['message'] ?? 'unknown'));
+                }
+                return $data;
+            }
+
+            // cURL transport error — retry with a short backoff.
+            $lastCurlErr = $err ?: 'unknown';
+            if ($attempt < $maxAttempts) {
+                usleep(500_000 * $attempt); // 0.5s, 1.0s, 1.5s
+            }
         }
-        if ($http >= 400) {
-            throw new \RuntimeException("football-data.org returned HTTP {$http}: " . substr((string) $body, 0, 500));
-        }
-        $data = json_decode((string) $body, true);
-        if (!is_array($data)) {
-            throw new \RuntimeException('football-data.org returned invalid JSON');
-        }
-        if (!empty($data['errorCode'])) {
-            throw new \RuntimeException("football-data.org error: " . (string) ($data['message'] ?? 'unknown'));
-        }
-        return $data;
+        throw new \RuntimeException("football-data.org request failed after {$maxAttempts} attempts: {$lastCurlErr}");
     }
 
     /**
