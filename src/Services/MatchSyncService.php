@@ -180,6 +180,11 @@ final class MatchSyncService
     /** @param list<array> $top */
     private function applyTopscorer(array $top, array &$errors): ?array
     {
+        // Always record the attempt so the 1h throttle works even before any
+        // goals have been scored. Without this, every 15-min cron tick would
+        // re-hit the API just to receive another empty array.
+        Setting::set('last_topscorer_sync_at', date('Y-m-d H:i:s'));
+
         if (empty($top)) {
             // No goals scored yet — not an error, just no data to apply.
             return null;
@@ -201,7 +206,7 @@ final class MatchSyncService
 
         Setting::set('actual_topscorer_player_id', (string) $playerId);
         Setting::set('actual_topscorer_goals',     (string) $bestGoals);
-        Setting::set('last_topscorer_sync_at',     date('Y-m-d H:i:s'));
+        // last_topscorer_sync_at already set at the top of this method
 
         // Per-player goal totals — supports the "+3 per goal your predicted topscorer scored" rule.
         foreach ($top as $p) {
