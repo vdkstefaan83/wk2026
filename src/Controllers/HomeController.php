@@ -18,6 +18,27 @@ final class HomeController extends Controller
         $this->render('home/index.twig');
     }
 
+    public function leaderboardForm(string $id): void
+    {
+        $form = Database::fetch(
+            'SELECT id, status, paid_at FROM forms WHERE id = ?',
+            [(int) $id]
+        );
+        if (!$form || $form['status'] !== 'submitted' || empty($form['paid_at'])) {
+            // Only show breakdowns for paid submitted entries — same data the
+            // public leaderboard already exposes.
+            http_response_code(404);
+            echo \App\Core\View::render('errors/404.twig');
+            return;
+        }
+        $data = \App\Services\ScoreBreakdownService::forForm((int) $id);
+        $me = \App\Core\Auth::user();
+        $this->render('home/leaderboard_form.twig', [
+            'data'       => $data,
+            'my_user_id' => $me ? (int) $me['id'] : 0,
+        ]);
+    }
+
     public function leaderboard(): void
     {
         $correct = Setting::get('tiebreaker_correct_value', '');

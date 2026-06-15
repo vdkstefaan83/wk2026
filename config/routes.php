@@ -18,6 +18,7 @@ $api        = ApiController::class;
 
 $router->get('/',                  $home . '@index');
 $router->get('/leaderboard',       $home . '@leaderboard');
+$router->get('/leaderboard/(\d+)', $home . '@leaderboardForm');
 
 // --- Authentication ---
 $router->get('/login',                  $auth . '@showLogin');

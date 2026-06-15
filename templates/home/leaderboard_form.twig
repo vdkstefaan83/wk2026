@@ -1,0 +1,200 @@
+{% extends 'layout/base.twig' %}
+{% block title %}{{ data.form.label }} · {{ data.form.user_name }} · Leaderboard{% endblock %}
+{% block content %}
+
+{# ---------- Macros ---------- #}
+{% macro statusPill(status) %}
+  {% if status == 'correct' %}
+    <span class="pill pill-green">✓ correct</span>
+  {% elseif status == 'wrong' %}
+    <span class="pill" style="background:#fee2e2;color:#7f1d1d">✗ wrong</span>
+  {% elseif status == 'no_prediction' %}
+    <span class="pill pill-grey">no prediction</span>
+  {% else %}
+    <span class="pill pill-blue">pending</span>
+  {% endif %}
+{% endmacro %}
+
+{% set me = data.form.user_id == my_user_id %}
+
+{# ---------- Header ---------- #}
+<div class="card-thick p-6 mb-6 flex flex-wrap items-center justify-between gap-4">
+  <div class="min-w-0 flex-1">
+    <p class="text-xs uppercase tracking-widest text-slate-500 font-bold">Score breakdown</p>
+    <h1 class="font-display text-3xl font-extrabold mt-1 text-slate-900 flex items-center gap-3">
+      <span class="truncate">{{ data.form.label }}</span>
+      {% if me %}<span class="pill pill-green">you</span>{% endif %}
+    </h1>
+    <p class="text-slate-600 mt-1">by <strong>{{ data.form.user_name }}</strong></p>
+  </div>
+  <div class="text-right">
+    <p class="text-xs uppercase tracking-widest text-slate-500 font-bold">Total</p>
+    <p class="stat-number text-5xl text-emerald-600">{{ data.totals.total }}<span class="text-base text-slate-400 font-bold ml-1">pt</span></p>
+  </div>
+</div>
+
+<div class="mb-6">
+  <a href="{{ url('/leaderboard') }}" class="btn btn-secondary btn-sm">← Back to leaderboard</a>
+</div>
+
+{# ---------- Totals strip ---------- #}
+<div class="card p-5 mb-6 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+  {% for k, label in {
+    'group_matches':'⚽ Group',
+    'r32':'1/16',
+    'r16':'1/8',
+    'qf':'1/4',
+    'sf':'1/2',
+    'final':'Final',
+    'winner':'🏆 Champion',
+    'topscorer':'👟 Top scorer'
+  } %}
+    <div class="text-center p-2 rounded-xl bg-slate-50 border border-slate-100">
+      <div class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">{{ label }}</div>
+      <div class="stat-number text-2xl mt-1 {{ data.totals[k] > 0 ? 'text-emerald-600' : 'text-slate-400' }}">
+        {{ data.totals[k] }}
+      </div>
+    </div>
+  {% endfor %}
+</div>
+
+{# ---------- Group stage ---------- #}
+<div class="card p-6 mb-6">
+  <div class="banner banner-green mb-5">
+    <span class="text-2xl">⚽</span>
+    <span>Group stage — {{ data.group.total }} pt</span>
+  </div>
+  <p class="text-sm text-slate-600 mb-3">1 point per correct 1-X-2 result, +2 extra for an exact score.</p>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50 border-b-2 border-slate-100">
+        <tr class="text-xs uppercase tracking-wider text-slate-500 font-bold">
+          <th class="p-2 text-left">Group</th>
+          <th class="p-2 text-left">Match</th>
+          <th class="p-2 text-center">Predicted</th>
+          <th class="p-2 text-center">Actual</th>
+          <th class="p-2 text-left">Status</th>
+          <th class="p-2 text-right">Points</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in data.group.matches %}
+          {% set bg = m.status == 'correct' ? 'bg-emerald-50' : (m.status == 'wrong' ? 'bg-rose-50/50' : '') %}
+          <tr class="border-t border-slate-100 {{ bg }}">
+            <td class="p-2 text-slate-500 font-mono">{{ m.group }}</td>
+            <td class="p-2 text-slate-800">{{ m.home_name }} – {{ m.away_name }}</td>
+            <td class="p-2 text-center font-mono font-bold">
+              {% if m.pred_home is not null %}{{ m.pred_home }}–{{ m.pred_away }}{% else %}—{% endif %}
+            </td>
+            <td class="p-2 text-center font-mono font-bold">
+              {% if m.actual_home is not null %}{{ m.actual_home }}–{{ m.actual_away }}{% else %}—{% endif %}
+            </td>
+            <td class="p-2">
+              {% if m.exact %}<span class="pill pill-green">✓ exact</span>
+              {% elseif m.outcome %}<span class="pill pill-orange">✓ outcome</span>
+              {% else %}{{ _self.statusPill(m.status) }}{% endif %}
+            </td>
+            <td class="p-2 text-right stat-number {{ m.points > 0 ? 'text-emerald-600' : 'text-slate-400' }}">
+              {{ m.points }}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# ---------- Knockout rounds ---------- #}
+{% set koMeta = {
+  'r32':  {label:'Round of 32',  banner:'banner-blue'},
+  'r16':  {label:'Round of 16',  banner:'banner-blue'},
+  'qf':   {label:'Quarter-finals', banner:'banner-orange'},
+  'sf':   {label:'Semi-finals',    banner:'banner-pink'},
+  'final':{label:'Final',          banner:'banner-green'}
+} %}
+{% for stage, meta in koMeta %}
+  {% set bucket = data.knockout[stage] %}
+  <div class="card p-6 mb-6">
+    <div class="banner {{ meta.banner }} mb-5">
+      <span class="text-2xl">🎯</span>
+      <span>{{ meta.label }} — {{ bucket.total }} pt</span>
+    </div>
+    <p class="text-sm text-slate-600 mb-3">{{ bucket.pts_per_pick }} points per team that actually reached this round.</p>
+    {% if bucket.items is empty %}
+      <p class="text-sm text-slate-500 italic">No picks made.</p>
+    {% else %}
+      <div class="grid sm:grid-cols-2 gap-2">
+        {% for it in bucket.items %}
+          {% set bg = it.status == 'correct' ? 'bg-emerald-50 border-emerald-200' : (it.status == 'wrong' ? 'bg-rose-50/50 border-rose-200' : 'bg-slate-50 border-slate-200') %}
+          <div class="flex items-center justify-between gap-3 p-3 rounded-xl border {{ bg }}">
+            <span class="flex items-center gap-2">
+              <span class="text-[10px] font-mono text-slate-500 font-bold">{{ it.slot }}</span>
+              <span class="font-semibold text-slate-900">{{ it.team_name }}</span>
+            </span>
+            <span class="flex items-center gap-2">
+              {{ _self.statusPill(it.status) }}
+              <span class="stat-number text-lg {{ it.points > 0 ? 'text-emerald-600' : 'text-slate-400' }}">{{ it.points }}</span>
+            </span>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+{% endfor %}
+
+{# ---------- Champion ---------- #}
+<div class="card-thick p-6 mb-6 border-emerald-300 bg-gradient-to-br from-emerald-50 to-white">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <p class="text-xs uppercase tracking-widest text-emerald-700 font-bold">🏆 World champion · 100 pt</p>
+      <p class="font-display text-2xl font-extrabold text-emerald-900 mt-2">
+        Picked: {{ data.winner.pred_name ?: '—' }}
+      </p>
+      {% if data.winner.actual_name %}
+        <p class="text-sm text-slate-700 mt-1">Actual winner: <strong>{{ data.winner.actual_name }}</strong></p>
+      {% else %}
+        <p class="text-sm text-slate-500 mt-1 italic">Final not played yet.</p>
+      {% endif %}
+    </div>
+    <div class="text-right">
+      {{ _self.statusPill(data.winner.status) }}
+      <p class="stat-number text-4xl {{ data.winner.points > 0 ? 'text-emerald-600' : 'text-slate-400' }} mt-2">
+        {{ data.winner.points }}<span class="text-base text-slate-400 font-bold ml-1">pt</span>
+      </p>
+    </div>
+  </div>
+</div>
+
+{# ---------- Top scorer ---------- #}
+<div class="card-thick p-6 border-orange-300 bg-gradient-to-br from-orange-50 to-white">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <p class="text-xs uppercase tracking-widest text-orange-700 font-bold">👟 Top scorer · 10 + 3 per goal</p>
+      <p class="font-display text-2xl font-extrabold text-orange-900 mt-2">
+        Picked: {{ data.topscorer.pred_name ?: '—' }}
+      </p>
+      <p class="text-sm text-slate-700 mt-1">
+        Goals scored so far: <strong>{{ data.topscorer.predicted_player_goals }}</strong>
+        ({{ data.topscorer.goal_points }} pt)
+      </p>
+      {% if data.topscorer.actual_name %}
+        <p class="text-sm text-slate-700 mt-1">
+          Tournament leader: <strong>{{ data.topscorer.actual_name }}</strong>
+          {% if data.topscorer.correct_player_points > 0 %}
+            <span class="pill pill-green ml-1">+10 correct player</span>
+          {% endif %}
+        </p>
+      {% else %}
+        <p class="text-sm text-slate-500 mt-1 italic">No leader yet.</p>
+      {% endif %}
+    </div>
+    <div class="text-right">
+      {{ _self.statusPill(data.topscorer.status) }}
+      <p class="stat-number text-4xl {{ data.topscorer.points > 0 ? 'text-orange-600' : 'text-slate-400' }} mt-2">
+        {{ data.topscorer.points }}<span class="text-base text-slate-400 font-bold ml-1">pt</span>
+      </p>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

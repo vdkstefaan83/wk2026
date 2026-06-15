@@ -1,0 +1,241 @@
+<?php
+declare(strict_types=1);
+
+namespace App\Services;
+
+use App\Core\Database;
+use App\Core\Setting;
+
+/**
+ * Builds the per-match / per-pick point breakdown that powers the public
+ * "click a name on the leaderboard" detail view. Mirrors ScoringService's
+ * point rules but exposes them in a presentation-friendly shape.
+ */
+final class ScoreBreakdownService
+{
+    private const STAGE_POINTS = [
+        'r32'   => 5,
+        'r16'   => 10,
+        'qf'    => 15,
+        'sf'    => 25,
+        'final' => 50,
+    ];
+
+    public static function forForm(int $formId): array
+    {
+        $form = Database::fetch(
+            'SELECT f.*, u.name AS user_name
+               FROM forms f
+               JOIN users u ON u.id = f.user_id
+              WHERE f.id = ?',
+            [$formId]
+        );
+        if (!$form) {
+            return [];
+        }
+
+        $group     = self::groupBreakdown($formId);
+        $knockout  = self::knockoutBreakdown($formId);
+        $winnerInf = self::winnerBreakdown($form);
+        $topscorer = self::topscorerBreakdown($form);
+
+        $totals = [
+            'group_matches' => $group['total'],
+            'r32'           => $knockout['r32']['total'],
+            'r16'           => $knockout['r16']['total'],
+            'qf'            => $knockout['qf']['total'],
+            'sf'            => $knockout['sf']['total'],
+            'final'         => $knockout['final']['total'],
+            'winner'        => $winnerInf['points'],
+            'topscorer'     => $topscorer['points'],
+        ];
+        $totals['total'] = array_sum($totals);
+
+        return [
+            'form'      => $form,
+            'group'     => $group,
+            'knockout'  => $knockout,
+            'winner'    => $winnerInf,
+            'topscorer' => $topscorer,
+            'totals'    => $totals,
+        ];
+    }
+
+    // ------------------------------------------------------------------
+
+    private static function groupBreakdown(int $formId): array
+    {
+        $rows = Database::fetchAll(
+            'SELECT m.id, m.match_number, m.kickoff_at,
+                    g.code AS group_code,
+                    h.name AS home_name,
+                    a.name AS away_name,
+                    m.actual_home_goals, m.actual_away_goals,
+                    p.home_goals AS pred_home, p.away_goals AS pred_away
+               FROM matches m
+          LEFT JOIN team_groups g ON g.id = m.group_id
+          LEFT JOIN teams h ON h.id = m.home_team_id
+          LEFT JOIN teams a ON a.id = m.away_team_id
+          LEFT JOIN predictions p ON p.match_id = m.id AND p.form_id = ? AND p.stage = "group"
+              WHERE m.stage = "group"
+           ORDER BY m.match_number',
+            [$formId]
+        );
+
+        $total = 0;
+        $matches = [];
+        foreach ($rows as $r) {
+            $points = 0;
+            $status = 'pending';
+            $exact  = false;
+            $outcome= false;
+
+            $hasActual = $r['actual_home_goals'] !== null && $r['actual_away_goals'] !== null;
+            $hasPred   = $r['pred_home']        !== null && $r['pred_away']        !== null;
+
+            if ($hasActual && $hasPred) {
+                $aH = (int)$r['actual_home_goals']; $aA = (int)$r['actual_away_goals'];
+                $pH = (int)$r['pred_home'];         $pA = (int)$r['pred_away'];
+                if (self::outcome($pH, $pA) === self::outcome($aH, $aA)) {
+                    $points  = 1;
+                    $outcome = true;
+                    if ($pH === $aH && $pA === $aA) {
+                        $points += 2;
+                        $exact   = true;
+                    }
+                }
+                $status = $points > 0 ? 'correct' : 'wrong';
+            } elseif (!$hasActual) {
+                $status = 'pending';
+            } else {
+                $status = 'no_prediction';
+            }
+            $total += $points;
+            $matches[] = [
+                'group'      => $r['group_code'],
+                'home_name'  => $r['home_name'],
+                'away_name'  => $r['away_name'],
+                'pred_home'  => $r['pred_home'],
+                'pred_away'  => $r['pred_away'],
+                'actual_home'=> $r['actual_home_goals'],
+                'actual_away'=> $r['actual_away_goals'],
+                'status'     => $status,
+                'outcome'    => $outcome,
+                'exact'      => $exact,
+                'points'     => $points,
+            ];
+        }
+        return ['total' => $total, 'matches' => $matches];
+    }
+
+    private static function knockoutBreakdown(int $formId): array
+    {
+        $out = [];
+        foreach (self::STAGE_POINTS as $stage => $pts) {
+            // Actual teams that appeared in this stage (real fixtures with team_ids).
+            $actualTeams = Database::fetchAll(
+                'SELECT DISTINCT id FROM teams WHERE id IN (
+                     SELECT home_team_id FROM matches WHERE stage = ? AND home_team_id IS NOT NULL
+                     UNION
+                     SELECT away_team_id FROM matches WHERE stage = ? AND away_team_id IS NOT NULL
+                 )',
+                [$stage, $stage]
+            );
+            $actualSet = array_flip(array_map(fn($t) => (int)$t['id'], $actualTeams));
+
+            // User picks (one team per slot).
+            $picks = Database::fetchAll(
+                'SELECT p.slot_code, p.team_id, t.name AS team_name
+                   FROM predictions p
+              LEFT JOIN teams t ON t.id = p.team_id
+                  WHERE p.form_id = ? AND p.stage = ? AND p.team_id IS NOT NULL
+               ORDER BY p.slot_code',
+                [$formId, $stage]
+            );
+
+            $items = [];
+            $total = 0;
+            foreach ($picks as $p) {
+                $hit = isset($actualSet[(int)$p['team_id']]);
+                $stagePending = empty($actualSet);
+                $points = $hit ? $pts : 0;
+                $total += $points;
+                $items[] = [
+                    'slot'      => $p['slot_code'],
+                    'team_name' => $p['team_name'],
+                    'status'    => $stagePending ? 'pending' : ($hit ? 'correct' : 'wrong'),
+                    'points'    => $points,
+                ];
+            }
+            $out[$stage] = ['total' => $total, 'pts_per_pick' => $pts, 'items' => $items];
+        }
+        return $out;
+    }
+
+    private static function winnerBreakdown(array $form): array
+    {
+        $predWinnerId = $form['winner_team_id'] ? (int)$form['winner_team_id'] : 0;
+        $actualWinnerId = (int)(Database::fetchColumn(
+            'SELECT CASE WHEN actual_home_goals > actual_away_goals THEN home_team_id
+                         WHEN actual_away_goals > actual_home_goals THEN away_team_id
+                         ELSE NULL END
+               FROM matches WHERE stage = "final" AND actual_home_goals IS NOT NULL
+            ORDER BY match_number ASC LIMIT 1'
+        ) ?: 0);
+
+        $predName   = $predWinnerId   ? (string) Database::fetchColumn('SELECT name FROM teams WHERE id = ?', [$predWinnerId])   : '';
+        $actualName = $actualWinnerId ? (string) Database::fetchColumn('SELECT name FROM teams WHERE id = ?', [$actualWinnerId]) : '';
+
+        $points = 0;
+        $status = 'pending';
+        if ($actualWinnerId) {
+            $hit    = $predWinnerId === $actualWinnerId;
+            $points = $hit ? 100 : 0;
+            $status = $hit ? 'correct' : 'wrong';
+        } elseif (!$predWinnerId) {
+            $status = 'no_prediction';
+        }
+        return [
+            'pred_name'   => $predName,
+            'actual_name' => $actualName,
+            'status'      => $status,
+            'points'      => $points,
+        ];
+    }
+
+    private static function topscorerBreakdown(array $form): array
+    {
+        $predId = $form['topscorer_player_id'] ? (int)$form['topscorer_player_id'] : 0;
+        $actualId = (int) Setting::get('actual_topscorer_player_id', 0);
+
+        $predName   = '';
+        if ($predId) {
+            $row = Database::fetch(
+                'SELECT p.name, t.name AS team_name FROM players p LEFT JOIN teams t ON t.id = p.team_id WHERE p.id = ?',
+                [$predId]
+            );
+            $predName = $row ? $row['name'] . ($row['team_name'] ? ' (' . $row['team_name'] . ')' : '') : '';
+        }
+        $actualName = $actualId ? (string) Database::fetchColumn('SELECT name FROM players WHERE id = ?', [$actualId]) : '';
+
+        $correctPlayerPoints = ($actualId && $actualId === $predId) ? 10 : 0;
+        $goals               = (int) Setting::get('predicted_topscorer_goals_for_' . $predId, 0);
+        $goalPoints          = 3 * $goals;
+        $totalPoints         = $correctPlayerPoints + $goalPoints;
+
+        return [
+            'pred_name'             => $predName,
+            'actual_name'           => $actualName,
+            'predicted_player_goals'=> $goals,
+            'correct_player_points' => $correctPlayerPoints,
+            'goal_points'           => $goalPoints,
+            'points'                => $totalPoints,
+            'status'                => $actualId ? ($predId === $actualId ? 'correct' : 'wrong') : 'pending',
+        ];
+    }
+
+    private static function outcome(int $h, int $a): string
+    {
+        return $h > $a ? '1' : ($h < $a ? '2' : 'X');
+    }
+}

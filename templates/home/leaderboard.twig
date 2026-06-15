@@ -38,7 +38,8 @@
       </thead>
       <tbody>
         {% for r in rows %}
-          <tr class="border-t border-slate-100 {{ r.user_id == my_user_id ? 'bg-emerald-50' : '' }}">
+          <tr class="border-t border-slate-100 hover:bg-slate-50 cursor-pointer transition {{ r.user_id == my_user_id ? 'bg-emerald-50 hover:bg-emerald-100' : '' }}"
+              onclick="window.location='{{ url('/leaderboard/' ~ r.id) }}'">
             <td class="p-3 font-display font-extrabold text-center">
               {% if r.rank == 1 %}<span class="text-2xl">🥇</span>
               {% elseif r.rank == 2 %}<span class="text-2xl">🥈</span>
@@ -47,9 +48,11 @@
               {% endif %}
             </td>
             <td class="p-3">
-              <span class="font-semibold {{ r.user_id == my_user_id ? 'text-emerald-800' : 'text-slate-900' }}">
+              <a href="{{ url('/leaderboard/' ~ r.id) }}"
+                 onclick="event.stopPropagation()"
+                 class="font-semibold hover:underline {{ r.user_id == my_user_id ? 'text-emerald-800' : 'text-slate-900' }}">
                 {{ r.user_name }}
-              </span>
+              </a>
               {% if r.user_id == my_user_id %}
                 <span class="pill pill-green ml-2">you</span>
               {% endif %}
