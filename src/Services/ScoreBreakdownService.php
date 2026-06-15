@@ -78,7 +78,7 @@ final class ScoreBreakdownService
           LEFT JOIN teams a ON a.id = m.away_team_id
           LEFT JOIN predictions p ON p.match_id = m.id AND p.form_id = ? AND p.stage = "group"
               WHERE m.stage = "group"
-           ORDER BY m.match_number',
+           ORDER BY (m.kickoff_at IS NULL), m.kickoff_at, m.match_number',
             [$formId]
         );
 
@@ -113,6 +113,8 @@ final class ScoreBreakdownService
             $total += $points;
             $matches[] = [
                 'group'      => $r['group_code'],
+                'kickoff'    => $r['kickoff_at'],
+                'date'       => $r['kickoff_at'] ? substr((string) $r['kickoff_at'], 0, 10) : null,
                 'home_name'  => $r['home_name'],
                 'away_name'  => $r['away_name'],
                 'pred_home'  => $r['pred_home'],

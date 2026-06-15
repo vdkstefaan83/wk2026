@@ -69,6 +69,7 @@
     <table class="w-full text-sm">
       <thead class="bg-slate-50 border-b-2 border-slate-100">
         <tr class="text-xs uppercase tracking-wider text-slate-500 font-bold">
+          <th class="p-2 text-left">Time</th>
           <th class="p-2 text-left">Group</th>
           <th class="p-2 text-left">Match</th>
           <th class="p-2 text-center">Predicted</th>
@@ -78,9 +79,21 @@
         </tr>
       </thead>
       <tbody>
+        {% set prevDate = null %}
         {% for m in data.group.matches %}
+          {% if m.date != prevDate %}
+            <tr class="bg-slate-100 border-t-2 border-slate-300">
+              <td colspan="7" class="px-3 py-2 text-xs uppercase tracking-widest text-slate-700 font-bold">
+                📅 {{ m.date ? m.date|date('l, j F Y') : 'No date yet' }}
+              </td>
+            </tr>
+            {% set prevDate = m.date %}
+          {% endif %}
           {% set bg = m.status == 'correct' ? 'bg-emerald-50' : (m.status == 'wrong' ? 'bg-rose-50/50' : '') %}
           <tr class="border-t border-slate-100 {{ bg }}">
+            <td class="p-2 text-slate-500 font-mono whitespace-nowrap">
+              {% if m.kickoff %}{{ m.kickoff|date('H:i') }}{% else %}—{% endif %}
+            </td>
             <td class="p-2 text-slate-500 font-mono">{{ m.group }}</td>
             <td class="p-2 text-slate-800">{{ m.home_name }} – {{ m.away_name }}</td>
             <td class="p-2 text-center font-mono font-bold">
