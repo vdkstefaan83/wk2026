@@ -298,12 +298,16 @@ final class AdminController extends Controller
         $showAll = !empty($_GET['all']);
         $paidFilter = $showAll ? '' : ' AND f.paid_at IS NOT NULL';
 
+        $goalSubquery = "(SELECT CAST(s.value AS UNSIGNED) FROM settings s
+                            WHERE s.`key` = CONCAT('predicted_topscorer_goals_for_', f.topscorer_player_id)
+                            LIMIT 1) AS topscorer_goals";
         if ($correct === '' || $correct === null) {
             $rows = Database::fetchAll(
                 'SELECT f.id, f.label, f.score, f.tiebreaker_value, f.paid_at,
                         u.name AS user_name, u.email AS user_email,
                         winner.name AS winner_team,
                         scorer.name AS topscorer_name,
+                        ' . $goalSubquery . ',
                         NULL AS tiebreak_diff
                    FROM forms f
                    JOIN users u ON u.id = f.user_id
@@ -318,6 +322,7 @@ final class AdminController extends Controller
                         u.name AS user_name, u.email AS user_email,
                         winner.name AS winner_team,
                         scorer.name AS topscorer_name,
+                        ' . $goalSubquery . ',
                         ABS(f.tiebreaker_value - ?) AS tiebreak_diff
                    FROM forms f
                    JOIN users u ON u.id = f.user_id

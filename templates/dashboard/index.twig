@@ -133,7 +133,11 @@
               </td>
               <td class="p-3 text-slate-700">{{ r.label }}</td>
               <td class="p-3 text-slate-700 hidden md:table-cell">{{ r.winner_team ?: '—' }}</td>
-              <td class="p-3 text-slate-700 hidden md:table-cell">{{ r.topscorer_name ?: '—' }}</td>
+              <td class="p-3 text-slate-700 hidden md:table-cell">
+                {% if r.topscorer_name %}
+                  {{ r.topscorer_name }}{% if r.topscorer_goals > 0 %} <span class="text-emerald-600 font-semibold">({{ r.topscorer_goals }})</span>{% endif %}
+                {% else %}—{% endif %}
+              </td>
               <td class="p-3 text-right stat-number text-2xl text-emerald-600">{{ r.score }}</td>
             </tr>
           {% endfor %}

@@ -42,12 +42,16 @@ final class HomeController extends Controller
     public function leaderboard(): void
     {
         $correct = Setting::get('tiebreaker_correct_value', '');
+        $goalSubquery = "(SELECT CAST(s.value AS UNSIGNED) FROM settings s
+                            WHERE s.`key` = CONCAT('predicted_topscorer_goals_for_', f.topscorer_player_id)
+                            LIMIT 1) AS topscorer_goals";
         if ($correct === '' || $correct === null) {
             $rows = Database::fetchAll(
                 'SELECT f.id, f.user_id, f.label, f.score,
                         u.name AS user_name,
                         winner.name AS winner_team,
-                        scorer.name AS topscorer_name
+                        scorer.name AS topscorer_name,
+                        ' . $goalSubquery . '
                    FROM forms f
                    JOIN users u ON u.id = f.user_id
               LEFT JOIN teams   winner ON winner.id = f.winner_team_id
@@ -61,6 +65,7 @@ final class HomeController extends Controller
                         u.name AS user_name,
                         winner.name AS winner_team,
                         scorer.name AS topscorer_name,
+                        ' . $goalSubquery . ',
                         ABS(f.tiebreaker_value - ?) AS tiebreak_diff
                    FROM forms f
                    JOIN users u ON u.id = f.user_id
