@@ -302,9 +302,13 @@ final class AdminController extends Controller
             $rows = Database::fetchAll(
                 'SELECT f.id, f.label, f.score, f.tiebreaker_value, f.paid_at,
                         u.name AS user_name, u.email AS user_email,
+                        winner.name AS winner_team,
+                        scorer.name AS topscorer_name,
                         NULL AS tiebreak_diff
                    FROM forms f
                    JOIN users u ON u.id = f.user_id
+              LEFT JOIN teams   winner ON winner.id = f.winner_team_id
+              LEFT JOIN players scorer ON scorer.id = f.topscorer_player_id
                   WHERE f.status = "submitted"' . $paidFilter . '
                ORDER BY f.score DESC, u.name'
             );
@@ -312,9 +316,13 @@ final class AdminController extends Controller
             $rows = Database::fetchAll(
                 'SELECT f.id, f.label, f.score, f.tiebreaker_value, f.paid_at,
                         u.name AS user_name, u.email AS user_email,
+                        winner.name AS winner_team,
+                        scorer.name AS topscorer_name,
                         ABS(f.tiebreaker_value - ?) AS tiebreak_diff
                    FROM forms f
                    JOIN users u ON u.id = f.user_id
+              LEFT JOIN teams   winner ON winner.id = f.winner_team_id
+              LEFT JOIN players scorer ON scorer.id = f.topscorer_player_id
                   WHERE f.status = "submitted"' . $paidFilter . '
                ORDER BY f.score DESC,
                         (tiebreak_diff IS NULL) ASC,

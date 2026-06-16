@@ -45,9 +45,13 @@ final class HomeController extends Controller
         if ($correct === '' || $correct === null) {
             $rows = Database::fetchAll(
                 'SELECT f.id, f.user_id, f.label, f.score,
-                        u.name AS user_name
+                        u.name AS user_name,
+                        winner.name AS winner_team,
+                        scorer.name AS topscorer_name
                    FROM forms f
                    JOIN users u ON u.id = f.user_id
+              LEFT JOIN teams   winner ON winner.id = f.winner_team_id
+              LEFT JOIN players scorer ON scorer.id = f.topscorer_player_id
                   WHERE f.status = "submitted" AND f.paid_at IS NOT NULL
                ORDER BY f.score DESC, u.name'
             );
@@ -55,9 +59,13 @@ final class HomeController extends Controller
             $rows = Database::fetchAll(
                 'SELECT f.id, f.user_id, f.label, f.score,
                         u.name AS user_name,
+                        winner.name AS winner_team,
+                        scorer.name AS topscorer_name,
                         ABS(f.tiebreaker_value - ?) AS tiebreak_diff
                    FROM forms f
                    JOIN users u ON u.id = f.user_id
+              LEFT JOIN teams   winner ON winner.id = f.winner_team_id
+              LEFT JOIN players scorer ON scorer.id = f.topscorer_player_id
                   WHERE f.status = "submitted" AND f.paid_at IS NOT NULL
                ORDER BY f.score DESC,
                         (tiebreak_diff IS NULL) ASC,

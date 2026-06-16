@@ -105,6 +105,8 @@
             <th class="p-3 text-left w-16">#</th>
             <th class="p-3 text-left">User</th>
             <th class="p-3 text-left">Form</th>
+            <th class="p-3 text-left hidden md:table-cell">🏆 Champion pick</th>
+            <th class="p-3 text-left hidden md:table-cell">👟 Top scorer pick</th>
             <th class="p-3 text-right">Score</th>
           </tr>
         </thead>
@@ -130,6 +132,8 @@
                 {% endif %}
               </td>
               <td class="p-3 text-slate-700">{{ r.label }}</td>
+              <td class="p-3 text-slate-700 hidden md:table-cell">{{ r.winner_team ?: '—' }}</td>
+              <td class="p-3 text-slate-700 hidden md:table-cell">{{ r.topscorer_name ?: '—' }}</td>
               <td class="p-3 text-right stat-number text-2xl text-emerald-600">{{ r.score }}</td>
             </tr>
           {% endfor %}
