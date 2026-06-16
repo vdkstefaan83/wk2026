@@ -6,8 +6,12 @@
 {% macro statusPill(status) %}
   {% if status == 'correct' %}
     <span class="pill pill-green">✓ correct</span>
+  {% elseif status == 'leading' %}
+    <span class="pill pill-green">★ leading</span>
   {% elseif status == 'wrong' %}
     <span class="pill" style="background:#fee2e2;color:#7f1d1d">✗ wrong</span>
+  {% elseif status == 'in_progress' %}
+    <span class="pill pill-blue">in progress</span>
   {% elseif status == 'no_prediction' %}
     <span class="pill pill-grey">no prediction</span>
   {% else %}

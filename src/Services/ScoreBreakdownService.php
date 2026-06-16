@@ -21,6 +21,15 @@ final class ScoreBreakdownService
         'final' => 50,
     ];
 
+    /** Number of teams that ultimately appear in each knockout round. */
+    private const STAGE_EXPECTED_TEAMS = [
+        'r32'   => 32,
+        'r16'   => 16,
+        'qf'    => 8,
+        'sf'    => 4,
+        'final' => 2,
+    ];
+
     public static function forForm(int $formId): array
     {
         $form = Database::fetch(
@@ -155,17 +164,27 @@ final class ScoreBreakdownService
                 [$formId, $stage]
             );
 
+            $stageDecided = count($actualSet) >= (self::STAGE_EXPECTED_TEAMS[$stage] ?? PHP_INT_MAX);
             $items = [];
             $total = 0;
             foreach ($picks as $p) {
                 $hit = isset($actualSet[(int)$p['team_id']]);
-                $stagePending = empty($actualSet);
-                $points = $hit ? $pts : 0;
+                if ($hit) {
+                    $status = 'correct';
+                    $points = $pts;
+                } elseif (!$stageDecided) {
+                    // Round isn't fully settled yet — don't call it wrong yet.
+                    $status = 'pending';
+                    $points = 0;
+                } else {
+                    $status = 'wrong';
+                    $points = 0;
+                }
                 $total += $points;
                 $items[] = [
                     'slot'      => $p['slot_code'],
                     'team_name' => $p['team_name'],
-                    'status'    => $stagePending ? 'pending' : ($hit ? 'correct' : 'wrong'),
+                    'status'    => $status,
                     'points'    => $points,
                 ];
             }
@@ -189,13 +208,11 @@ final class ScoreBreakdownService
         $actualName = $actualWinnerId ? (string) Database::fetchColumn('SELECT name FROM teams WHERE id = ?', [$actualWinnerId]) : '';
 
         $points = 0;
-        $status = 'pending';
+        $status = $predWinnerId ? 'pending' : 'no_prediction';
         if ($actualWinnerId) {
             $hit    = $predWinnerId === $actualWinnerId;
             $points = $hit ? 100 : 0;
             $status = $hit ? 'correct' : 'wrong';
-        } elseif (!$predWinnerId) {
-            $status = 'no_prediction';
         }
         return [
             'pred_name'   => $predName,
@@ -225,6 +242,19 @@ final class ScoreBreakdownService
         $goalPoints          = 3 * $goals;
         $totalPoints         = $correctPlayerPoints + $goalPoints;
 
+        // Tournament-finished only once the final has actual scores.
+        $finalPlayed = (int) Database::fetchColumn(
+            'SELECT COUNT(*) FROM matches WHERE stage = "final" AND actual_home_goals IS NOT NULL'
+        ) > 0;
+
+        if (!$actualId) {
+            $status = 'pending';                               // nobody has scored yet
+        } elseif ($predId === $actualId) {
+            $status = $finalPlayed ? 'correct' : 'leading';     // matches current leader
+        } else {
+            $status = $finalPlayed ? 'wrong'   : 'in_progress'; // someone else leads, may still flip
+        }
+
         return [
             'pred_name'             => $predName,
             'actual_name'           => $actualName,
@@ -232,7 +262,7 @@ final class ScoreBreakdownService
             'correct_player_points' => $correctPlayerPoints,
             'goal_points'           => $goalPoints,
             'points'                => $totalPoints,
-            'status'                => $actualId ? ($predId === $actualId ? 'correct' : 'wrong') : 'pending',
+            'status'                => $status,
         ];
     }
 
