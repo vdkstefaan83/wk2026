@@ -28,6 +28,24 @@ try {
     foreach (array_slice($fixtures, 0, 3) as $i => $f) {
         echo "[$i] " . json_encode($f, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n";
     }
+
+    echo "\n=== first non-group (knockout) fixture ===\n";
+    $ko = null;
+    foreach ($fixtures as $f) {
+        if (($f['stage'] ?? '') !== 'group') { $ko = $f; break; }
+    }
+    echo $ko ? json_encode($ko, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n"
+             : "(none found — all 104 fixtures are group-stage in the provider response)\n";
+
+    echo "\n=== stage values across all fixtures ===\n";
+    $counts = [];
+    foreach ($fixtures as $f) {
+        $key = $f['stage'] ?? '(null)';
+        $counts[$key] = ($counts[$key] ?? 0) + 1;
+    }
+    foreach ($counts as $stage => $n) {
+        echo "  {$stage}: {$n}\n";
+    }
 } catch (\Throwable $e) {
     echo "fixtures error: " . $e->getMessage() . "\n";
 }
