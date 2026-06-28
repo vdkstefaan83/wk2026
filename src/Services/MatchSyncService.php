@@ -156,28 +156,38 @@ final class MatchSyncService
 
             // Knockout slot fallback: nothing matched by team pair (because the
             // local row still has NULL home/away_team_id from seed) — find by
-            // stage + kickoff_at and write the team assignment now.
+            // stage + kickoff_at and write the team assignment now. We compare
+            // timestamps in PHP because the DB stores naive CEST/Belgian times
+            // while the API ships ISO-8601 UTC ("…Z") — MySQL can't reconcile
+            // those, strtotime() can (it interprets DB values via the default
+            // timezone set in App::run).
             $assignedNow = false;
             if (empty($candidates) && !empty($f['stage']) && $f['stage'] !== 'group' && !empty($f['kickoff_at'])) {
-                $slot = Database::fetch(
+                $apiTs = strtotime($f['kickoff_at']);
+                $emptySlots = Database::fetchAll(
                     'SELECT id, stage, kickoff_at, actual_home_goals, actual_away_goals,
                             home_team_id, away_team_id
                        FROM matches
                       WHERE stage = ?
                         AND home_team_id IS NULL
                         AND away_team_id IS NULL
-                        AND kickoff_at IS NOT NULL
-                        AND ABS(TIMESTAMPDIFF(MINUTE, kickoff_at, ?)) < 60
-                   ORDER BY ABS(TIMESTAMPDIFF(MINUTE, kickoff_at, ?))
-                      LIMIT 1',
-                    [$f['stage'], $f['kickoff_at'], $f['kickoff_at']]
+                        AND kickoff_at IS NOT NULL',
+                    [$f['stage']]
                 );
-                if ($slot) {
+                $best = null; $bestDiff = PHP_INT_MAX;
+                foreach ($emptySlots as $s) {
+                    $diff = abs(strtotime($s['kickoff_at']) - $apiTs);
+                    if ($diff < 3600 && $diff < $bestDiff) {
+                        $best = $s;
+                        $bestDiff = $diff;
+                    }
+                }
+                if ($best) {
                     Database::update('matches', [
                         'home_team_id' => $homeId,
                         'away_team_id' => $awayId,
-                    ], ['id' => (int) $slot['id']]);
-                    $candidates  = [$slot];
+                    ], ['id' => (int) $best['id']]);
+                    $candidates  = [$best];
                     $assignedNow = true;
                     $updatedCount++;
                 }
