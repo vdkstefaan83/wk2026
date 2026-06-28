@@ -21,7 +21,8 @@ interface MatchDataProvider
      *   away_iso: ?string, away_name: ?string,
      *   home_goals: ?int, away_goals: ?int,
      *   is_final: bool,
-     *   kickoff_at: ?string
+     *   kickoff_at: ?string,
+     *   stage: ?string                     // 'group', 'r32', 'r16', 'qf', 'sf', 'final', or null
      * }>
      */
     public function fixtures(): array;

@@ -153,6 +153,36 @@ final class MatchSyncService
                 );
                 $swap = !empty($candidates);
             }
+
+            // Knockout slot fallback: nothing matched by team pair (because the
+            // local row still has NULL home/away_team_id from seed) — find by
+            // stage + kickoff_at and write the team assignment now.
+            $assignedNow = false;
+            if (empty($candidates) && !empty($f['stage']) && $f['stage'] !== 'group' && !empty($f['kickoff_at'])) {
+                $slot = Database::fetch(
+                    'SELECT id, stage, kickoff_at, actual_home_goals, actual_away_goals,
+                            home_team_id, away_team_id
+                       FROM matches
+                      WHERE stage = ?
+                        AND home_team_id IS NULL
+                        AND away_team_id IS NULL
+                        AND kickoff_at IS NOT NULL
+                        AND ABS(TIMESTAMPDIFF(MINUTE, kickoff_at, ?)) < 60
+                   ORDER BY ABS(TIMESTAMPDIFF(MINUTE, kickoff_at, ?))
+                      LIMIT 1',
+                    [$f['stage'], $f['kickoff_at'], $f['kickoff_at']]
+                );
+                if ($slot) {
+                    Database::update('matches', [
+                        'home_team_id' => $homeId,
+                        'away_team_id' => $awayId,
+                    ], ['id' => (int) $slot['id']]);
+                    $candidates  = [$slot];
+                    $assignedNow = true;
+                    $updatedCount++;
+                }
+            }
+
             if (empty($candidates)) {
                 $errors[] = sprintf('No local match for %s vs %s', $f['home_name'] ?? '?', $f['away_name'] ?? '?');
                 continue;
@@ -161,15 +191,21 @@ final class MatchSyncService
             $h = $swap ? (int) $f['away_goals'] : (int) $f['home_goals'];
             $a = $swap ? (int) $f['home_goals'] : (int) $f['away_goals'];
 
+            // No score yet — but if we just assigned teams that already counts
+            // as a meaningful update (it unlocks the breakdown for this round).
+            if ($f['home_goals'] === null || $f['away_goals'] === null) {
+                continue;
+            }
             if ((int) ($match['actual_home_goals'] ?? -1) === $h
-             && (int) ($match['actual_away_goals'] ?? -1) === $a) {
+             && (int) ($match['actual_away_goals'] ?? -1) === $a
+             && !$assignedNow) {
                 continue;
             }
             Database::update('matches', [
                 'actual_home_goals' => $h,
                 'actual_away_goals' => $a,
             ], ['id' => (int) $match['id']]);
-            $updatedCount++;
+            if (!$assignedNow) $updatedCount++;
             if ($f['is_final']) {
                 $finalUpdated = true;
             }

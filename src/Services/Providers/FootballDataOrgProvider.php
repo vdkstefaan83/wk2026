@@ -69,9 +69,23 @@ final class FootballDataOrgProvider implements MatchDataProvider
                 'away_goals' => $awayGoals === null ? null : (int) $awayGoals,
                 'is_final'   => $isFinal,
                 'kickoff_at' => $m['utcDate'] ?? null,
+                'stage'      => $this->mapStage((string) ($m['stage'] ?? '')),
             ];
         }
         return $out;
+    }
+
+    private function mapStage(string $apiStage): ?string
+    {
+        return [
+            'GROUP_STAGE'    => 'group',
+            'LAST_32'        => 'r32',
+            'LAST_16'        => 'r16',
+            'QUARTER_FINALS' => 'qf',
+            'SEMI_FINALS'    => 'sf',
+            'THIRD_PLACE'    => null,   // we don't model the 3rd place game
+            'FINAL'          => 'final',
+        ][$apiStage] ?? null;
     }
 
     public function topScorers(): array

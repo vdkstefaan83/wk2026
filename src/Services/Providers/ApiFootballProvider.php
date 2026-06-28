@@ -42,9 +42,23 @@ final class ApiFootballProvider implements MatchDataProvider
                 'away_goals' => $awayGoals === null ? null : (int) $awayGoals,
                 'is_final'   => $isFinal,
                 'kickoff_at' => $f['fixture']['date'] ?? null,
+                'stage'      => $this->mapRound((string) ($f['league']['round'] ?? '')),
             ];
         }
         return $out;
+    }
+
+    private function mapRound(string $round): ?string
+    {
+        $r = strtolower($round);
+        if (str_contains($r, 'group'))            return 'group';
+        if (str_contains($r, 'round of 32'))      return 'r32';
+        if (str_contains($r, 'round of 16'))      return 'r16';
+        if (str_contains($r, 'quarter'))          return 'qf';
+        if (str_contains($r, 'semi'))             return 'sf';
+        if (str_contains($r, '3rd') || str_contains($r, 'third')) return null;
+        if (str_contains($r, 'final'))            return 'final';
+        return null;
     }
 
     public function topScorers(): array
