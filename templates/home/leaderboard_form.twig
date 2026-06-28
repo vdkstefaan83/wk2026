@@ -136,7 +136,12 @@
       <span class="text-2xl">🎯</span>
       <span>{{ meta.label }} — {{ bucket.total }} pt</span>
     </div>
-    <p class="text-sm text-slate-600 mb-3">{{ bucket.pts_per_pick }} points per team that actually reached this round.</p>
+    <p class="text-sm text-slate-600 mb-3">
+      {{ bucket.pts_per_pick }} points per team that actually reached this round.
+      {% if bucket.derived_from_groups %}
+        <br><span class="text-slate-500 italic">The 32 teams below are derived automatically from your group-stage standings (top 2 of each group + the 8 best third-placed teams).</span>
+      {% endif %}
+    </p>
     {% if bucket.items is empty %}
       <p class="text-sm text-slate-500 italic">No picks made.</p>
     {% else %}

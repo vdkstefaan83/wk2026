@@ -30,6 +30,14 @@ final class ScoreBreakdownService
         'final' => 2,
     ];
 
+    /** wizard-pick stage  ->  the round those picks predict reaching */
+    private const PICK_TO_REACHED = [
+        'r32' => 'r16',
+        'r16' => 'qf',
+        'qf'  => 'sf',
+        'sf'  => 'final',
+    ];
+
     public static function forForm(int $formId): array
     {
         $form = Database::fetch(
@@ -142,44 +150,67 @@ final class ScoreBreakdownService
     private static function knockoutBreakdown(int $formId): array
     {
         $out = [];
-        foreach (self::STAGE_POINTS as $stage => $pts) {
-            // Actual teams that appeared in this stage (real fixtures with team_ids).
-            $actualTeams = Database::fetchAll(
-                'SELECT DISTINCT id FROM teams WHERE id IN (
-                     SELECT home_team_id FROM matches WHERE stage = ? AND home_team_id IS NOT NULL
-                     UNION
-                     SELECT away_team_id FROM matches WHERE stage = ? AND away_team_id IS NOT NULL
-                 )',
-                [$stage, $stage]
-            );
-            $actualSet = array_flip(array_map(fn($t) => (int)$t['id'], $actualTeams));
 
-            // User picks (one team per slot).
+        // -------- R32: 32 teams derived from the user's group standings --------
+        $r32Actual = self::actualStageTeams('r32');
+        $r32Decided = count($r32Actual) >= self::STAGE_EXPECTED_TEAMS['r32'];
+
+        $resolved = PredictionResolver::resolve($formId);
+        $bracket  = $resolved['bracket'] ?? [];
+        $teamsById = self::teamsById();
+
+        $r32Items = [];
+        $r32Total = 0;
+        foreach ([
+            ['firsts',           '1st'],
+            ['seconds',          '2nd'],
+            ['qualified_thirds', '3rd'],
+        ] as [$key, $label]) {
+            foreach (($bracket[$key] ?? []) as $row) {
+                $teamId = (int) ($row['team_id'] ?? 0);
+                if (!$teamId) continue;
+                $hit = isset($r32Actual[$teamId]);
+                if ($hit)              { $status = 'correct'; $points = self::STAGE_POINTS['r32']; }
+                elseif (!$r32Decided)  { $status = 'pending'; $points = 0; }
+                else                   { $status = 'wrong';   $points = 0; }
+                $r32Total += $points;
+                $r32Items[] = [
+                    'slot'      => ($row['group'] ?? '') . ' ' . $label,
+                    'team_name' => $teamsById[$teamId]['name'] ?? '(unknown)',
+                    'status'    => $status,
+                    'points'    => $points,
+                ];
+            }
+        }
+        $out['r32'] = [
+            'total'        => $r32Total,
+            'pts_per_pick' => self::STAGE_POINTS['r32'],
+            'items'        => $r32Items,
+            'derived_from_groups' => true,
+        ];
+
+        // -------- R16 / QF / SF / Final: shift wizard picks one round up --------
+        foreach (self::PICK_TO_REACHED as $pickStage => $reached) {
+            $actualSet = self::actualStageTeams($reached);
+            $stageDecided = count($actualSet) >= (self::STAGE_EXPECTED_TEAMS[$reached] ?? PHP_INT_MAX);
+
             $picks = Database::fetchAll(
                 'SELECT p.slot_code, p.team_id, t.name AS team_name
                    FROM predictions p
               LEFT JOIN teams t ON t.id = p.team_id
                   WHERE p.form_id = ? AND p.stage = ? AND p.team_id IS NOT NULL
                ORDER BY p.slot_code',
-                [$formId, $stage]
+                [$formId, $pickStage]
             );
 
-            $stageDecided = count($actualSet) >= (self::STAGE_EXPECTED_TEAMS[$stage] ?? PHP_INT_MAX);
+            $pts = self::STAGE_POINTS[$reached];
             $items = [];
             $total = 0;
             foreach ($picks as $p) {
-                $hit = isset($actualSet[(int)$p['team_id']]);
-                if ($hit) {
-                    $status = 'correct';
-                    $points = $pts;
-                } elseif (!$stageDecided) {
-                    // Round isn't fully settled yet — don't call it wrong yet.
-                    $status = 'pending';
-                    $points = 0;
-                } else {
-                    $status = 'wrong';
-                    $points = 0;
-                }
+                $hit = isset($actualSet[(int) $p['team_id']]);
+                if ($hit)              { $status = 'correct'; $points = $pts; }
+                elseif (!$stageDecided){ $status = 'pending'; $points = 0; }
+                else                   { $status = 'wrong';   $points = 0; }
                 $total += $points;
                 $items[] = [
                     'slot'      => $p['slot_code'],
@@ -188,7 +219,37 @@ final class ScoreBreakdownService
                     'points'    => $points,
                 ];
             }
-            $out[$stage] = ['total' => $total, 'pts_per_pick' => $pts, 'items' => $items];
+            $out[$reached] = [
+                'total'        => $total,
+                'pts_per_pick' => $pts,
+                'items'        => $items,
+                'derived_from_groups' => false,
+            ];
+        }
+        return $out;
+    }
+
+    /** @return array<int, true> */
+    private static function actualStageTeams(string $stage): array
+    {
+        $rows = Database::fetchAll(
+            'SELECT DISTINCT t.id FROM (
+                 SELECT home_team_id AS id FROM matches WHERE stage = ? AND home_team_id IS NOT NULL
+                 UNION
+                 SELECT away_team_id AS id FROM matches WHERE stage = ? AND away_team_id IS NOT NULL
+             ) t', [$stage, $stage]
+        );
+        $out = [];
+        foreach ($rows as $r) $out[(int) $r['id']] = true;
+        return $out;
+    }
+
+    /** @return array<int, array{name:string}> */
+    private static function teamsById(): array
+    {
+        $out = [];
+        foreach (Database::fetchAll('SELECT id, name FROM teams') as $t) {
+            $out[(int) $t['id']] = ['name' => $t['name']];
         }
         return $out;
     }
