@@ -15,6 +15,10 @@ final class Config
             Dotenv::createImmutable($basePath)->safeLoad();
         }
         self::$items['base_path'] = $basePath;
+        // CLI entry points (cron, debug scripts) bypass App::run() — make sure
+        // the timezone is still correct so strtotime() reconciles naive DB
+        // datetimes against ISO-8601 UTC strings the same way the web does.
+        date_default_timezone_set((string) self::get('APP_TIMEZONE', 'Europe/Brussels'));
     }
 
     public static function get(string $key, mixed $default = null): mixed
