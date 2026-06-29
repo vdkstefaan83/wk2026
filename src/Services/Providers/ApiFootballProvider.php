@@ -79,4 +79,12 @@ final class ApiFootballProvider implements MatchDataProvider
         }
         return $out;
     }
+
+    public function fetchMatchGoals(int $providerMatchId): array
+    {
+        // Not implemented — api-football's events endpoint exists but isn't
+        // needed for our current default (football-data.org). Return empty so
+        // MatchSyncService skips enrichment cleanly when this backend is used.
+        return [];
+    }
 }

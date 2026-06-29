@@ -48,6 +48,8 @@ final class MatchSyncService
         $finalsRecomputed = false;
         $topscorerInfo = null;
         $topscorerChanged = false;
+        $fixtures = null;
+        $enrichInfo = null;
 
         if (!$this->provider->isConfigured()) {
             $errors[] = $this->provider->name() . ': not configured (check .env)';
@@ -60,7 +62,7 @@ final class MatchSyncService
                 $errors[] = 'fixtures: ' . $e->getMessage();
             }
 
-            // 2. Topscorer (throttled)
+            // 2. Topscorer (throttled) — global /scorers ranking
             if ($includeTopscorer || $this->topscorerStale()) {
                 try {
                     $top = $this->provider->topScorers();
@@ -68,6 +70,20 @@ final class MatchSyncService
                     $topscorerChanged = $topscorerInfo !== null;
                 } catch (\Throwable $e) {
                     $errors[] = 'topscorer: ' . $e->getMessage();
+                }
+            }
+
+            // 3. Per-match goal enrichment for picked players. The /scorers
+            //    feed caps at the top 100, so picks outside that cutoff get
+            //    their goal count by aggregating /matches/{id} goal events.
+            if ($fixtures !== null && self::enrichmentTableExists()) {
+                try {
+                    $enrichInfo = $this->enrichPickedTopscorers($fixtures, $errors);
+                    if (($enrichInfo['players_updated'] ?? 0) > 0) {
+                        $topscorerChanged = true;
+                    }
+                } catch (\Throwable $e) {
+                    $errors[] = 'enrich: ' . $e->getMessage();
                 }
             }
         }
@@ -81,12 +97,25 @@ final class MatchSyncService
             'updated'           => $updated,
             'finals_recomputed' => $finalsRecomputed,
             'topscorer'         => $topscorerInfo,
+            'enrichment'        => $enrichInfo,
             'errors'            => $errors,
             'synced_at'         => date('Y-m-d H:i:s'),
         ];
         Setting::set('last_sync_at',      $summary['synced_at']);
         Setting::set('last_sync_summary', json_encode($summary, JSON_UNESCAPED_UNICODE));
         return $summary;
+    }
+
+    private static function enrichmentTableExists(): bool
+    {
+        static $cached = null;
+        if ($cached !== null) return $cached;
+        try {
+            Database::fetchColumn('SELECT 1 FROM match_enriched LIMIT 1');
+            return $cached = true;
+        } catch (\Throwable) {
+            return $cached = false;
+        }
     }
 
     private function topscorerStale(): bool
@@ -270,49 +299,51 @@ final class MatchSyncService
     /**
      * Find the local player id for a name supplied by the data provider.
      * Tries — in order:
-     *   1. exact, accent/case-insensitive match within the same team
-     *   2. last-name match within the same team
-     *   3. last-name match without team constraint (fallback for renamed teams)
+     *   1. exact softNormalize'd match within the same team
+     *   2. exact softNormalize'd match ignoring team
+     *   3. last-name match within the same team
+     *   4. unique last-name match across all players
      *
      * @param list<array{id:int,name:string,team_id:?int}> $players
      */
     private function resolvePlayerId(string $apiName, ?int $apiTeamId, array $players): int
     {
-        $apiNorm = $this->normalize($apiName);
-        $apiLast = $this->lastWord($apiNorm);
-        if ($apiNorm === '') return 0;
+        $apiSoft = $this->softNormalize($apiName);
+        $apiLast = $this->lastWord($apiSoft);
+        if ($apiSoft === '') return 0;
 
         // 1. exact, within team
         foreach ($players as $p) {
-            if ($this->normalize((string) $p['name']) === $apiNorm
+            if ($this->softNormalize((string) $p['name']) === $apiSoft
                 && (int) ($p['team_id'] ?? 0) === (int) $apiTeamId) {
                 return (int) $p['id'];
             }
         }
         // 2. exact, ignoring team
         foreach ($players as $p) {
-            if ($this->normalize((string) $p['name']) === $apiNorm) {
+            if ($this->softNormalize((string) $p['name']) === $apiSoft) {
                 return (int) $p['id'];
             }
         }
         // 3. last-name match within team (catches "Romelu Lukaku" vs "R. Lukaku")
-        if ($apiTeamId) {
+        if ($apiTeamId && $apiLast !== '') {
             foreach ($players as $p) {
                 if ((int) ($p['team_id'] ?? 0) !== (int) $apiTeamId) continue;
-                if ($this->lastWord($this->normalize((string) $p['name'])) === $apiLast) {
+                if ($this->lastWord($this->softNormalize((string) $p['name'])) === $apiLast) {
                     return (int) $p['id'];
                 }
             }
         }
         // 4. unique last-name match across all players
-        $candidates = [];
-        foreach ($players as $p) {
-            if ($this->lastWord($this->normalize((string) $p['name'])) === $apiLast) {
-                $candidates[] = (int) $p['id'];
+        if ($apiLast !== '') {
+            $candidates = [];
+            foreach ($players as $p) {
+                if ($this->lastWord($this->softNormalize((string) $p['name'])) === $apiLast) {
+                    $candidates[] = (int) $p['id'];
+                }
             }
+            if (count($candidates) === 1) return $candidates[0];
         }
-        if (count($candidates) === 1) return $candidates[0];
-
         return 0;
     }
 
@@ -320,6 +351,142 @@ final class MatchSyncService
     {
         $parts = preg_split('/\s+/', trim($s)) ?: [];
         return $parts ? (string) end($parts) : '';
+    }
+
+    // ------------------------------------------------------------------
+    // Per-match goal enrichment for picked top-scorers
+    // ------------------------------------------------------------------
+
+    /**
+     * For each player picked as top scorer by at least one user, make sure
+     * we have an accurate goal count even if they fall outside the global
+     * /scorers feed (which caps at the top 100). We fetch per-match goal
+     * events from /matches/{id}, cache them in match_goals, and aggregate.
+     *
+     * Throttled to a small batch per sync to stay under the provider's
+     * 10 req/min rate limit; subsequent syncs pick up where this one left off.
+     *
+     * @param list<array> $fixtures   Output of provider->fixtures()
+     * @return array{enriched_calls:int, players_updated:int, total_picked:int}
+     */
+    private function enrichPickedTopscorers(array $fixtures, array &$errors): array
+    {
+        $picked = Database::fetchAll(
+            'SELECT DISTINCT p.id, p.name, p.team_id, t.iso3 AS team_iso
+               FROM forms f
+               JOIN players p ON p.id = f.topscorer_player_id
+          LEFT JOIN teams t ON t.id = p.team_id
+              WHERE f.status = "submitted" AND f.topscorer_player_id IS NOT NULL'
+        );
+        if (empty($picked)) {
+            return ['enriched_calls' => 0, 'players_updated' => 0, 'total_picked' => 0];
+        }
+
+        // Set of team ISOs that matter (i.e. at least one picked player plays for them).
+        $teamIsos = [];
+        foreach ($picked as $p) {
+            $iso = strtoupper((string) ($p['team_iso'] ?? ''));
+            if ($iso !== '') $teamIsos[$iso] = true;
+        }
+
+        // Already-enriched provider match IDs.
+        $enriched = [];
+        foreach (Database::fetchAll('SELECT provider_match_id FROM match_enriched') as $row) {
+            $enriched[(int) $row['provider_match_id']] = true;
+        }
+
+        // Filter fixtures to finished matches involving a picked team, not yet enriched.
+        $toEnrich = [];
+        foreach ($fixtures as $f) {
+            $pid = (int) ($f['provider_id'] ?? 0);
+            if (!$pid || empty($f['is_final'])) continue;
+            if (isset($enriched[$pid])) continue;
+            $hi = strtoupper((string) ($f['home_iso'] ?? ''));
+            $ai = strtoupper((string) ($f['away_iso'] ?? ''));
+            if (!isset($teamIsos[$hi]) && !isset($teamIsos[$ai])) continue;
+            $toEnrich[] = $pid;
+        }
+
+        // Throttle to stay well under 10 req/min (we've already used 2 for
+        // fixtures + scorers this tick).
+        $maxCalls = (int) Config::get('TOPSCORER_ENRICH_BATCH', 6);
+        if ($maxCalls < 1) $maxCalls = 1;
+        $toEnrich = array_slice($toEnrich, 0, $maxCalls);
+
+        $enrichedCalls = 0;
+        foreach ($toEnrich as $matchId) {
+            try {
+                $goals = $this->provider->fetchMatchGoals($matchId);
+                foreach ($goals as $g) {
+                    if (!empty($g['is_own_goal'])) continue;
+                    Database::insert('match_goals', [
+                        'provider_match_id' => $matchId,
+                        'scorer_name'       => $g['scorer_name'],
+                        'team_iso'          => $g['team_iso'],
+                        'minute'            => $g['minute'],
+                        'is_own_goal'       => 0,
+                    ]);
+                }
+                Database::insert('match_enriched', [
+                    'provider_match_id' => $matchId,
+                    'enriched_at'       => date('Y-m-d H:i:s'),
+                ]);
+                $enrichedCalls++;
+            } catch (\Throwable $e) {
+                $errors[] = "match goals {$matchId}: " . $e->getMessage();
+            }
+        }
+
+        // Recompute per-player goal counts from match_goals and override
+        // settings if the cached-events count exceeds the API feed's count.
+        $playersUpdated = 0;
+        foreach ($picked as $p) {
+            $playerId = (int) $p['id'];
+            $count = $this->countGoalsForPlayer((string) $p['name'], (string) ($p['team_iso'] ?? ''));
+            $key = 'predicted_topscorer_goals_for_' . $playerId;
+            $existing = (int) Setting::get($key, 0);
+            $new = max($existing, $count);
+            if ($new !== $existing) {
+                Setting::set($key, (string) $new);
+                $playersUpdated++;
+            }
+        }
+
+        return [
+            'enriched_calls'  => $enrichedCalls,
+            'players_updated' => $playersUpdated,
+            'total_picked'    => count($picked),
+        ];
+    }
+
+    /**
+     * Count goals for a player by fuzzy-matching cached match_goals events.
+     * Match by last-name + team iso when available; falls back to last-name
+     * alone if team is unknown.
+     */
+    private function countGoalsForPlayer(string $playerName, string $teamIso): int
+    {
+        $soft = $this->softNormalize($playerName);
+        $last = $this->lastWord($soft);
+        if ($last === '' && $soft === '') return 0;
+
+        $teamIso = strtoupper(trim($teamIso));
+        if ($teamIso !== '') {
+            $events = Database::fetchAll(
+                'SELECT scorer_name FROM match_goals WHERE team_iso = ?',
+                [$teamIso]
+            );
+        } else {
+            $events = Database::fetchAll('SELECT scorer_name FROM match_goals');
+        }
+
+        $count = 0;
+        foreach ($events as $e) {
+            $eSoft = $this->softNormalize((string) $e['scorer_name']);
+            if ($eSoft === $soft) { $count++; continue; }
+            if ($last !== '' && $this->lastWord($eSoft) === $last) { $count++; }
+        }
+        return $count;
     }
 
     // ------------------------------------------------------------------
@@ -372,5 +539,22 @@ final class MatchSyncService
         }
         $s = preg_replace('/[^a-z0-9]+/', '', $s) ?? $s;
         return $s;
+    }
+
+    /**
+     * Like normalize() but preserves word boundaries so lastWord() can split
+     * "Romelu Lukaku" -> ["romelu","lukaku"]. The compact normalize() strips
+     * spaces, which breaks last-name matching for variants like "R. Lukaku".
+     */
+    private function softNormalize(string $s): string
+    {
+        $s = mb_strtolower($s, 'UTF-8');
+        if (function_exists('iconv')) {
+            $tr = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $s);
+            if ($tr !== false) $s = $tr;
+        }
+        $s = preg_replace('/[^a-z0-9]+/', ' ', $s) ?? $s;
+        $s = preg_replace('/\s+/', ' ', $s) ?? $s;
+        return trim($s);
     }
 }

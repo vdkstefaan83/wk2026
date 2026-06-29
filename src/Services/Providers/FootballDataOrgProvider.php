@@ -61,6 +61,7 @@ final class FootballDataOrgProvider implements MatchDataProvider
             $away = $m['awayTeam'] ?? [];
 
             $out[] = [
+                'provider_id'=> isset($m['id']) ? (int) $m['id'] : null,
                 'home_iso'   => $this->iso($home),
                 'home_name'  => $home['name'] ?? $home['shortName'] ?? null,
                 'away_iso'   => $this->iso($away),
@@ -178,5 +179,34 @@ final class FootballDataOrgProvider implements MatchDataProvider
         $query = $this->season ? ['season' => $this->season] : [];
         $data = $this->get("/competitions/{$this->competition}/matches", $query);
         return $data['matches'][0] ?? [];
+    }
+
+    /**
+     * Fetch the per-match goal events. Each row corresponds to one goal
+     * (so a player with a hat-trick produces three rows). Used to recover
+     * goal counts for picks that fall outside the global /scorers top-100.
+     *
+     * @return list<array{scorer_name:string, team_iso:?string, team_name:?string, minute:?int, is_own_goal:bool}>
+     */
+    public function fetchMatchGoals(int $providerMatchId): array
+    {
+        $data = $this->get('/matches/' . $providerMatchId);
+        $goals = $data['goals'] ?? [];
+        $out = [];
+        foreach ($goals as $g) {
+            $scorer = $g['scorer'] ?? null;
+            if (!$scorer || empty($scorer['name'])) continue;
+            $team = $g['team'] ?? [];
+            $type = strtoupper((string) ($g['type'] ?? 'REGULAR'));
+            $minute = isset($g['minute']) ? (int) $g['minute'] : null;
+            $out[] = [
+                'scorer_name' => (string) $scorer['name'],
+                'team_iso'    => $this->iso($team),
+                'team_name'   => $team['name'] ?? $team['shortName'] ?? null,
+                'minute'      => $minute,
+                'is_own_goal' => $type === 'OWN',
+            ];
+        }
+        return $out;
     }
 }

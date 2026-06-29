@@ -34,4 +34,16 @@ interface MatchDataProvider
      * }>
      */
     public function topScorers(): array;
+
+    /**
+     * Per-match goal events for one finished match. Used to recover goal
+     * counts for picks that fall outside the global /scorers top-N feed.
+     * Implementations that can't fetch per-match goals should return [].
+     *
+     * @return list<array{
+     *   scorer_name: string, team_iso: ?string, team_name: ?string,
+     *   minute: ?int, is_own_goal: bool
+     * }>
+     */
+    public function fetchMatchGoals(int $providerMatchId): array;
 }
