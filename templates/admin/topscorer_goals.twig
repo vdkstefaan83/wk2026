@@ -1,0 +1,64 @@
+{% extends 'admin/_layout.twig' %}
+{% block admin_content %}
+<p class="text-xs uppercase tracking-widest text-slate-500 font-bold">Admin</p>
+<h1 class="font-display text-4xl font-extrabold mt-1 mb-4 text-slate-900">
+  Top scorer goals <span class="text-base font-normal text-slate-500">(manual override)</span>
+</h1>
+
+<div class="card p-5 mb-5 bg-amber-50 border-amber-200">
+  <p class="text-sm text-slate-700">
+    Only players that at least one user picked as their top scorer are listed below.
+    The provider's <code class="bg-white px-1 rounded">/scorers</code> feed only returns
+    the top 100 by goals, so long-tail picks never get a goal count automatically.
+    Edit the value here whenever a picked player scores and isn't in the feed.
+  </p>
+  <p class="text-sm text-slate-700 mt-2">
+    <strong>⚠️ Saving recomputes every form's score.</strong>
+  </p>
+</div>
+
+{% if flash.success %}
+  <div class="card p-4 mb-5 bg-emerald-50 border-emerald-200 text-emerald-900">{{ flash.success }}</div>
+{% endif %}
+
+<form method="post" action="{{ url('/admin/topscorer-goals') }}">
+  <input type="hidden" name="_csrf" value="{{ csrf }}">
+  <div class="card overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50 border-b-2 border-slate-100">
+        <tr>
+          <th class="p-3 text-left text-xs uppercase tracking-wider text-slate-500 font-bold">Player</th>
+          <th class="p-3 text-left text-xs uppercase tracking-wider text-slate-500 font-bold w-40">Team</th>
+          <th class="p-3 text-center text-xs uppercase tracking-wider text-slate-500 font-bold w-24">Picked by</th>
+          <th class="p-3 text-center text-xs uppercase tracking-wider text-slate-500 font-bold w-32">Goals</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+          <tr class="border-t border-slate-100 {{ r.id == actual_id ? 'bg-amber-50' : '' }}">
+            <td class="p-2 font-semibold text-slate-900">
+              {{ r.name }}
+              {% if r.id == actual_id %}<span class="pill pill-orange ml-1">👟 leader</span>{% endif %}
+            </td>
+            <td class="p-2 text-slate-700">{{ r.team_name ?: '—' }}</td>
+            <td class="p-2 text-center">
+              <span class="pill pill-blue">{{ r.pick_count }}</span>
+            </td>
+            <td class="p-2 text-center">
+              <input type="number"
+                     name="goals[{{ r.id }}]"
+                     value="{{ r.goals ?: 0 }}"
+                     min="0" step="1" inputmode="numeric"
+                     aria-label="Goals scored by {{ r.name }}"
+                     class="w-20 px-2 py-1.5 text-center font-mono font-bold">
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="4" class="p-6 text-center text-slate-500 italic">No top-scorer picks yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <button class="mt-4 btn btn-primary">💾 Save & recompute all scores</button>
+</form>
+{% endblock %}

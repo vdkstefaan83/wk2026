@@ -195,6 +195,65 @@ final class AdminController extends Controller
         $this->redirect('/admin/players');
     }
 
+    // -------- Top-scorer goal overrides --------
+    //
+    // football-data.org's /scorers feed caps at the top 100 scorers (ranked by
+    // goals). Players outside that cutoff — even ones picked by a user as
+    // their top-scorer — never get a goal count, so users miss the +3/goal
+    // bonus. This page lets admin manually patch goal counts for any picked
+    // player. The next sync will overwrite the value only if/when that player
+    // appears in the API feed, so manual entries persist for long-tail picks.
+
+    public function topscorerGoals(): void
+    {
+        $this->requireAdmin();
+        $rows = Database::fetchAll(
+            'SELECT p.id, p.name, t.name AS team_name,
+                    COUNT(f.id) AS pick_count,
+                    (SELECT s.value FROM settings s
+                       WHERE s.`key` = CONCAT("predicted_topscorer_goals_for_", p.id) LIMIT 1) AS goals
+               FROM players p
+          LEFT JOIN teams t ON t.id = p.team_id
+               JOIN forms f ON f.topscorer_player_id = p.id
+              WHERE f.status = "submitted"
+           GROUP BY p.id, p.name, t.name
+           ORDER BY pick_count DESC, t.name, p.name'
+        );
+        $actualId = (int) Setting::get('actual_topscorer_player_id', 0);
+        $this->render('admin/topscorer_goals.twig', [
+            'rows'      => $rows,
+            'actual_id' => $actualId,
+        ]);
+    }
+
+    public function saveTopscorerGoals(): void
+    {
+        $this->requireAdmin();
+        $this->requireCsrf();
+        $goals = $_POST['goals'] ?? [];
+        $changed = 0;
+        if (is_array($goals)) {
+            foreach ($goals as $playerId => $value) {
+                $pid = (int) $playerId;
+                if (!$pid) continue;
+                $key = 'predicted_topscorer_goals_for_' . $pid;
+                $new = max(0, (int) $value);
+                $old = (int) Setting::get($key, 0);
+                if ($new !== $old) {
+                    Setting::set($key, (string) $new);
+                    $changed++;
+                }
+            }
+        }
+        if ($changed > 0) {
+            ScoringService::recomputeAll();
+            Session::flash('success', "Updated {$changed} goal count(s) and recomputed all scores.");
+        } else {
+            Session::flash('success', 'No changes.');
+        }
+        $this->redirect('/admin/topscorer-goals');
+    }
+
     // -------- Forms / payment tracking --------
 
     public function forms(): void

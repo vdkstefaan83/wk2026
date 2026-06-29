@@ -59,6 +59,8 @@ $router->get('/admin/matches',                $admin . '@matches');
 $router->post('/admin/matches',               $admin . '@saveMatches');
 $router->get('/admin/players',                $admin . '@players');
 $router->post('/admin/players',               $admin . '@savePlayers');
+$router->get('/admin/topscorer-goals',        $admin . '@topscorerGoals');
+$router->post('/admin/topscorer-goals',       $admin . '@saveTopscorerGoals');
 $router->get('/admin/users',                  $admin . '@users');
 $router->post('/admin/users/(\d+)/admin',     $admin . '@toggleAdmin');
 $router->get('/admin/forms',                  $admin . '@forms');
