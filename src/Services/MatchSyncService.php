@@ -237,37 +237,89 @@ final class MatchSyncService
         }
         [$teamsByIso, $teamsByName] = $this->buildTeamLookup();
 
+        // Cache all players once for fuzzy-matching.
+        $allPlayers = Database::fetchAll('SELECT id, name, team_id FROM players');
+
         $best     = $top[0];
         $bestName = (string) $best['name'];
         $bestGoals= (int) $best['goals'];
         $bestTeamId = $this->lookupTeam($best['team_iso'] ?? null, $best['team_name'] ?? null, $teamsByIso, $teamsByName);
 
-        $playerId = (int) Database::fetchColumn(
-            'SELECT id FROM players WHERE LOWER(name) = LOWER(?) AND (team_id <=> ?)',
-            [$bestName, $bestTeamId]
-        );
+        $playerId = $this->resolvePlayerId($bestName, $bestTeamId, $allPlayers);
         if (!$playerId) {
             $playerId = Database::insert('players', ['name' => $bestName, 'team_id' => $bestTeamId]);
+            $allPlayers[] = ['id' => $playerId, 'name' => $bestName, 'team_id' => $bestTeamId];
         }
 
         Setting::set('actual_topscorer_player_id', (string) $playerId);
         Setting::set('actual_topscorer_goals',     (string) $bestGoals);
-        // last_topscorer_sync_at already set at the top of this method
 
         // Per-player goal totals — supports the "+3 per goal your predicted topscorer scored" rule.
         foreach ($top as $p) {
             $pname = (string) $p['name'];
             if ($pname === '') continue;
             $pteam = $this->lookupTeam($p['team_iso'] ?? null, $p['team_name'] ?? null, $teamsByIso, $teamsByName);
-            $pid = (int) Database::fetchColumn(
-                'SELECT id FROM players WHERE LOWER(name) = LOWER(?) AND (team_id <=> ?)',
-                [$pname, $pteam]
-            );
+            $pid = $this->resolvePlayerId($pname, $pteam, $allPlayers);
             if ($pid) {
                 Setting::set('predicted_topscorer_goals_for_' . $pid, (string) (int) $p['goals']);
             }
         }
         return ['player' => $bestName, 'goals' => $bestGoals];
+    }
+
+    /**
+     * Find the local player id for a name supplied by the data provider.
+     * Tries — in order:
+     *   1. exact, accent/case-insensitive match within the same team
+     *   2. last-name match within the same team
+     *   3. last-name match without team constraint (fallback for renamed teams)
+     *
+     * @param list<array{id:int,name:string,team_id:?int}> $players
+     */
+    private function resolvePlayerId(string $apiName, ?int $apiTeamId, array $players): int
+    {
+        $apiNorm = $this->normalize($apiName);
+        $apiLast = $this->lastWord($apiNorm);
+        if ($apiNorm === '') return 0;
+
+        // 1. exact, within team
+        foreach ($players as $p) {
+            if ($this->normalize((string) $p['name']) === $apiNorm
+                && (int) ($p['team_id'] ?? 0) === (int) $apiTeamId) {
+                return (int) $p['id'];
+            }
+        }
+        // 2. exact, ignoring team
+        foreach ($players as $p) {
+            if ($this->normalize((string) $p['name']) === $apiNorm) {
+                return (int) $p['id'];
+            }
+        }
+        // 3. last-name match within team (catches "Romelu Lukaku" vs "R. Lukaku")
+        if ($apiTeamId) {
+            foreach ($players as $p) {
+                if ((int) ($p['team_id'] ?? 0) !== (int) $apiTeamId) continue;
+                if ($this->lastWord($this->normalize((string) $p['name'])) === $apiLast) {
+                    return (int) $p['id'];
+                }
+            }
+        }
+        // 4. unique last-name match across all players
+        $candidates = [];
+        foreach ($players as $p) {
+            if ($this->lastWord($this->normalize((string) $p['name'])) === $apiLast) {
+                $candidates[] = (int) $p['id'];
+            }
+        }
+        if (count($candidates) === 1) return $candidates[0];
+
+        return 0;
+    }
+
+    private function lastWord(string $s): string
+    {
+        $parts = preg_split('/\s+/', trim($s)) ?: [];
+        return $parts ? (string) end($parts) : '';
     }
 
     // ------------------------------------------------------------------
