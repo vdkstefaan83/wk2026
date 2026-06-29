@@ -91,7 +91,11 @@ final class FootballDataOrgProvider implements MatchDataProvider
 
     public function topScorers(): array
     {
-        $query = ['limit' => 100];
+        // limit=100 cuts off in the middle of the 1-goal tier; picks like
+        // Romelu Lukaku fall off the list and lose their goal credit. The
+        // API ignores anything above the actual scorer count, so a generous
+        // limit is safe and future-proof for the rest of the tournament.
+        $query = ['limit' => 500];
         if ($this->season) $query['season'] = $this->season;
         $data = $this->get("/competitions/{$this->competition}/scorers", $query);
         $rows = $data['scorers'] ?? [];
@@ -182,9 +186,19 @@ final class FootballDataOrgProvider implements MatchDataProvider
     }
 
     /**
+     * football-data.org's free tier exposes /v4/matches/{id} but the
+     * response only contains score totals — no goal events. Switching to
+     * limit=500 on /scorers covers the long-tail picks instead.
+     */
+    public function supportsMatchGoals(): bool
+    {
+        return false;
+    }
+
+    /**
      * Fetch the per-match goal events. Each row corresponds to one goal
-     * (so a player with a hat-trick produces three rows). Used to recover
-     * goal counts for picks that fall outside the global /scorers top-100.
+     * (so a player with a hat-trick produces three rows). Kept for the
+     * day a paid-tier endpoint or another provider does expose this.
      *
      * @return list<array{scorer_name:string, team_iso:?string, team_name:?string, minute:?int, is_own_goal:bool}>
      */

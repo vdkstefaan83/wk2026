@@ -73,10 +73,13 @@ final class MatchSyncService
                 }
             }
 
-            // 3. Per-match goal enrichment for picked players. The /scorers
-            //    feed caps at the top 100, so picks outside that cutoff get
-            //    their goal count by aggregating /matches/{id} goal events.
-            if ($fixtures !== null && self::enrichmentTableExists()) {
+            // 3. Per-match goal enrichment for picked players. Only useful
+            //    when the provider actually exposes per-match goal events
+            //    (football-data.org's free tier does not, so the check
+            //    short-circuits there).
+            if ($fixtures !== null
+                && $this->provider->supportsMatchGoals()
+                && self::enrichmentTableExists()) {
                 try {
                     $enrichInfo = $this->enrichPickedTopscorers($fixtures, $errors);
                     if (($enrichInfo['players_updated'] ?? 0) > 0) {

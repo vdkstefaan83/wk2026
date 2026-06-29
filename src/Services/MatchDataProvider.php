@@ -46,4 +46,12 @@ interface MatchDataProvider
      * }>
      */
     public function fetchMatchGoals(int $providerMatchId): array;
+
+    /**
+     * Whether this backend actually returns per-match goal events.
+     * football-data.org's free tier exposes /v4/matches/{id} but without
+     * a "goals" array, so enrichment is impossible — MatchSyncService
+     * checks this flag and skips the per-match loop entirely.
+     */
+    public function supportsMatchGoals(): bool;
 }
